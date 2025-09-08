@@ -1,0 +1,58 @@
+body {
+    background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+form {
+    background: #fff;
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    min-width: 320px;
+    max-width: 400px;
+}
+
+input, select {
+    padding: 0.7rem 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+    outline: none;
+}
+
+input:focus, select:focus {
+    border-color: #fda085;
+    background: #fffbe6;
+}
+
+select {
+    background: #f6f6f6;
+}
+
+input[type="date"] {
+    color: #555;
+}
+
+form input[type="submit"], form button {
+    background: #fda085;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.8rem 1.2rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+form input[type="submit"]:hover, form button:hover {
+    background: #f6d365;
+}
