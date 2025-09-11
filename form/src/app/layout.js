@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Formulário preamar",
+  title: "Monitoramento de desembarque de pescado - Preamar",
   description: "Formulário para coleta de dados - Preamar",
 };
 
