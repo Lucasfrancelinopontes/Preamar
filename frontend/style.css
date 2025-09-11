@@ -1,5 +1,5 @@
 body {
-    background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+    background: #f0f0f0;
     font-family: 'Segoe UI', Arial, sans-serif;
     min-height: 100vh;
     margin: 0;
@@ -17,7 +17,12 @@ form {
     flex-direction: column;
     gap: 1.2rem;
     min-width: 320px;
-    max-width: 400px;
+    max-width: 75vw;
+    min-height: 340px;
+    max-height: 75vh;
+    border: 1px solid #e0e0e0;
+    width: 75vw;
+    height: auto;
 }
 
 input, select {
@@ -43,7 +48,7 @@ input[type="date"] {
 }
 
 form input[type="submit"], form button {
-    background: #fda085;
+    background: #ff5f32;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -54,5 +59,27 @@ form input[type="submit"], form button {
 }
 
 form input[type="submit"]:hover, form button:hover {
-    background: #f6d365;
+    background: #4bff3b;
+}
+
+.form-row {
+    display: flex;
+    gap: 1.2rem;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 180px;
+    min-width: 120px;
+    max-width: 100%;
+}
+
+/* Inputs maiores para nome e informações grandes */
+#embarcacao, #coordenadas, #tamanhoPetrecho {
+    width: 100%;
+    min-width: 220px;
+    max-width: 400px;
 }

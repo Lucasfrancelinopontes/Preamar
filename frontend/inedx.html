@@ -8,18 +8,55 @@
 </head>
 <body>
     <form action="" method="post">
-        <input placeholder="ID"></input>
-        <input placeholder="COD.desembarque">
-        <input type="date" name="" id="">
-        <input type="date" name="" id="">
-        <input placeholder="apelido">
-        <input placeholder="Coordenadas">
-        <input placeholder="Nome da embarcação">
-        <select name="Petrecho" id="">
-            <option value="">petrecho 1</option>
-            <option value="">petrecho 2</option>
-        </select>
-        <input placeholder="Tamanho petrecho">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id">ID</label>
+                <input id="id" name="id" type="text" placeholder="ID">
+            </div>
+            <div class="form-group">
+                <label for="codDesembarque">COD. desembarque</label>
+                <input id="codDesembarque" name="codDesembarque" type="text" placeholder="COD.desembarque">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="dataSaida">Data de saída</label>
+                <input id="dataSaida" name="dataSaida" type="date">
+            </div>
+            <div class="form-group">
+                <label for="dataChegada">Data de chegada</label>
+                <input id="dataChegada" name="dataChegada" type="date">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="apelido">Apelido</label>
+                <input id="apelido" name="apelido" type="text" placeholder="Apelido">
+            </div>
+            <div class="form-group">
+                <label for="coordenadas">Coordenadas</label>
+                <input id="coordenadas" name="coordenadas" type="text" placeholder="Coordenadas">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="embarcacao">Nome da embarcação</label>
+                <input id="embarcacao" name="embarcacao" type="text" placeholder="Nome da embarcação">
+            </div>
+            <div class="form-group">
+                <label for="petrecho">Petrecho</label>
+                <select id="petrecho" name="petrecho">
+                    <option value="">Selecione</option>
+                    <option value="petrecho1">Petrecho 1</option>
+                    <option value="petrecho2">Petrecho 2</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="tamanhoPetrecho">Tamanho do petrecho</label>
+                <input id="tamanhoPetrecho" name="tamanhoPetrecho" type="text" placeholder="Tamanho petrecho">
+            </div>
+        </div>
+        <button type="submit">Enviar</button>
     </form>
 </body>
 </html>
