@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-preamar}
+      MYSQL_USER: ${DB_USER:-preamar}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-preamarpass}
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      PORT: ${PORT:-3000}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-preamar}
+      DB_USER: ${DB_USER:-preamar}
+      DB_PASSWORD: ${DB_PASSWORD:-preamarpass}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/usr/src/app
+    command: npm run dev
+
+volumes:
+  db_data:
