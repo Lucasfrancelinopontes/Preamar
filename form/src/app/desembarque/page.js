@@ -1,4 +1,14 @@
+"use client";
+import { useRouter } from 'next/navigation';
+
 export default function DesembarquePage() {
+    const router = useRouter();
+
+    const handleNext = (e) => {
+        e.preventDefault();
+        router.push('/dadosPesca');
+    }
+
     return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center flex-wrap" style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}>
             <div className="mx-auto">
@@ -81,6 +91,9 @@ export default function DesembarquePage() {
                         <input id="dataD" name="dataD" type="date" className="px-4 py-2 border border-gray-200 rounded-lg text-base text-gray-700 focus:outline-none focus:border-amber-400 focus:bg-amber-50" />
                     </div>
                 </div>
+                <button onClick={handleNext} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors w-full mt-4">
+                    Proximo
+                </button>
             </form>
         </div>
     );

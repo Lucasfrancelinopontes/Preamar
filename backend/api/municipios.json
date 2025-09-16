@@ -1,0 +1,68 @@
+[
+    {
+        "municipio": "Mataraca",
+        "municipioCode": "MT",
+        "localidades": [
+            { "localidade": "Camaratuba", "localidadeCode": "CM" }
+        ]
+    },
+    {
+        "municipio": "Baía da Traição",
+        "municipioCode": "BT",
+        "localidades": [
+            { "localidade": "Praia", "localidadeCode": "PR" },
+            { "localidade": "Em frente às duas principais praças", "localidadeCode": "PP" },
+            { "localidade": "Em frente do bar \"do tubarão\"", "localidadeCode": "TB" }
+        ]
+    },
+    {
+        "municipio": "Marcação",
+        "municipioCode": "MR",
+        "localidades": [
+            { "localidade": "Camurupim", "localidadeCode": "CP" }
+        ]
+    },
+    {
+        "municipio": "Lucena",
+        "municipioCode": "LU",
+        "localidades": [
+            { "localidade": "Costinha", "localidadeCode": "CT" },
+            { "localidade": "Pontinha - Lucena", "localidadeCode": "PL" }
+        ]
+    },
+    {
+        "municipio": "Cabedelo",
+        "municipioCode": "CB",
+        "localidades": [
+            { "localidade": "Ponta de Matos (até frente ao bar das meninas Miramar)", "localidadeCode": "PM" },
+            { "localidade": "Porto de Camalaú (entre o terminal pesqueiro e o ferroboat)", "localidadeCode": "CA" },
+            { "localidade": "Bancas do Mercado do Peixe", "localidadeCode": "BA" }
+        ]
+    },
+    {
+        "municipio": "João Pessoa",
+        "municipioCode": "JP",
+        "localidades": [
+            { "localidade": "Mercado de peixe de Tambaú", "localidadeCode": "TU" },
+            { "localidade": "Seixas", "localidadeCode": "SX" },
+            { "localidade": "Penha", "localidadeCode": "PE" }
+        ]
+    },
+    {
+        "municipio": "Conde",
+        "municipioCode": "CO",
+        "localidades": [
+            { "localidade": "Jacumã", "localidadeCode": "JA" },
+            { "localidade": "Carapibus", "localidadeCode": "CR" }
+        ]
+    },
+    {
+        "municipio": "Pitimbu",
+        "municipioCode": "PI",
+        "localidades": [
+            { "localidade": "Acaú, Porto de Pontinha, Estaleiro - Camboa", "localidadeCode": "AP" },
+            { "localidade": "Acaú, Polo pesqueiro (Mourão)", "localidadeCode": "PP" },
+            { "localidade": "Praia de Pitimbu", "localidadeCode": "PI" }
+        ]
+    }
+]
