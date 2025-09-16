@@ -1,11 +1,7 @@
-const express = require('express');
+import { Router } from 'express'
+const router = Router()
+import {gmun} from './api/funcoes.js'
 
+router.get('/municipios', gmun)
 
-const options = {}; 
-const router = express.Router(options);
-
-router.get('/municipios', (req, res) => {
-    res.json({ message: 'Lista de municípios' });
-});
-
-module.exports = router;
+export default router;
