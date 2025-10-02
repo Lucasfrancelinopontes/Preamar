@@ -1,8 +1,49 @@
 "use client";
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export default function DesembarquePage() {
     const router = useRouter();
+    const [municipios, setMunicipios] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [selectedMunicipio, setSelectedMunicipio] = useState("");
+    const [localidades, setLocalidades] = useState([]);
+
+    useEffect(() => {
+        const fetchMunicipios = async () => {
+            try {
+                const response = await fetch('http://localhost:3001/api/municipios');
+                if (!response.ok) throw new Error('Erro ao carregar municípios');
+                const data = await response.json();
+                setMunicipios(data);
+                setError(null);
+            } catch (err) {
+                console.error('Erro:', err);
+                setError('Falha ao carregar municípios');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMunicipios();
+    }, []);
+
+    const handleMunicipioChange = (e) => {
+        const municipioCode = e.target.value;
+        setSelectedMunicipio(municipioCode);
+        
+        if (municipioCode) {
+            const municipioSelecionado = municipios.find(m => m.municipioCode === municipioCode);
+            setLocalidades(municipioSelecionado ? municipioSelecionado.localidades : []);
+        } else {
+            // Se nenhum município selecionado, mostra todas as localidades
+            const todasLocalidades = municipios.reduce((acc, municipio) => {
+                return [...acc, ...municipio.localidades];
+            }, []);
+            setLocalidades(todasLocalidades);
+        }
+    };
 
     const handleNext = (e) => {
         e.preventDefault();
@@ -27,21 +68,44 @@ export default function DesembarquePage() {
                         <div className="flex gap-4 items-center flex-wrap">
                             <div className="flex flex-col">
                                 <label htmlFor="municipio" className="mb-2 text-sm font-medium text-gray-700">Municipio</label>
-                                <select id="municipio" name="municipio" className="px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50">
-                                    <option value="">Selecione</option>
-                                    <option value="#">EX1</option>
-                                    <option value="#">EX2</option>
-                                    <option value="#">EX3</option>
+                                <select 
+                                    id="municipio" 
+                                    name="municipio" 
+                                    className="px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50"
+                                    disabled={loading}
+                                    onChange={handleMunicipioChange}
+                                    value={selectedMunicipio}
+                                >
+                                    <option value="">Selecione um município</option>
+                                    {loading ? (
+                                        <option>Carregando...</option>
+                                    ) : error ? (
+                                        <option>Erro ao carregar</option>
+                                    ) : (
+                                        municipios.map((municipio) => (
+                                            <option key={municipio.municipioCode} value={municipio.municipioCode}>
+                                                {municipio.municipio}
+                                            </option>
+                                        ))
+                                    )}
                                 </select>
+                                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
                             </div>
 
                             <div className="flex flex-col">
                                 <label htmlFor="localidade" className="mb-2 text-sm font-medium text-gray-700">Localidade</label>
-                                <select id="localidade" name="localidade" className="px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50">
-                                    <option value="">Selecione</option>
-                                    <option value="#">EX1</option>
-                                    <option value="#">EX2</option>
-                                    <option value="#">EX3</option>
+                                <select 
+                                    id="localidade" 
+                                    name="localidade" 
+                                    className="px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50"
+                                    disabled={loading}
+                                >
+                                    <option value="">Selecione uma localidade</option>
+                                    {localidades.map((localidade) => (
+                                        <option key={localidade.localidadeCode} value={localidade.localidadeCode}>
+                                            {localidade.localidade}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 

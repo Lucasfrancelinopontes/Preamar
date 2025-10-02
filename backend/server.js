@@ -3,10 +3,16 @@ dotenv.config();
 import express from 'express';
 import router from './router.js';
 import { connectDB } from './db.js';
+import cors from 'cors';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
+app.use(cors({
+    origin: 'http://localhost:3000', // URL do frontend Next.js
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type']
+}));
 app.use(express.json());
 app.use('/api', router);
 
