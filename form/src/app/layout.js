@@ -16,13 +16,17 @@ export const metadata = {
   description: "Formulário para coleta de dados - Preamar",
 };
 
+import ClientProvider from './contexts/ClientProvider';
+
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-br">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ClientProvider>
+          {children}
+        </ClientProvider>
       </body>
     </html>
   );

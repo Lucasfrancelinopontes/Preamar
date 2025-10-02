@@ -1,4 +1,104 @@
+"use client";
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useFormContext } from '../contexts/FormContext';
+
 export default function DadosPesca() {
+    const router = useRouter();
+    const { formData, updateFormData } = useFormContext();
+    
+    const saveFormData = (formElement) => {
+        const formValues = {};
+        
+        // Inputs de texto, número, data, hora
+        const simpleInputs = formElement.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], input[type="time"]');
+        simpleInputs.forEach(input => {
+            if (input.name) {
+                formValues[input.name] = input.value;
+            }
+        });
+
+        // Checkboxes
+        const checkboxes = formElement.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.name) {
+                formValues[checkbox.name] = checkbox.checked;
+            }
+        });
+
+        // Radio buttons
+        const radioGroups = new Set(Array.from(formElement.querySelectorAll('input[type="radio"]')).map(radio => radio.name));
+        radioGroups.forEach(groupName => {
+            const selectedRadio = formElement.querySelector(`input[name="${groupName}"]:checked`);
+            formValues[groupName] = selectedRadio ? selectedRadio.value : '';
+        });
+
+        // Selects
+        const selects = formElement.querySelectorAll('select');
+        selects.forEach(select => {
+            if (select.name) {
+                formValues[select.name] = select.value;
+            }
+        });
+
+        // Textareas
+        const textareas = formElement.querySelectorAll('textarea');
+        textareas.forEach(textarea => {
+            if (textarea.name) {
+                formValues[textarea.name] = textarea.value;
+            }
+        });
+
+        // Atualizar o contexto com os novos dados
+        updateFormData(formValues);
+    };
+
+    const handleBack = (e) => {
+        e.preventDefault();
+        // Salva os dados antes de voltar
+        const formElement = e.target.closest('form');
+        if (formElement) {
+            saveFormData(formElement);
+        }
+        router.back();
+    };
+
+    // Efeito para preencher o formulário com dados do contexto
+    useEffect(() => {
+        if (formData) {
+            // Preencher inputs simples
+            Object.keys(formData).forEach(key => {
+                const element = document.querySelector(`[name="${key}"]`);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = formData[key];
+                    } else if (element.type === 'radio') {
+                        const radio = document.querySelector(`[name="${key}"][value="${formData[key]}"]`);
+                        if (radio) {
+                            radio.checked = true;
+                        }
+                    } else {
+                        element.value = formData[key];
+                    }
+                }
+            });
+        }
+    }, [formData]);
+
+    const handleNext = (e) => {
+        e.preventDefault();
+        
+        // Salvar os dados do formulário
+        const formElement = e.target.closest('form');
+        if (formElement) {
+            saveFormData(formElement);
+
+        // Navegar para a próxima página
+        router.push('/dadosPeixes');
+    }
+    // Fim da função handleNext
+}
+
 return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center flex-wrap" style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}>
         <div className="mx-auto">
@@ -301,8 +401,21 @@ return (
                     </fieldset>
                 </div>
 
-                <div className="flex justify-end">
-                    <button type="submit" className="bg-orange-500 hover:bg-green-400 text-white rounded-lg px-4 py-2">Enviar</button>
+                <div className="flex justify-between mt-6">
+                    <button 
+                        onClick={handleBack}
+                        type="button"
+                        className="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                        Voltar
+                    </button>
+                    <button 
+                        onClick={handleNext}
+                        type="button"
+                        className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors"
+                    >
+                        Próximo
+                    </button>
                 </div>
             </div>
         </form>

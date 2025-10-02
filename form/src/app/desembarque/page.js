@@ -1,13 +1,15 @@
 "use client";
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useFormContext } from '../contexts/FormContext';
 
 export default function DesembarquePage() {
     const router = useRouter();
+    const { formData, updateFormData } = useFormContext();
     const [municipios, setMunicipios] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedMunicipio, setSelectedMunicipio] = useState("");
+    const [selectedMunicipio, setSelectedMunicipio] = useState(formData.municipio || "");
     const [localidades, setLocalidades] = useState([]);
 
     useEffect(() => {
@@ -29,13 +31,21 @@ export default function DesembarquePage() {
         fetchMunicipios();
     }, []);
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        updateFormData({ [name]: value });
+    };
+
     const handleMunicipioChange = (e) => {
         const municipioCode = e.target.value;
         setSelectedMunicipio(municipioCode);
+        updateFormData({ municipio: municipioCode });
         
         if (municipioCode) {
             const municipioSelecionado = municipios.find(m => m.municipioCode === municipioCode);
             setLocalidades(municipioSelecionado ? municipioSelecionado.localidades : []);
+            // Limpa a localidade selecionada quando muda o município
+            updateFormData({ localidade: "" });
         } else {
             // Se nenhum município selecionado, mostra todas as localidades
             const todasLocalidades = municipios.reduce((acc, municipio) => {
@@ -48,7 +58,15 @@ export default function DesembarquePage() {
     const handleNext = (e) => {
         e.preventDefault();
         router.push('/dadosPesca');
-    }
+    };
+
+    // Efeito para carregar as localidades iniciais baseado no município salvo
+    useEffect(() => {
+        if (formData.municipio && municipios.length > 0) {
+            const municipioSelecionado = municipios.find(m => m.municipioCode === formData.municipio);
+            setLocalidades(municipioSelecionado ? municipioSelecionado.localidades : []);
+        }
+    }, [municipios, formData.municipio]);
 
     return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center flex-wrap" style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}>
@@ -99,6 +117,8 @@ export default function DesembarquePage() {
                                     name="localidade" 
                                     className="px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50"
                                     disabled={loading}
+                                    value={formData.localidade}
+                                    onChange={handleInputChange}
                                 >
                                     <option value="">Selecione uma localidade</option>
                                     {localidades.map((localidade) => (
@@ -111,12 +131,27 @@ export default function DesembarquePage() {
 
                             <div className="flex flex-col">
                                 <label htmlFor="data" className="mb-2 text-sm font-medium text-gray-700">Data</label>
-                                <input id="data" name="data" type="date" className="px-4 py-2 border border-gray-200 rounded-lg text-base text-gray-700 focus:outline-none focus:border-amber-400 focus:bg-amber-50" />
+                                <input 
+                                    id="data" 
+                                    name="data" 
+                                    type="date" 
+                                    value={formData.data}
+                                    onChange={handleInputChange}
+                                    className="px-4 py-2 border border-gray-200 rounded-lg text-base text-gray-700 focus:outline-none focus:border-amber-400 focus:bg-amber-50" 
+                                />
                             </div>
 
                             <div className="flex flex-col">
                                 <label htmlFor="consecutivo" className="mb-2 text-sm font-medium text-gray-700">Consecutivo</label>
-                                <input id="consecutivo" name="consecutivo" type="text" placeholder="EX: 2" className="px-4 py-2 border border-gray-200 rounded-lg text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50" />
+                                <input 
+                                    id="consecutivo" 
+                                    name="consecutivo" 
+                                    type="text" 
+                                    placeholder="EX: 2" 
+                                    value={formData.consecutivo}
+                                    onChange={handleInputChange}
+                                    className="px-4 py-2 border border-gray-200 rounded-lg text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50" 
+                                />
                             </div>
                         </div>
                     </div>
@@ -125,34 +160,79 @@ export default function DesembarquePage() {
                 <div className="flex gap-4 flex-wrap">
                     <div className="flex flex-col flex-1 min-w-[120px]">
                         <label htmlFor="coletor" className="mb-2 text-sm font-medium text-gray-700">Coletor</label>
-                        <input id="coletor" name="coletor" type="text" placeholder="Nome:" className="px-4 py-2 border border-gray-200 rounded-lg text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50" />
+                        <input 
+                            id="coletor" 
+                            name="coletor" 
+                            type="text" 
+                            placeholder="Nome:" 
+                            value={formData.coletor}
+                            onChange={handleInputChange}
+                            className="px-4 py-2 border border-gray-200 rounded-lg text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50" 
+                        />
                     </div>
 
                     <div className="flex flex-col flex-1 min-w-[120px]">
                         <label htmlFor="dataChegada" className="mb-2 text-sm font-medium text-gray-700">Data</label>
-                        <input id="dataC" name="dataC" type="date" className="px-4 py-2 border border-gray-200 rounded-lg text-base text-gray-700 focus:outline-none focus:border-amber-400 focus:bg-amber-50" />
+                        <input 
+                            id="dataC" 
+                            name="dataC" 
+                            type="date" 
+                            value={formData.dataC}
+                            onChange={handleInputChange}
+                            className="px-4 py-2 border border-gray-200 rounded-lg text-base text-gray-700 focus:outline-none focus:border-amber-400 focus:bg-amber-50" 
+                        />
                     </div>
                 </div>
                 <div className="flex gap-4 flex-wrap">
                     <div className="flex flex-col flex-1 min-w-[120px]">
                         <label htmlFor="revisor" className="mb-2 text-sm font-medium text-gray-700">Revisor</label>
-                        <input id="revisor" name="revisor" type="text" placeholder="Nome:" className="px-4 py-2 border border-gray-200 rounded-lg text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50" />
+                        <input 
+                            id="revisor" 
+                            name="revisor" 
+                            type="text" 
+                            placeholder="Nome:" 
+                            value={formData.revisor}
+                            onChange={handleInputChange}
+                            className="px-4 py-2 border border-gray-200 rounded-lg text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50" 
+                        />
                     </div>
 
                     <div className="flex flex-col flex-1 min-w-[120px]">
                         <label htmlFor="dataR" className="mb-2 text-sm font-medium text-gray-700">Data</label>
-                        <input id="dataR" name="dataR" type="date" className="px-4 py-2 border border-gray-200 rounded-lg text-base text-gray-700 focus:outline-none focus:border-amber-400 focus:bg-amber-50" />
+                        <input 
+                            id="dataR" 
+                            name="dataR" 
+                            type="date" 
+                            value={formData.dataR}
+                            onChange={handleInputChange}
+                            className="px-4 py-2 border border-gray-200 rounded-lg text-base text-gray-700 focus:outline-none focus:border-amber-400 focus:bg-amber-50" 
+                        />
                     </div>
                 </div>
                 <div className="flex gap-4 flex-wrap">
                     <div className="flex flex-col flex-1 min-w-[120px]">
                         <label htmlFor="digitador" className="mb-2 text-sm font-medium text-gray-700">Digitador</label>
-                        <input id="digitador" name="digitador" type="text" placeholder="Nome:" className="px-4 py-2 border border-gray-200 rounded-lg text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50" />
+                        <input 
+                            id="digitador" 
+                            name="digitador" 
+                            type="text" 
+                            placeholder="Nome:" 
+                            value={formData.digitador}
+                            onChange={handleInputChange}
+                            className="px-4 py-2 border border-gray-200 rounded-lg text-base focus:outline-none focus:border-amber-400 focus:bg-amber-50" 
+                        />
                     </div>
 
                     <div className="flex flex-col flex-1 min-w-[120px]">
                         <label htmlFor="dataD" className="mb-2 text-sm font-medium text-gray-700">Data</label>
-                        <input id="dataD" name="dataD" type="date" className="px-4 py-2 border border-gray-200 rounded-lg text-base text-gray-700 focus:outline-none focus:border-amber-400 focus:bg-amber-50" />
+                        <input 
+                            id="dataD" 
+                            name="dataD" 
+                            type="date" 
+                            value={formData.dataD}
+                            onChange={handleInputChange}
+                            className="px-4 py-2 border border-gray-200 rounded-lg text-base text-gray-700 focus:outline-none focus:border-amber-400 focus:bg-amber-50" 
+                        />
                     </div>
                 </div>
                 <button onClick={handleNext} className="bg-amber-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors w-full mt-4">
