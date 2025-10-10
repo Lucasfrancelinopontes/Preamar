@@ -9,6 +9,7 @@ import {
   sequelize
 } from '../models/index.js';
 import { Op } from 'sequelize';
+import { validarCPF } from '../utils/validators.js';
 
 // Criar novo desembarque completo
 export const criarDesembarque = async (req, res) => {
@@ -21,6 +22,22 @@ export const criarDesembarque = async (req, res) => {
       capturas, 
       individuos 
     } = req.body;
+
+    // Validar dados obrigatórios
+    if (!desembarque) {
+      return res.status(400).json({
+        success: false,
+        message: 'Dados do desembarque são obrigatórios'
+      });
+    }
+
+    // Validar CPF do pescador se fornecido
+    if (pescador?.cpf && !validarCPF(pescador.cpf)) {
+      return res.status(400).json({
+        success: false,
+        message: 'CPF inválido'
+      });
+    }
 
     // 1. Criar ou encontrar pescador
     let pescadorDb;
@@ -270,10 +287,12 @@ export const deletarDesembarque = async (req, res) => {
       });
     }
 
-    // Deletar registros relacionados
-    await DesembarqueArte.destroy({ where: { ID_desembarque: id } });
-    await Captura.destroy({ where: { ID_desembarque: id } });
-    await Individuo.destroy({ where: { ID_desembarque: id } });
+    // Deletar registros relacionados em paralelo
+    await Promise.all([
+      DesembarqueArte.destroy({ where: { ID_desembarque: id } }),
+      Captura.destroy({ where: { ID_desembarque: id } }),
+      Individuo.destroy({ where: { ID_desembarque: id } })
+    ]);
     
     // Deletar desembarque
     await desembarque.destroy();

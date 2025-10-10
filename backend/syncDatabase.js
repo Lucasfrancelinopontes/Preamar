@@ -11,7 +11,7 @@ import {
   defineAssociations,
   sequelize
 } from './models/index.js';
-import especiesData from './api/especies.json' assert { type: 'json' };
+import especiesData from './api/especies.json' with { type: 'json' };
 
 // Definir associações antes de sincronizar
 defineAssociations();
