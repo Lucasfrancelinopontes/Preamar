@@ -14,12 +14,16 @@ import {
 import {
   listarPescadores,
   criarPescador,
-  buscarPescador
+  buscarPescador,
+  atualizarPescador,
+  deletarPescador
 } from './controllers/pescadorController.js';
 import {
   listarEmbarcacoes,
   criarEmbarcacao,
-  buscarEmbarcacao
+  buscarEmbarcacao,
+  atualizarEmbarcacao,
+  deletarEmbarcacao
 } from './controllers/embarcacaoController.js';
 
 // Rotas existentes (JSON estáticos)
@@ -28,8 +32,8 @@ router.get('/especies', gesp);
 
 // Rotas de Desembarques
 router.post('/desembarques', criarDesembarque);
+router.get('/desembarques/estatisticas', estatisticasDesembarques); // ANTES do :id
 router.get('/desembarques', listarDesembarques);
-router.get('/desembarques/estatisticas', estatisticasDesembarques);
 router.get('/desembarques/:id', buscarDesembarque);
 router.put('/desembarques/:id', atualizarDesembarque);
 router.delete('/desembarques/:id', deletarDesembarque);
@@ -38,10 +42,14 @@ router.delete('/desembarques/:id', deletarDesembarque);
 router.get('/pescadores', listarPescadores);
 router.post('/pescadores', criarPescador);
 router.get('/pescadores/:id', buscarPescador);
+router.put('/pescadores/:id', atualizarPescador);
+router.delete('/pescadores/:id', deletarPescador);
 
 // Rotas de Embarcações
 router.get('/embarcacoes', listarEmbarcacoes);
 router.post('/embarcacoes', criarEmbarcacao);
 router.get('/embarcacoes/:id', buscarEmbarcacao);
+router.put('/embarcacoes/:id', atualizarEmbarcacao);
+router.delete('/embarcacoes/:id', deletarEmbarcacao);
 
 export default router;
