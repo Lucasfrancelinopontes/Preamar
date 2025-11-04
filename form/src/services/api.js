@@ -9,8 +9,38 @@ class ApiError extends Error {
   }
 }
 
+// Função para obter o token do localStorage
+const getToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token');
+  }
+  return null;
+};
+
+// Função para criar headers com autenticação
+const getAuthHeaders = () => {
+  const token = getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
+};
+
 const handleResponse = async (response) => {
   const data = await response.json();
+  
+  // Se retornar 401 (não autorizado), redirecionar para login
+  if (response.status === 401 && typeof window !== 'undefined') {
+    localStorage.removeItem('token');
+    localStorage.removeItem('usuario');
+    window.location.href = '/login';
+  }
   
   if (!response.ok) {
     throw new ApiError(
@@ -23,8 +53,101 @@ const handleResponse = async (response) => {
   return data;
 };
 
-export const api = {
-  // Municípios e Espécies
+const api = {
+  // ==================== AUTENTICAÇÃO ====================
+  
+  login: async (email, senha) => {
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ email, senha })
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
+      throw error;
+    }
+  },
+
+  obterPerfil: async () => {
+    try {
+      const response = await fetch(`${API_URL}/auth/perfil`, {
+        headers: getAuthHeaders()
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao obter perfil:', error);
+      throw error;
+    }
+  },
+
+  alterarSenha: async (senhaAtual, novaSenha) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/senha`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ senhaAtual, novaSenha })
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao alterar senha:', error);
+      throw error;
+    }
+  },
+
+  // ==================== USUÁRIOS ====================
+
+  listarUsuarios: async (filtros = {}) => {
+    try {
+      const params = new URLSearchParams(filtros);
+      const response = await fetch(`${API_URL}/usuarios?${params}`, {
+        headers: getAuthHeaders()
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao listar usuários:', error);
+      throw error;
+    }
+  },
+
+  criarUsuario: async (dados) => {
+    try {
+      const response = await fetch(`${API_URL}/usuarios`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      throw error;
+    }
+  },
+
+  deletarUsuario: async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/usuarios/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao deletar usuário:', error);
+      throw error;
+    }
+  },
+
+  // ==================== MUNICÍPIOS E ESPÉCIES ====================
+
   getMunicipios: async () => {
     try {
       const response = await fetch(`${API_URL}/municipios`);
@@ -45,15 +168,13 @@ export const api = {
     }
   },
 
-  // Desembarques
+  // ==================== DESEMBARQUE ====================
+
   criarDesembarque: async (dados) => {
     try {
       const response = await fetch(`${API_URL}/desembarques`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(dados)
       });
       
@@ -67,7 +188,10 @@ export const api = {
   listarDesembarques: async (filtros = {}) => {
     try {
       const params = new URLSearchParams(filtros);
-      const response = await fetch(`${API_URL}/desembarques?${params}`);
+      const response = await fetch(`${API_URL}/desembarques?${params}`, {
+        headers: getAuthHeaders()
+      });
+      
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao listar desembarques:', error);
@@ -75,30 +199,15 @@ export const api = {
     }
   },
 
-  buscarDesembarque: async (id) => {
-    try {
-      const response = await fetch(`${API_URL}/desembarques/${id}`);
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Erro ao buscar desembarque:', error);
-      throw error;
-    }
-  },
-
-  atualizarDesembarque: async (id, dados) => {
+  getDesembarque: async (id) => {
     try {
       const response = await fetch(`${API_URL}/desembarques/${id}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(dados)
+        headers: getAuthHeaders()
       });
       
       return handleResponse(response);
     } catch (error) {
-      console.error('Erro ao atualizar desembarque:', error);
+      console.error('Erro ao buscar desembarque:', error);
       throw error;
     }
   },
@@ -107,9 +216,7 @@ export const api = {
     try {
       const response = await fetch(`${API_URL}/desembarques/${id}`, {
         method: 'DELETE',
-        headers: { 
-          'Accept': 'application/json'
-        }
+        headers: getAuthHeaders()
       });
       
       return handleResponse(response);
@@ -119,77 +226,13 @@ export const api = {
     }
   },
 
-  obterEstatisticas: async (filtros = {}) => {
-    try {
-      const params = new URLSearchParams(filtros);
-      const response = await fetch(`${API_URL}/desembarques/estatisticas?${params}`);
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Erro ao obter estatísticas:', error);
-      throw error;
-    }
-  },
-
-  // Pescadores
-  listarPescadores: async (filtros = {}) => {
-    try {
-      const params = new URLSearchParams(filtros);
-      const response = await fetch(`${API_URL}/pescadores?${params}`);
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Erro ao listar pescadores:', error);
-      throw error;
-    }
-  },
-
-  criarPescador: async (dados) => {
-    try {
-      const response = await fetch(`${API_URL}/pescadores`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(dados)
-      });
-      
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Erro ao criar pescador:', error);
-      throw error;
-    }
-  },
-
-  buscarPescador: async (id) => {
-    try {
-      const response = await fetch(`${API_URL}/pescadores/${id}`);
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Erro ao buscar pescador:', error);
-      throw error;
-    }
-  },
-
-  // Embarcações
-  listarEmbarcacoes: async (filtros = {}) => {
-    try {
-      const params = new URLSearchParams(filtros);
-      const response = await fetch(`${API_URL}/embarcacoes?${params}`);
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Erro ao listar embarcações:', error);
-      throw error;
-    }
-  },
+  // ==================== EMBARCAÇÕES ====================
 
   criarEmbarcacao: async (dados) => {
     try {
       const response = await fetch(`${API_URL}/embarcacoes`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(dados)
       });
       
@@ -200,12 +243,73 @@ export const api = {
     }
   },
 
-  buscarEmbarcacao: async (id) => {
+  listarEmbarcacoes: async (filtros = {}) => {
     try {
-      const response = await fetch(`${API_URL}/embarcacoes/${id}`);
+      const params = new URLSearchParams(filtros);
+      const response = await fetch(`${API_URL}/embarcacoes?${params}`, {
+        headers: getAuthHeaders()
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao listar embarcações:', error);
+      throw error;
+    }
+  },
+
+  getEmbarcacao: async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/embarcacoes/${id}`, {
+        headers: getAuthHeaders()
+      });
+      
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao buscar embarcação:', error);
+      throw error;
+    }
+  },
+
+  // ==================== PESCADORES ====================
+
+  criarPescador: async (dados) => {
+    try {
+      const response = await fetch(`${API_URL}/pescadores`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao criar pescador:', error);
+      throw error;
+    }
+  },
+
+  listarPescadores: async (filtros = {}) => {
+    try {
+      const params = new URLSearchParams(filtros);
+      const response = await fetch(`${API_URL}/pescadores?${params}`, {
+        headers: getAuthHeaders()
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao listar pescadores:', error);
+      throw error;
+    }
+  },
+
+  getPescador: async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/pescadores/${id}`, {
+        headers: getAuthHeaders()
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao buscar pescador:', error);
       throw error;
     }
   }

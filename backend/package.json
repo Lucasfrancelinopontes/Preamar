@@ -12,23 +12,22 @@
     "db:sync:alter": "node syncDatabase.js --alter",
     "db:populate": "node examples/populaBancoDados.js",
     "db:queries": "node examples/consultasExemplo.js",
-    "test": "node examples/testarAPI.js",
-    "test:watch": "nodemon examples/testarAPI.js",
-    "db:sync": "node syncDatabase.js",
-    "db:sync:force": "node syncDatabase.js --force",
-    "db:sync:alter": "node syncDatabase.js --alter",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:create-admin": "node scripts/criarAdmin.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:watch": "nodemon examples/testarAPI.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mariadb": "^3.1.4",
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
-  }
+}
 }

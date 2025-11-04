@@ -1,76 +1,175 @@
 "use client";
+
 import { useRouter } from 'next/navigation';
+import { useAuth } from './contexts/AuthContext';
 
 export default function Home() {
     const router = useRouter();
+    const { usuario, estaAutenticado, ehAdmin, logout } = useAuth();
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-4">
-            <div className="max-w-4xl w-full">
-                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-8 text-white">
-                        <h1 className="text-4xl font-bold mb-2">Sistema Preamar</h1>
-                        <p className="text-xl opacity-90">Monitoramento de Desembarque de Pescado</p>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
+            {/* Header com navegação */}
+            <header className="bg-white shadow-md">
+                <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold text-gray-800">Sistema Preamar</h1>
+                            <p className="text-xs text-gray-500">Monitoramento de Desembarque</p>
+                        </div>
                     </div>
 
-                    {/* Content */}
-                    <div className="p-8">
-                        <div className="mb-8">
-                            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Bem-vindo ao Sistema</h2>
-                            <p className="text-gray-600 text-lg leading-relaxed">
-                                Este sistema permite o registro completo de desembarques pesqueiros, 
-                                incluindo dados do pescador, embarcação, espécies capturadas e 
-                                informações da viagem de pesca.
+                    {estaAutenticado() ? (
+                        <div className="flex items-center gap-4">
+                            <div className="text-right">
+                                <p className="text-sm font-medium text-gray-800">{usuario?.nome}</p>
+                                <p className="text-xs text-gray-500">{usuario?.funcao}</p>
+                            </div>
+                            <button
+                                onClick={logout}
+                                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                                Sair
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => router.push('/login')}
+                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        >
+                            Entrar
+                        </button>
+                    )}
+                </div>
+            </header>
+
+            <div className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
+                <div className="max-w-4xl w-full">
+                    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                        {/* Content */}
+                        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-8 text-white">
+                            <h2 className="text-3xl font-bold mb-2">Bem-vindo ao Sistema</h2>
+                            <p className="text-lg opacity-90">
+                                {estaAutenticado() 
+                                    ? `Olá, ${usuario?.nome}! Escolha uma opção abaixo.`
+                                    : 'Faça login para acessar o sistema completo.'
+                                }
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
-                                <div className="text-blue-600 mb-3">
-                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-semibold text-gray-800 mb-2">Formulário Simples</h3>
-                                <p className="text-gray-600">Interface intuitiva dividida em etapas</p>
-                            </div>
+                        <div className="p-8">
+                            {estaAutenticado() ? (
+                                <>
+                                    <div className="mb-8">
+                                        <h3 className="text-xl font-semibold text-gray-800 mb-4">Funcionalidades</h3>
+                                        <p className="text-gray-600">
+                                            Sistema de registro completo de desembarques pesqueiros, 
+                                            incluindo dados do pescador, embarcação, espécies capturadas e 
+                                            informações da viagem de pesca.
+                                        </p>
+                                    </div>
 
-                            <div className="p-6 bg-green-50 rounded-lg border border-green-200">
-                                <div className="text-green-600 mb-3">
-                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-semibold text-gray-800 mb-2">Validação Automática</h3>
-                                <p className="text-gray-600">Verificação de dados em tempo real</p>
-                            </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                                        {/* Card: Novo Desembarque */}
+                                        <button
+                                            onClick={() => router.push('/desembarque')}
+                                            className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg hover:shadow-xl transition-all text-left text-white group"
+                                        >
+                                            <div className="flex items-center gap-4 mb-3">
+                                                <div className="p-3 bg-white bg-opacity-20 rounded-lg group-hover:bg-opacity-30 transition-all">
+                                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-xl font-bold">Novo Desembarque</h4>
+                                                    <p className="text-sm opacity-90">Registrar novo desembarque</p>
+                                                </div>
+                                            </div>
+                                        </button>
 
-                            <div className="p-6 bg-purple-50 rounded-lg border border-purple-200">
-                                <div className="text-purple-600 mb-3">
-                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-semibold text-gray-800 mb-2">Armazenamento Seguro</h3>
-                                <p className="text-gray-600">Dados salvos em banco de dados</p>
-                            </div>
-                        </div>
+                                        {/* Card: Gerenciar Usuários (apenas Admin) */}
+                                        {ehAdmin() && (
+                                            <button
+                                                onClick={() => router.push('/usuarios')}
+                                                className="p-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg hover:shadow-xl transition-all text-left text-white group"
+                                            >
+                                                <div className="flex items-center gap-4 mb-3">
+                                                    <div className="p-3 bg-white bg-opacity-20 rounded-lg group-hover:bg-opacity-30 transition-all">
+                                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-xl font-bold">Usuários</h4>
+                                                        <p className="text-sm opacity-90">Gerenciar usuários do sistema</p>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        )}
+                                    </div>
 
-                        <div className="flex justify-center">
-                            <button
-                                onClick={() => router.push('/desembarque')}
-                                className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-12 py-4 rounded-lg text-lg font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all transform hover:scale-105 shadow-lg"
-                            >
-                                Iniciar Novo Registro →
-                            </button>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                            <div className="text-blue-600 mb-2">
+                                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                            </div>
+                                            <h4 className="font-semibold text-gray-800 mb-1">Formulário Simples</h4>
+                                            <p className="text-sm text-gray-600">Interface intuitiva dividida em etapas</p>
+                                        </div>
+
+                                        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                                            <div className="text-green-600 mb-2">
+                                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </div>
+                                            <h4 className="font-semibold text-gray-800 mb-1">Validação Automática</h4>
+                                            <p className="text-sm text-gray-600">Verificação de dados em tempo real</p>
+                                        </div>
+
+                                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                            <div className="text-purple-600 mb-2">
+                                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                                </svg>
+                                            </div>
+                                            <h4 className="font-semibold text-gray-800 mb-1">Sistema Seguro</h4>
+                                            <p className="text-sm text-gray-600">Autenticação e controle de acesso</p>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <div className="mb-6">
+                                        <svg className="w-20 h-20 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        </svg>
+                                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
+                                        <p className="text-gray-600 mb-6">Faça login para acessar o sistema de registro de desembarques.</p>
+                                    </div>
+                                    <button
+                                        onClick={() => router.push('/login')}
+                                        className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+                                    >
+                                        Fazer Login
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
-                </div>
 
-                {/* Footer */}
-                <div className="mt-8 text-center text-gray-600">
-                    <p>Projeto Preamar - Monitoramento Pesqueiro na Paraíba</p>
+                    {/* Footer */}
+                    <div className="mt-8 text-center text-gray-600">
+                        <p>Projeto Preamar - Monitoramento Pesqueiro na Paraíba © 2025</p>
+                    </div>
                 </div>
             </div>
         </div>

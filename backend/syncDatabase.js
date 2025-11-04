@@ -8,6 +8,7 @@ import {
   DesembarqueArte,
   Captura,
   Individuo,
+  Usuario,
   defineAssociations,
   sequelize
 } from './models/index.js';
@@ -30,11 +31,12 @@ const syncDatabase = async (options = {}) => {
     
     console.log('✅ Banco de dados sincronizado com sucesso!');
     
-    // Se force: true, popular tabela de espécies
+    // Se force: true, popular tabelas
     if (options.force) {
-      console.log('Populando tabela de espécies...');
+      console.log('Populando tabelas...');
       await seedEspecies();
       await seedPetrechos();
+      await seedAdminUsuario();
     }
     
   } catch (error) {
@@ -108,4 +110,32 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
     });
 }
 
-export { syncDatabase, seedEspecies, seedPetrechos };
+const seedAdminUsuario = async () => {
+  try {
+    const adminExistente = await Usuario.findOne({ 
+      where: { email: 'admin@preamar.com' } 
+    });
+    
+    if (!adminExistente) {
+      await Usuario.create({
+        nome: 'Administrador',
+        email: 'admin@preamar.com',
+        senha: 'admin123',
+        funcao: 'Administrador'
+      });
+      
+      console.log('');
+      console.log('================================================');
+      console.log('   USUÁRIO ADMINISTRADOR CRIADO');
+      console.log('================================================');
+      console.log('   Email:    admin@preamar.com');
+      console.log('   Senha:    admin123');
+      console.log('================================================');
+      console.log('');
+    }
+  } catch (error) {
+    console.error('❌ Erro ao criar usuário admin:', error);
+  }
+};
+
+export { syncDatabase, seedEspecies, seedPetrechos, seedAdminUsuario };

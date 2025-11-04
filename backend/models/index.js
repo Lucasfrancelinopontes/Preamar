@@ -6,6 +6,7 @@ import { Desembarque } from './Desembarque.js';
 import { DesembarqueArte } from './DesembarqueArte.js';
 import { Captura } from './Captura.js';
 import { Individuo } from './Individuo.js';
+import { Usuario } from './Usuario.js';
 import sequelize from '../db.js';
 
 // Definir associações
@@ -91,5 +92,6 @@ export {
   DesembarqueArte,
   Captura,
   Individuo,
+  Usuario,
   sequelize
 };
