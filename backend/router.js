@@ -27,6 +27,7 @@ import {
 } from './controllers/embarcacaoController.js';
 import {
   login,
+  register,
   obterPerfil,
   alterarSenha
 } from './controllers/authController.js';
@@ -50,6 +51,7 @@ import {
 
 // Autenticação
 router.post('/login', login);
+router.post('/register', register);
 
 // Rotas existentes (JSON estáticos) - podem permanecer públicas
 router.get('/municipios', gmun);

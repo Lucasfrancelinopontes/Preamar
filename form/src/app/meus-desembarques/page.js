@@ -21,7 +21,17 @@ function MeusDesembarquesContent() {
     const carregarDesembarques = async () => {
         try {
             const data = await api.listarDesembarques();
-            setDesembarques(data);
+            
+            // Ordenar por data e pegar apenas o mais recente
+            if (data.data && data.data.length > 0) {
+                const desembarquesOrdenados = [...data.data].sort((a, b) => 
+                    new Date(b.data_coleta) - new Date(a.data_coleta)
+                );
+                setDesembarques([desembarquesOrdenados[0]]); // Salva apenas o primeiro
+            } else {
+                setDesembarques([]);
+            }
+            
             setLoading(false);
         } catch (err) {
             console.error('Erro ao carregar desembarques:', err);

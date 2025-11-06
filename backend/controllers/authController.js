@@ -1,6 +1,64 @@
 import { Usuario } from '../models/Usuario.js';
 import { gerarToken } from '../middleware/authMiddleware.js';
 
+// Registro de novo usuário (público)
+export const register = async (req, res) => {
+  try {
+    const { nome, email, senha, telefone, funcao } = req.body;
+
+    // Validar dados obrigatórios
+    if (!nome || !email || !senha) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nome, email e senha são obrigatórios'
+      });
+    }
+
+    // Validar tamanho mínimo da senha
+    if (senha.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Senha deve ter no mínimo 6 caracteres'
+      });
+    }
+
+    // Verificar se o email já está em uso
+    const usuarioExistente = await Usuario.findOne({ where: { email } });
+
+    if (usuarioExistente) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email já está em uso'
+      });
+    }
+
+    // Criar novo usuário (função padrão é 'Coletor')
+    const novoUsuario = await Usuario.create({
+      nome,
+      email,
+      senha,
+      telefone: telefone || null,
+      funcao: funcao || 'Coletor',
+      ativo: true
+    });
+
+    // Retornar dados do usuário criado (sem senha)
+    res.status(201).json({
+      success: true,
+      message: 'Usuário registrado com sucesso',
+      data: novoUsuario.toSafeObject()
+    });
+
+  } catch (error) {
+    console.error('Erro ao registrar usuário:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao registrar usuário',
+      error: error.message
+    });
+  }
+};
+
 // Login
 export const login = async (req, res) => {
   try {

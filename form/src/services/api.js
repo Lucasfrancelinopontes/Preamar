@@ -74,6 +74,24 @@ const api = {
     }
   },
 
+  registrar: async (dados) => {
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(dados)
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao registrar usuário:', error);
+      throw error;
+    }
+  },
+
   obterPerfil: async () => {
     try {
       const response = await fetch(`${API_URL}/auth/perfil`, {
@@ -160,7 +178,9 @@ const api = {
 
   getEspecies: async () => {
     try {
-      const response = await fetch(`${API_URL}/especies`);
+      const response = await fetch(`${API_URL}/especies`, {
+        headers: getAuthHeaders()
+      });
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao buscar espécies:', error);

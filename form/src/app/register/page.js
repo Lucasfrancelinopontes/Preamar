@@ -92,7 +92,7 @@ export default function RegisterPage() {
         setCarregando(true);
 
         try {
-            await api.criarUsuario({
+            await api.registrar({
                 nome: formData.nome,
                 email: formData.email,
                 senha: formData.senha,
