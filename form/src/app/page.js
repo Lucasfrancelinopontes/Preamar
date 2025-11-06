@@ -77,7 +77,7 @@ export default function Home() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                                         {/* Card: Novo Desembarque */}
                                         <button
-                                            onClick={() => router.push('/desembarque')}
+                                            onClick={() => router.push('/selecao')}
                                             className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg hover:shadow-xl transition-all text-left text-white group"
                                         >
                                             <div className="flex items-center gap-4 mb-3">

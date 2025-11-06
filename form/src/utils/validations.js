@@ -40,6 +40,37 @@ export const validarEmail = (email) => {
   return regex.test(email);
 };
 
+export const validarNomeCompleto = (nome) => {
+  // Verifica se tem pelo menos duas palavras e comprimento mínimo
+  const palavras = nome.trim().split(/\s+/);
+  return palavras.length >= 2 && nome.length >= 5;
+};
+
+export const validarTelefone = (telefone) => {
+  // Remove caracteres não numéricos
+  const numeros = telefone.replace(/\D/g, '');
+  // Verifica se tem 10 ou 11 dígitos (com DDD)
+  return numeros.length >= 10 && numeros.length <= 11;
+};
+
+export const validarSenha = (senha) => {
+  // Mínimo 8 caracteres, pelo menos uma letra e um número
+  return senha.length >= 8 && 
+         /[A-Za-z]/.test(senha) && 
+         /[0-9]/.test(senha);
+};
+
+export const validarConfirmacaoSenha = (senha, confirmacao) => {
+  return senha === confirmacao;
+};
+
+export const formatarTelefone = (telefone) => {
+  telefone = telefone.replace(/\D/g, '');
+  telefone = telefone.replace(/^(\d{2})(\d)/g, '($1) $2');
+  telefone = telefone.replace(/(\d)(\d{4})$/, '$1-$2');
+  return telefone;
+};
+
 export const validarData = (data) => {
   if (!data) return false;
   const dataObj = new Date(data);

@@ -1,0 +1,400 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useFormContext } from '@/app/contexts/FormContext'
+import api from '@/services/api'
+import { gerarCodigoDesembarque } from '@/utils/validations'
+
+export default function Step8ResumoAnexos({ prevStep }) {
+  const router = useRouter()
+  const { formData, resetForm } = useFormContext()
+  const [anexos, setAnexos] = useState([])
+  const [previewUrls, setPreviewUrls] = useState([])
+  const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState(null)
+  const [sucesso, setSucesso] = useState(false)
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files)
+    setAnexos(files)
+
+    // Generate preview URLs for images
+    const urls = files.map(file => {
+      if (file.type.startsWith('image/')) {
+        return URL.createObjectURL(file)
+      }
+      return null
+    })
+    setPreviewUrls(urls)
+  }
+
+  const removerAnexo = (index) => {
+    const newAnexos = anexos.filter((_, i) => i !== index)
+    const newPreviews = previewUrls.filter((_, i) => i !== index)
+    
+    // Revoke URL to free memory
+    if (previewUrls[index]) {
+      URL.revokeObjectURL(previewUrls[index])
+    }
+    
+    setAnexos(newAnexos)
+    setPreviewUrls(newPreviews)
+  }
+
+  const prepararDadosEnvio = () => {
+    // Gerar código de desembarque
+    const codDesembarque = gerarCodigoDesembarque(
+      formData.municipio,
+      formData.localidade,
+      formData.dataColeta,
+      formData.consecutivo
+    )
+
+    // Preparar dados do pescador
+    const pescador = {
+      nome: formData.nomePescador || '',
+      apelido: formData.apelidoPescador || null,
+      cpf: formData.cpfPescador?.replace(/\D/g, '') || '',
+      nascimento: formData.nascimentoPescador || null,
+      municipio: formData.municipio
+    }
+
+    // Preparar dados da embarcação
+    const embarcacao = {
+      nome_embarcacao: formData.nomeEmbarcacao,
+      codigo_embarcacao: formData.codigoEmbarcacao,
+      proprietario: formData.proprietarioNome || formData.nomePescador,
+      tipo: formData.tipoEmbarcacao,
+      comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
+      capacidade: formData.capacidadeEstocagem ? parseFloat(formData.capacidadeEstocagem) : null,
+      hp: formData.forcaMotor ? parseInt(formData.forcaMotor) : null,
+      possui: formData.armazenamento || null
+    }
+
+    // Preparar dados do desembarque
+    const desembarque = {
+      cod_desembarque: codDesembarque,
+      municipio: formData.municipio,
+      localidade: formData.localidade,
+      data_coleta: formData.dataColeta,
+      consecutivo: parseInt(formData.consecutivo),
+      data_saida: formData.dataSaida || null,
+      hora_saida: formData.horaSaida || null,
+      data_chegada: formData.dataChegada || null,
+      hora_desembarque: formData.horaChegada || null,
+      numero_tripulantes: formData.numTripulantes ? parseInt(formData.numTripulantes) : null,
+      pesqueiros: formData.numPesqueiros ? parseInt(formData.numPesqueiros) : null,
+      arte_obs: null,
+      quadrante1: formData.quadrantesPesca || null,
+      quadrante2: null,
+      quadrante3: null,
+      origem: null,
+      desp_diesel: formData.combustivelTipo === 'Diesel',
+      desp_gasolina: formData.combustivelTipo === 'Gasolina',
+      litros: formData.combustivelLitros ? parseFloat(formData.combustivelLitros) : null,
+      gelo_kg: formData.quantidadeGelo ? parseFloat(formData.quantidadeGelo) : null,
+      rancho: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
+      destino_pescado: formData.destinoPescado || null,
+      destino_apelido: formData.apelidoDestino || null,
+      destino_outros_qual: null
+    }
+
+    // Preparar artes de pesca
+    const artes = formData.arteSelecionadas 
+      ? formData.arteSelecionadas
+          .filter(arte => arte.arte && arte.tamanho)
+          .map(arte => ({
+            arte: arte.arte,
+            tamanho: parseFloat(arte.tamanho)
+          }))
+      : []
+
+    // Preparar capturas
+    const capturas = formData.especiesCapturadas
+      ? formData.especiesCapturadas
+          .filter(e => e.id && e.peso)
+          .map(especie => ({
+            especie_id: especie.id,
+            peso: parseFloat(especie.peso),
+            preco: especie.preco ? parseFloat(especie.preco) : null
+          }))
+      : []
+
+    return {
+      pescador,
+      embarcacao,
+      desembarque,
+      artes,
+      capturas
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    
+    setErro(null)
+    setSucesso(false)
+
+    // Preparar dados para envio
+    const dadosEnvio = prepararDadosEnvio()
+
+    console.log('📤 Dados preparados para envio:', JSON.stringify(dadosEnvio, null, 2))
+
+    try {
+      setEnviando(true)
+      const resultado = await api.criarDesembarque(dadosEnvio)
+      
+      console.log('✅ Desembarque criado com sucesso:', resultado)
+      setSucesso(true)
+      
+      // Aguardar 2 segundos e redirecionar
+      setTimeout(() => {
+        resetForm()
+        router.push('/sucesso')
+      }, 2000)
+
+    } catch (error) {
+      console.error('❌ Erro ao enviar:', error)
+
+      let mensagemErro = 'Erro ao enviar dados. Tente novamente.'
+      
+      if (error?.response?.data?.message) {
+        mensagemErro = error.response.data.message
+      } else if (error?.response?.data?.error) {
+        mensagemErro = error.response.data.error
+      } else if (error?.response?.data?.errors) {
+        mensagemErro = Array.isArray(error.response.data.errors) 
+          ? error.response.data.errors.join(', ')
+          : error.response.data.errors
+      } else if (error?.message) {
+        mensagemErro = error.message
+      }
+
+      if (error?.response?.status === 404) {
+        mensagemErro = 'Servidor não encontrado. Verifique sua conexão.'
+      } else if (error?.response?.status === 500) {
+        mensagemErro = 'Erro interno do servidor. Tente novamente mais tarde.'
+      }
+      
+      setErro(mensagemErro)
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  const calcularTotal = () => {
+    if (!formData.especiesCapturadas) return '0.00'
+    
+    return formData.especiesCapturadas
+      .filter(e => e.peso && e.preco)
+      .reduce((total, e) => total + (parseFloat(e.peso) * parseFloat(e.preco)), 0)
+      .toFixed(2)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-8 p-4 max-w-4xl mx-auto">
+      {/* Seção Anexos */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+          Anexos
+        </h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Fazer upload de fotos e arquivos
+            </label>
+            <input
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx"
+              onChange={handleFileChange}
+              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-300"
+            />
+          </div>
+
+          {/* Preview de imagens */}
+          {previewUrls.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+              {anexos.map((file, index) => (
+                <div key={index} className="relative">
+                  {previewUrls[index] ? (
+                    <img
+                      src={previewUrls[index]}
+                      alt={file.name}
+                      className="w-full h-32 object-cover rounded-md"
+                    />
+                  ) : (
+                    <div className="w-full h-32 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removerAnexo(index)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">{file.name}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Seção Resumo */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+          Resumo do Desembarque
+        </h2>
+
+        <div className="space-y-6">
+          {/* Local */}
+          <div>
+            <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Local</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div><span className="text-gray-500">Município:</span> {formData.municipio}</div>
+              <div><span className="text-gray-500">Localidade:</span> {formData.localidade}</div>
+              <div><span className="text-gray-500">Data:</span> {formData.dataColeta}</div>
+              <div><span className="text-gray-500">Consecutivo:</span> {formData.consecutivo}</div>
+            </div>
+          </div>
+
+          {/* Pescador */}
+          <div>
+            <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Pescador</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div><span className="text-gray-500">Nome:</span> {formData.nomePescador}</div>
+              <div><span className="text-gray-500">CPF:</span> {formData.cpfPescador}</div>
+              <div><span className="text-gray-500">Nascimento:</span> {formData.nascimentoPescador || 'Não informado'}</div>
+              <div><span className="text-gray-500">Apelido:</span> {formData.apelidoPescador || 'Não informado'}</div>
+            </div>
+          </div>
+
+          {/* Embarcação */}
+          <div>
+            <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Embarcação</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div><span className="text-gray-500">Nome:</span> {formData.nomeEmbarcacao}</div>
+              <div><span className="text-gray-500">Código:</span> {formData.codigoEmbarcacao}</div>
+              <div><span className="text-gray-500">Tipo:</span> {formData.tipoEmbarcacao}</div>
+              <div><span className="text-gray-500">Comprimento:</span> {formData.comprimento}m</div>
+              <div><span className="text-gray-500">Tripulantes:</span> {formData.numTripulantes}</div>
+              <div><span className="text-gray-500">Pesqueiros:</span> {formData.numPesqueiros}</div>
+            </div>
+          </div>
+
+          {/* Proprietário */}
+          <div>
+            <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Proprietário</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div><span className="text-gray-500">Nome:</span> {formData.proprietarioNome}</div>
+              <div><span className="text-gray-500">CPF:</span> {formData.cpfProprietario}</div>
+              <div><span className="text-gray-500">Atuou na pesca:</span> {formData.atuouNaPesca ? 'Sim' : 'Não'}</div>
+            </div>
+          </div>
+
+          {/* Artes de Pesca */}
+          {formData.arteSelecionadas && formData.arteSelecionadas.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Artes de Pesca</h3>
+              <div className="space-y-1 text-sm">
+                {formData.arteSelecionadas.filter(a => a.arte).map((arte, index) => (
+                  <div key={index}>
+                    • {arte.arte} - {arte.tamanho}m
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Espécies Capturadas */}
+          {formData.especiesCapturadas && formData.especiesCapturadas.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Espécies Capturadas</h3>
+              <div className="space-y-1 text-sm">
+                {formData.especiesCapturadas.filter(e => e.id).map((especie, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span>• Espécie #{especie.id}</span>
+                    <span>{especie.peso}kg × R${especie.preco}/kg = R${(parseFloat(especie.peso) * parseFloat(especie.preco)).toFixed(2)}</span>
+                  </div>
+                ))}
+                <div className="pt-2 border-t dark:border-gray-700 font-semibold flex justify-between">
+                  <span>Total:</span>
+                  <span>R$ {calcularTotal()}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Despesas */}
+          <div>
+            <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Despesas</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div><span className="text-gray-500">Combustível:</span> {formData.combustivelLitros}L ({formData.combustivelTipo})</div>
+              <div><span className="text-gray-500">Gelo:</span> {formData.quantidadeGelo || 0}kg</div>
+              <div><span className="text-gray-500">Rancho:</span> R${formData.valorRancho || 0}</div>
+            </div>
+          </div>
+
+          {/* Destino */}
+          <div>
+            <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Destino do Pescado</h3>
+            <div className="text-sm">
+              <div><span className="text-gray-500">Destino:</span> {formData.destinoPescado}</div>
+              {formData.apelidoDestino && (
+                <div><span className="text-gray-500">Apelido:</span> {formData.apelidoDestino}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mensagens de Sucesso/Erro */}
+      {sucesso && (
+        <div className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-md">
+          <p className="text-green-700 dark:text-green-300">✅ Desembarque enviado com sucesso! Redirecionando...</p>
+        </div>
+      )}
+
+      {erro && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-md">
+          <p className="text-red-700 dark:text-red-300">❌ {erro}</p>
+        </div>
+      )}
+
+      {/* Botões de navegação */}
+      <div className="flex justify-between pt-4">
+        <button
+          type="button"
+          onClick={prevStep}
+          disabled={enviando}
+          className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors disabled:opacity-50"
+        >
+          &lt; Voltar
+        </button>
+        <button
+          type="submit"
+          disabled={enviando}
+          className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+        >
+          {enviando ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Enviando...
+            </>
+          ) : (
+            'Enviar cadastro'
+          )}
+        </button>
+      </div>
+    </form>
+  )
+}
