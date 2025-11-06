@@ -74,7 +74,7 @@ export default function Home() {
                                         </p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                                         {/* Card: Novo Desembarque */}
                                         <button
                                             onClick={() => router.push('/selecao')}
@@ -89,6 +89,24 @@ export default function Home() {
                                                 <div>
                                                     <h4 className="text-xl font-bold">Novo Desembarque</h4>
                                                     <p className="text-sm opacity-90">Registrar novo desembarque</p>
+                                                </div>
+                                            </div>
+                                        </button>
+
+                                        {/* Card: Visualizar Desembarques */}
+                                        <button
+                                            onClick={() => router.push('/meus-desembarques')}
+                                            className="p-6 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg hover:shadow-xl transition-all text-left text-white group"
+                                        >
+                                            <div className="flex items-center gap-4 mb-3">
+                                                <div className="p-3 bg-white bg-opacity-20 rounded-lg group-hover:bg-opacity-30 transition-all">
+                                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-xl font-bold">Visualizar Desembarques</h4>
+                                                    <p className="text-sm opacity-90">Ver desembarques registrados</p>
                                                 </div>
                                             </div>
                                         </button>

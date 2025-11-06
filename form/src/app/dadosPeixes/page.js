@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useFormContext } from '../contexts/FormContext';
-import { api } from '@/services/api';
+import api from '@/services/api';
 import { gerarCodigoDesembarque } from '@/utils/validations';
 
 export default function DadosPeixes() {

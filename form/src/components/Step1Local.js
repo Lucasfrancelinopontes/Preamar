@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFormContext } from '@/app/contexts/FormContext';
+import api from '@/services/api';
 
 export default function Step1Local({ nextStep, prevStep }) {
     const { formData, updateFormData } = useFormContext();
@@ -9,14 +10,15 @@ export default function Step1Local({ nextStep, prevStep }) {
     const [municipios, setMunicipios] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedMunicipio, setSelectedMunicipio] = useState(formData.municipio || "");
-    const [localidades, setLocalidades] = useState([]);
+    const [selectedMunicipioObj, setSelectedMunicipioObj] = useState(null);
     const [temaEscuro, setTemaEscuro] = useState(false);
     
     // Campos do formulário
     const [formFields, setFormFields] = useState({
         municipio: formData.municipio || "",
+        municipioCode: formData.municipioCode || "",
         localidade: formData.localidade || "",
+        localidadeCode: formData.localidadeCode || "",
         codigoColeta: formData.codigoColeta || "",
         codigoFoto: formData.codigoFoto || "",
         dataSaida: formData.dataSaida || "",
@@ -26,57 +28,64 @@ export default function Step1Local({ nextStep, prevStep }) {
     const [fieldErrors, setFieldErrors] = useState({});
 
     useEffect(() => {
-        fetchMunicipios();
+        carregarMunicipios();
     }, []);
 
     useEffect(() => {
-        if (selectedMunicipio) {
-            fetchLocalidades(selectedMunicipio);
+        // Quando municipio muda, encontrar o objeto correspondente
+        if (formFields.municipio && municipios.length > 0) {
+            const munObj = municipios.find(m => m.municipio === formFields.municipio);
+            setSelectedMunicipioObj(munObj || null);
+        } else {
+            setSelectedMunicipioObj(null);
         }
-    }, [selectedMunicipio]);
+    }, [formFields.municipio, municipios]);
 
-    const fetchMunicipios = async () => {
+    const carregarMunicipios = async () => {
         try {
-            const response = await fetch('/api/municipios');
-            const data = await response.json();
+            const data = await api.getMunicipios();
             setMunicipios(data);
             setLoading(false);
         } catch (err) {
+            console.error('Erro ao carregar municípios:', err);
             setError('Erro ao carregar municípios');
             setLoading(false);
         }
     };
 
-    const fetchLocalidades = async (municipioId) => {
-        try {
-            const response = await fetch(`/api/localidades?municipio=${municipioId}`);
-            const data = await response.json();
-            setLocalidades(data);
-        } catch (err) {
-            setError('Erro ao carregar localidades');
-        }
-    };
-
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormFields(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        
+        if (name === 'municipio') {
+            // Encontrar o objeto do município selecionado
+            const munObj = municipios.find(m => m.municipio === value);
+            setFormFields(prev => ({
+                ...prev,
+                municipio: value,
+                municipioCode: munObj?.municipioCode || "",
+                localidade: '', // Reset localidade when municipio changes
+                localidadeCode: ''
+            }));
+        } else if (name === 'localidade') {
+            // Encontrar o código da localidade selecionada
+            const locObj = selectedMunicipioObj?.localidades.find(l => l.localidade === value);
+            setFormFields(prev => ({
+                ...prev,
+                localidade: value,
+                localidadeCode: locObj?.localidadeCode || ""
+            }));
+        } else {
+            setFormFields(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
 
         // Limpar erro do campo quando ele for alterado
         if (fieldErrors[name]) {
             setFieldErrors(prev => ({
                 ...prev,
                 [name]: ''
-            }));
-        }
-
-        if (name === 'municipio') {
-            setSelectedMunicipio(value);
-            setFormFields(prev => ({
-                ...prev,
-                localidade: '' // Reset localidade when municipio changes
             }));
         }
     };
@@ -139,14 +148,14 @@ export default function Step1Local({ nextStep, prevStep }) {
                     value={formFields.municipio}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 rounded-lg ${
-                        temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
+                        temaEscuro ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
                     } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
                     disabled={loading}
                 >
                     <option value="">Selecione um município</option>
-                    {municipios.map(municipio => (
-                        <option key={municipio.id} value={municipio.id}>
-                            {municipio.nome}
+                    {municipios.map(mun => (
+                        <option key={mun.municipioCode} value={mun.municipio}>
+                            {mun.municipio}
                         </option>
                     ))}
                 </select>
@@ -165,14 +174,14 @@ export default function Step1Local({ nextStep, prevStep }) {
                     value={formFields.localidade}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 rounded-lg ${
-                        temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
+                        temaEscuro ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
                     } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
-                    disabled={!selectedMunicipio}
+                    disabled={!selectedMunicipioObj}
                 >
                     <option value="">Selecione uma localidade</option>
-                    {localidades.map(localidade => (
-                        <option key={localidade.id} value={localidade.id}>
-                            {localidade.nome}
+                    {selectedMunicipioObj?.localidades.map(loc => (
+                        <option key={loc.localidadeCode} value={loc.localidade}>
+                            {loc.localidade}
                         </option>
                     ))}
                 </select>
