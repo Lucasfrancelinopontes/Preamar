@@ -51,18 +51,46 @@ export const criarDesembarque = async (req, res) => {
     // 2. Criar ou encontrar embarcação
     let embarcacaoDb;
     if (embarcacao.codigo_embarcacao) {
-      [embarcacaoDb] = await Embarcacao.findOrCreate({
-        where: { codigo_embarcacao: embarcacao.codigo_embarcacao },
-        defaults: embarcacao
-      });
+      try {
+        [embarcacaoDb] = await Embarcacao.findOrCreate({
+          where: { codigo_embarcacao: embarcacao.codigo_embarcacao },
+          defaults: embarcacao
+        });
+      } catch (error) {
+        if (error.name === 'SequelizeUniqueConstraintError') {
+          // Se código já existe, buscar a embarcação existente
+          embarcacaoDb = await Embarcacao.findOne({
+            where: { codigo_embarcacao: embarcacao.codigo_embarcacao }
+          });
+        } else {
+          throw error;
+        }
+      }
     }
 
     // 3. Criar desembarque
-    const desembarqueDb = await Desembarque.create({
-      ...desembarque,
-      ID_pescador: pescadorDb?.ID_pescador,
-      ID_embarcacao: embarcacaoDb?.ID_embarcacao
-    });
+    let desembarqueDb;
+    try {
+      desembarqueDb = await Desembarque.create({
+        ...desembarque,
+        ID_pescador: pescadorDb?.ID_pescador,
+        ID_embarcacao: embarcacaoDb?.ID_embarcacao
+      });
+    } catch (error) {
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        // Se código de desembarque já existe, gerar um novo
+        const timestamp = Date.now();
+        const novoCodigo = `${desembarque.cod_desembarque}-${timestamp}`;
+        desembarqueDb = await Desembarque.create({
+          ...desembarque,
+          cod_desembarque: novoCodigo,
+          ID_pescador: pescadorDb?.ID_pescador,
+          ID_embarcacao: embarcacaoDb?.ID_embarcacao
+        });
+      } else {
+        throw error;
+      }
+    }
 
     // 4. Criar artes de pesca
     if (artes && artes.length > 0) {
@@ -110,11 +138,18 @@ export const criarDesembarque = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erro ao criar desembarque:', error);
+    console.error('❌ Erro detalhado ao criar desembarque:', {
+      message: error.message,
+      name: error.name,
+      sql: error.sql,
+      original: error.original,
+      errors: error.errors
+    });
     res.status(500).json({
       success: false,
       message: 'Erro ao criar desembarque',
-      error: error.message
+      error: error.message,
+      details: error.original?.message || error.errors
     });
   }
 };

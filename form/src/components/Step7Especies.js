@@ -149,8 +149,8 @@ export default function Step7Especies({ nextStep, prevStep }) {
                   >
                     <option value="">Selecione uma espécie</option>
                     {especiesDisponiveis.map((esp) => (
-                      <option key={`${index}-${esp.id}`} value={esp.id}>
-                        {esp.nome_comum} ({esp.nome_cientifico})
+                      <option key={`${index}-${esp.ID}`} value={esp.ID}>
+                        {esp.Nome_popular} ({esp.Nome_cientifico})
                       </option>
                     ))}
                   </select>

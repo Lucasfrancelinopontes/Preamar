@@ -8,7 +8,7 @@ export const Desembarque = sequelize.define('Desembarque', {
     autoIncrement: true
   },
   cod_desembarque: {
-    type: DataTypes.STRING(50),
+    type: DataTypes.STRING(100), // Expandido de 50 para 100 chars
     unique: true,
     allowNull: false
   },
@@ -16,11 +16,11 @@ export const Desembarque = sequelize.define('Desembarque', {
     type: DataTypes.STRING(50)
   },
   municipio: {
-    type: DataTypes.STRING(10),
+    type: DataTypes.STRING(50), // Expandido de 10 para 50 chars
     allowNull: false
   },
   localidade: {
-    type: DataTypes.STRING(10),
+    type: DataTypes.STRING(50), // Expandido de 10 para 50 chars
     allowNull: false
   },
   data_coleta: {
@@ -46,13 +46,15 @@ export const Desembarque = sequelize.define('Desembarque', {
     }
   },
   data_saida: {
-    type: DataTypes.DATEONLY
+    type: DataTypes.DATE,
+    comment: 'Data e hora de saída da embarcação'
   },
   hora_saida: {
     type: DataTypes.TIME
   },
   data_chegada: {
-    type: DataTypes.DATEONLY
+    type: DataTypes.DATE,
+    comment: 'Data e hora de chegada da embarcação'
   },
   hora_desembarque: {
     type: DataTypes.TIME
@@ -61,7 +63,8 @@ export const Desembarque = sequelize.define('Desembarque', {
     type: DataTypes.INTEGER
   },
   pesqueiros: {
-    type: DataTypes.STRING(255)
+    type: DataTypes.STRING(255),
+    comment: 'Pesqueiros ou locais de pesca'
   },
   // Coordenadas
   lat_deg1: {

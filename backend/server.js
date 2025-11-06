@@ -3,6 +3,7 @@ dotenv.config();
 import express from 'express';
 import router from './router.js';
 import { connectDB } from './db.js';
+import { defineAssociations } from './models/index.js';
 import cors from 'cors';
 import { errorHandler } from './middleware/validationMiddleware.js';
 
@@ -56,6 +57,10 @@ app.use((req, res) => {
 const start = async () => {
     try {
         await connectDB();
+        
+        // Definir associações entre os modelos
+        defineAssociations();
+        
         app.listen(PORT, () => {
             console.log(`
 ╔════════════════════════════════════════════╗

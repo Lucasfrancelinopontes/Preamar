@@ -43,12 +43,17 @@ export default function Step8ResumoAnexos({ prevStep }) {
   }
 
   const prepararDadosEnvio = () => {
-    // Gerar código de desembarque
+    // Gerar código de desembarque com valores padrão se necessário
+    const dataColeta = formData.dataColeta || new Date().toISOString().split('T')[0];
+    const consecutivo = formData.consecutivo || 1;
+    const municipio = formData.municipio || 'LOCAL';
+    const localidade = formData.localidade || 'PRAIA';
+    
     const codDesembarque = gerarCodigoDesembarque(
-      formData.municipio,
-      formData.localidade,
-      formData.dataColeta,
-      formData.consecutivo
+      municipio,
+      localidade,
+      dataColeta,
+      consecutivo
     )
 
     // Preparar dados do pescador
@@ -75,16 +80,16 @@ export default function Step8ResumoAnexos({ prevStep }) {
     // Preparar dados do desembarque
     const desembarque = {
       cod_desembarque: codDesembarque,
-      municipio: formData.municipio,
-      localidade: formData.localidade,
-      data_coleta: formData.dataColeta,
-      consecutivo: parseInt(formData.consecutivo),
+      municipio: municipio, // Usar valor original sem truncamento
+      localidade: localidade, // Usar valor original sem truncamento
+      data_coleta: dataColeta, // Usar valor já definido
+      consecutivo: consecutivo, // Usar valor já definido
       data_saida: formData.dataSaida || null,
       hora_saida: formData.horaSaida || null,
       data_chegada: formData.dataChegada || null,
       hora_desembarque: formData.horaChegada || null,
       numero_tripulantes: formData.numTripulantes ? parseInt(formData.numTripulantes) : null,
-      pesqueiros: formData.numPesqueiros ? parseInt(formData.numPesqueiros) : null,
+      pesqueiros: formData.numPesqueiros ? String(formData.numPesqueiros) : null, // Converter para string
       arte_obs: null,
       quadrante1: formData.quadrantesPesca || null,
       quadrante2: null,
@@ -94,8 +99,8 @@ export default function Step8ResumoAnexos({ prevStep }) {
       desp_gasolina: formData.combustivelTipo === 'Gasolina',
       litros: formData.combustivelLitros ? parseFloat(formData.combustivelLitros) : null,
       gelo_kg: formData.quantidadeGelo ? parseFloat(formData.quantidadeGelo) : null,
-      rancho: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
-      destino_pescado: formData.destinoPescado || null,
+      rancho_valor: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
+      destino_pescado: formData.destinoPescado ? formData.destinoPescado.toLowerCase() : null,
       destino_apelido: formData.apelidoDestino || null,
       destino_outros_qual: null
     }
@@ -115,9 +120,9 @@ export default function Step8ResumoAnexos({ prevStep }) {
       ? formData.especiesCapturadas
           .filter(e => e.id && e.peso)
           .map(especie => ({
-            especie_id: especie.id,
-            peso: parseFloat(especie.peso),
-            preco: especie.preco ? parseFloat(especie.preco) : null
+            ID_especie: parseInt(especie.id),
+            peso_kg: parseFloat(especie.peso),
+            preco_kg: especie.preco ? parseFloat(especie.preco) : null
           }))
       : []
 

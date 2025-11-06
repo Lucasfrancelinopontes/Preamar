@@ -23,7 +23,7 @@ export const gerarToken = (usuario) => {
 export const verificarAdmin = async (req, res, next) => {
   try {
     // Verificar se o usuário está autenticado e tem função de admin
-    if (!req.usuario || req.usuario.funcao !== 'admin') {
+    if (!req.usuario || req.usuario.funcao !== 'Administrador') {
       return res.status(403).json({
         success: false,
         message: 'Acesso negado. Requer privilégios de administrador.'

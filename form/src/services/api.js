@@ -178,9 +178,7 @@ const api = {
 
   getEspecies: async () => {
     try {
-      const response = await fetch(`${API_URL}/especies`, {
-        headers: getAuthHeaders()
-      });
+      const response = await fetch(`${API_URL}/especies`);
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao buscar espécies:', error);
@@ -194,7 +192,7 @@ const api = {
     try {
       const response = await fetch(`${API_URL}/desembarques`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify(dados)
       });
       
