@@ -24,7 +24,6 @@ export default function RegisterPage() {
     const [carregando, setCarregando] = useState(false);
     const [temaEscuro, setTemaEscuro] = useState(false);
     const router = useRouter();
-    const { api } = useAuth();
 
     // Detectar preferência de tema do sistema
     useEffect(() => {

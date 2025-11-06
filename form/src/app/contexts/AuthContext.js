@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/services/api';
 
 const AuthContext = createContext();
 
@@ -33,19 +34,7 @@ export function AuthProvider({ children }) {
 
     const login = async (email, senha) => {
         try {
-            const response = await fetch('http://localhost:3001/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email, senha })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Erro ao fazer login');
-            }
+            const data = await api.login(email, senha);
 
             // Salvar token e usuário
             localStorage.setItem('token', data.data.token);
@@ -59,7 +48,7 @@ export function AuthProvider({ children }) {
             console.error('Erro no login:', error);
             return {
                 success: false,
-                message: error.message
+                message: error.message || 'Erro ao fazer login'
             };
         }
     };
@@ -74,17 +63,9 @@ export function AuthProvider({ children }) {
 
     const atualizarPerfil = async () => {
         try {
-            const response = await fetch('http://localhost:3001/api/auth/perfil', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setUsuario(data.data);
-                localStorage.setItem('usuario', JSON.stringify(data.data));
-            }
+            const data = await api.obterPerfil();
+            setUsuario(data.data);
+            localStorage.setItem('usuario', JSON.stringify(data.data));
         } catch (error) {
             console.error('Erro ao atualizar perfil:', error);
         }
