@@ -16,12 +16,20 @@ export const Desembarque = sequelize.define('Desembarque', {
     type: DataTypes.STRING(50)
   },
   municipio: {
-    type: DataTypes.STRING(50), // Expandido de 10 para 50 chars
+    type: DataTypes.STRING(50),
     allowNull: false
   },
+  municipio_code: {
+    type: DataTypes.STRING(10),
+    comment: 'Código do município para geração do cod_desembarque'
+  },
   localidade: {
-    type: DataTypes.STRING(50), // Expandido de 10 para 50 chars
+    type: DataTypes.STRING(50),
     allowNull: false
+  },
+  localidade_code: {
+    type: DataTypes.STRING(10),
+    comment: 'Código da localidade para geração do cod_desembarque'
   },
   data_coleta: {
     type: DataTypes.DATEONLY,
@@ -144,7 +152,7 @@ export const Desembarque = sequelize.define('Desembarque', {
   },
   // Destino do pescado
   destino_pescado: {
-    type: DataTypes.ENUM('atravessador', 'armador', 'diretoConsumidor', 'outros')
+    type: DataTypes.ENUM('atravessador', 'armador', 'consumidor', 'diretoConsumidor', 'outros')
   },
   destino_apelido: {
     type: DataTypes.STRING(100)

@@ -18,6 +18,14 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
     updateFormData({ [name]: value })
   }
 
+  const handleQuadranteChange = (e, quadranteNum) => {
+    const { value } = e.target
+    // Only allow numbers and limit to 3 digits
+    if (value === '' || (/^\d{0,3}$/.test(value))) {
+      updateFormData({ [`quadrante${quadranteNum}`]: value })
+    }
+  }
+
   const handleDestinoChange = (value) => {
     updateFormData({ destinoPescado: value })
     // Clear apelido if changing from 'Outros' to another option
@@ -29,9 +37,27 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    // Validate required fields
-    if (!formData.quadrantesPesca) {
-      alert('Por favor, informe o(s) quadrante(s) de pesca.')
+    // Validate at least one quadrante
+    const quadrante1 = formData.quadrante1 || ''
+    const quadrante2 = formData.quadrante2 || ''
+    const quadrante3 = formData.quadrante3 || ''
+
+    if (!quadrante1 && !quadrante2 && !quadrante3) {
+      alert('Por favor, informe pelo menos um quadrante de pesca.')
+      return
+    }
+
+    // Validate that quadrantes have 3 digits if filled
+    if (quadrante1 && quadrante1.length !== 3) {
+      alert('O Quadrante 1 deve ter exatamente 3 algarismos.')
+      return
+    }
+    if (quadrante2 && quadrante2.length !== 3) {
+      alert('O Quadrante 2 deve ter exatamente 3 algarismos.')
+      return
+    }
+    if (quadrante3 && quadrante3.length !== 3) {
+      alert('O Quadrante 3 deve ter exatamente 3 algarismos.')
       return
     }
 
@@ -52,23 +78,70 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
         </h2>
 
         <div className="space-y-6">
-          {/* Campo Quadrantes */}
+          {/* Campos Quadrantes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Número(s) quadrante(s) de pesca(s) *
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Quadrantes de pesca *
             </label>
-            <input
-              type="text"
-              name="quadrantesPesca"
-              value={formData.quadrantesPesca || ''}
-              onChange={handleChange}
-              placeholder="Ex: 1, 2, 3"
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              required
-            />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Informe os números dos quadrantes separados por vírgula
+            <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+              Informe até 3 quadrantes. Cada quadrante deve ter exatamente 3 algarismos.
             </p>
+            
+            <div className="space-y-3">
+              {/* Quadrante 1 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Quadrante 1
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{3}"
+                  maxLength="3"
+                  name="quadrante1"
+                  value={formData.quadrante1 || ''}
+                  onChange={(e) => handleQuadranteChange(e, 1)}
+                  placeholder="Ex: 123"
+                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono text-lg"
+                />
+              </div>
+
+              {/* Quadrante 2 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Quadrante 2 (opcional)
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{3}"
+                  maxLength="3"
+                  name="quadrante2"
+                  value={formData.quadrante2 || ''}
+                  onChange={(e) => handleQuadranteChange(e, 2)}
+                  placeholder="Ex: 456"
+                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono text-lg"
+                />
+              </div>
+
+              {/* Quadrante 3 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Quadrante 3 (opcional)
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{3}"
+                  maxLength="3"
+                  name="quadrante3"
+                  value={formData.quadrante3 || ''}
+                  onChange={(e) => handleQuadranteChange(e, 3)}
+                  placeholder="Ex: 789"
+                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono text-lg"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Campo Destino */}

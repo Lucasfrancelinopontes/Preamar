@@ -9,7 +9,7 @@ export default function Step7Especies({ nextStep, prevStep }) {
   
   // Initialize especies list from formData or with one empty entry
   const [especies, setEspecies] = useState(
-    formData.especiesCapturadas || [{ id: '', peso: '', preco: '' }]
+    formData.especiesCapturadas || [{ id: '', peso: '', preco: '', comprimento: '' }]
   )
   const [especiesDisponiveis, setEspeciesDisponiveis] = useState([])
   const [loading, setLoading] = useState(false)
@@ -34,7 +34,7 @@ export default function Step7Especies({ nextStep, prevStep }) {
   }, [])
 
   const adicionarEspecie = () => {
-    setEspecies([...especies, { id: '', peso: '', preco: '' }])
+    setEspecies([...especies, { id: '', peso: '', preco: '', comprimento: '' }])
   }
 
   const removerEspecie = (index) => {
@@ -124,9 +124,10 @@ export default function Step7Especies({ nextStep, prevStep }) {
           <div className="space-y-4">
             {/* Table Header - Hidden on mobile, visible on desktop */}
             <div className="hidden md:grid md:grid-cols-12 gap-4 font-medium text-sm text-gray-700 dark:text-gray-300 pb-2 border-b dark:border-gray-700">
-              <div className="col-span-5">Espécie *</div>
-              <div className="col-span-3">Peso (kg) *</div>
-              <div className="col-span-3">Preço/kg (R$) *</div>
+              <div className="col-span-4">Espécie *</div>
+              <div className="col-span-2">Peso (kg) *</div>
+              <div className="col-span-2">Preço/kg (R$) *</div>
+              <div className="col-span-3">Comprimento (cm)</div>
               <div className="col-span-1"></div>
             </div>
 
@@ -137,7 +138,7 @@ export default function Step7Especies({ nextStep, prevStep }) {
                 className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 md:p-0 border md:border-0 rounded-md md:rounded-none dark:border-gray-700"
               >
                 {/* Espécie Select */}
-                <div className="md:col-span-5">
+                <div className="md:col-span-4">
                   <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Espécie *
                   </label>
@@ -157,7 +158,7 @@ export default function Step7Especies({ nextStep, prevStep }) {
                 </div>
 
                 {/* Peso Input */}
-                <div className="md:col-span-3">
+                <div className="md:col-span-2">
                   <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Peso (kg) *
                   </label>
@@ -174,7 +175,7 @@ export default function Step7Especies({ nextStep, prevStep }) {
                 </div>
 
                 {/* Preço Input */}
-                <div className="md:col-span-3">
+                <div className="md:col-span-2">
                   <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Preço/kg (R$) *
                   </label>
@@ -187,6 +188,22 @@ export default function Step7Especies({ nextStep, prevStep }) {
                     placeholder="0.00"
                     className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     required
+                  />
+                </div>
+
+                {/* Comprimento Input */}
+                <div className="md:col-span-3">
+                  <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Comprimento (cm)
+                  </label>
+                  <input
+                    type="number"
+                    value={especie.comprimento}
+                    onChange={(e) => atualizarEspecie(index, 'comprimento', e.target.value)}
+                    min="0"
+                    step="0.1"
+                    placeholder="Ex: 25.5"
+                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
                 </div>
 

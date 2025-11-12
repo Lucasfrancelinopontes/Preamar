@@ -30,6 +30,10 @@ export const Captura = sequelize.define('Captura', {
   },
   preco_total: {
     type: DataTypes.DECIMAL(10, 2)
+  },
+  comprimento_cm: {
+    type: DataTypes.DECIMAL(10, 2),
+    comment: 'Comprimento do pescado em centímetros'
   }
 }, {
   tableName: 'capturas',

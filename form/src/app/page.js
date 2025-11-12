@@ -119,6 +119,29 @@ export default function Home() {
                                             </div>
                                         </button>
 
+                                        {/* Botão: Dashboard e Analytics */}
+                                        <button
+                                            onClick={() => router.push('/analytics')}
+                                            className="w-full p-6 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-xl shadow-lg hover:shadow-xl transition-all text-white group"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-3 bg-white bg-opacity-20 rounded-lg group-hover:bg-opacity-30 transition-all">
+                                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <h4 className="text-xl font-bold">Dashboard & Análises</h4>
+                                                        <p className="text-sm opacity-90">Visualizar estatísticas e relatórios</p>
+                                                    </div>
+                                                </div>
+                                                <svg className="w-6 h-6 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </div>
+                                        </button>
+
                                         {/* Botão: Gerenciar Usuários (apenas Admin) */}
                                         {ehAdmin() && (
                                             <button
