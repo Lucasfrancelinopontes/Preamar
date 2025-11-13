@@ -186,6 +186,62 @@ const api = {
     }
   },
 
+  listarEspeciesAdmin: async () => {
+    try {
+      const response = await fetch(`${API_URL}/admin/especies`, {
+        headers: getAuthHeaders()
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao listar espécies (admin):', error);
+      throw error;
+    }
+  },
+
+  criarEspecie: async (dados) => {
+    try {
+      const response = await fetch(`${API_URL}/especies`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao criar espécie:', error);
+      throw error;
+    }
+  },
+
+  atualizarEspecie: async (id, dados) => {
+    try {
+      const response = await fetch(`${API_URL}/especies/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao atualizar espécie:', error);
+      throw error;
+    }
+  },
+
+  excluirEspecie: async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/especies/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao excluir espécie:', error);
+      throw error;
+    }
+  },
+
   // ==================== DESEMBARQUE ====================
 
   criarDesembarque: async (dados) => {
@@ -246,6 +302,19 @@ const api = {
 
   // ==================== EMBARCAÇÕES ====================
 
+  getEmbarcacoes: async () => {
+    try {
+      const response = await fetch(`${API_URL}/embarcacoes`, {
+        headers: getAuthHeaders()
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao buscar embarcações:', error);
+      throw error;
+    }
+  },
+
   criarEmbarcacao: async (dados) => {
     try {
       const response = await fetch(`${API_URL}/embarcacoes`, {
@@ -257,6 +326,35 @@ const api = {
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao criar embarcação:', error);
+      throw error;
+    }
+  },
+
+  atualizarEmbarcacao: async (id, dados) => {
+    try {
+      const response = await fetch(`${API_URL}/embarcacoes/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao atualizar embarcação:', error);
+      throw error;
+    }
+  },
+
+  excluirEmbarcacao: async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/embarcacoes/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao excluir embarcação:', error);
       throw error;
     }
   },

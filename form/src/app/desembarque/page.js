@@ -9,8 +9,9 @@ import Step3Embarcacao from '@/components/Step3Embarcacao';
 import Step4ArtesPesca from '@/components/Step4ArtesPesca';
 import Step5ProprietarioDespesas from '@/components/Step5ProprietarioDespesas';
 import Step6QuadrantesDestino from '@/components/Step6QuadrantesDestino';
-import Step7Especies from '@/components/Step7Especies';
-import Step8ResumoAnexos from '@/components/Step8ResumoAnexos';
+import Step7EspeciesCaptura from '@/components/Step7EspeciesCaptura';
+import Step8EspeciesIndividuos from '@/components/Step8EspeciesIndividuos';
+import Step9ResumoAnexos from '@/components/Step9ResumoAnexos';
 
 export default function DesembarquePage() {
     const [step, setStep] = useState(1);
@@ -26,8 +27,9 @@ export default function DesembarquePage() {
         { number: 4, title: "Tipo de embarcação & artes de pesca" },
         { number: 5, title: "Proprietário & despesas" },
         { number: 6, title: "Quadrantes & destino do pescado" },
-        { number: 7, title: "Espécies & pesagens" },
-        { number: 8, title: "Anexos & resumo" }
+        { number: 7, title: "Espécies & pesagens - Etapa 1" },
+        { number: 8, title: "Espécies & pesagens - Etapa 2" },
+        { number: 9, title: "Anexos & resumo" }
     ];
 
     const nextStep = () => setStep(s => Math.min(s + 1, steps.length));
@@ -58,9 +60,11 @@ export default function DesembarquePage() {
             case 6:
                 return <Step6QuadrantesDestino nextStep={nextStep} prevStep={prevStep} />;
             case 7:
-                return <Step7Especies nextStep={nextStep} prevStep={prevStep} />;
+                return <Step7EspeciesCaptura nextStep={nextStep} prevStep={prevStep} />;
             case 8:
-                return <Step8ResumoAnexos prevStep={prevStep} />;
+                return <Step8EspeciesIndividuos nextStep={nextStep} prevStep={prevStep} />;
+            case 9:
+                return <Step9ResumoAnexos prevStep={prevStep} />;
             default:
                 return null;
         }
@@ -104,8 +108,9 @@ export default function DesembarquePage() {
                     {step === 4 && "Registre as artes de pesca utilizadas"}
                     {step === 5 && "Informe os dados do proprietário e despesas"}
                     {step === 6 && "Informe os quadrantes de pesca e destino do pescado"}
-                    {step === 7 && "Registre as espécies e quantidades capturadas"}
-                    {step === 8 && "Revise e confirme os dados informados"}
+                    {step === 7 && "Registre as espécies e peso total capturado"}
+                    {step === 8 && "Adicione dados individuais dos peixes (opcional)"}
+                    {step === 9 && "Revise e confirme os dados informados"}
                 </p>
             </div>
 

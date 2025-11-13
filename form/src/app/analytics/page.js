@@ -48,7 +48,19 @@ function AnalyticsContent() {
         desembarques.forEach(d => {
             if (d.capturas && d.capturas.length > 0) {
                 d.capturas.forEach(c => {
-                    const nome = c.especie?.Nome_popular || `Espécie #${c.ID_especie}`;
+                    // Melhorar exibição do nome da espécie
+                    let nome = '';
+                    if (c.especie?.Nome_popular) {
+                        nome = c.especie.Nome_popular;
+                        if (c.especie.Nome_cientifico) {
+                            nome += ` (${c.especie.Nome_cientifico})`;
+                        }
+                    } else if (c.especie?.Nome_cientifico) {
+                        nome = c.especie.Nome_cientifico;
+                    } else {
+                        nome = `Espécie ID #${c.ID_especie}`;
+                    }
+                    
                     if (!especies[nome]) {
                         especies[nome] = {
                             quantidade: 0,
@@ -118,6 +130,34 @@ function AnalyticsContent() {
         };
     };
 
+    // 6. Dados para gráfico Preço vs Peso
+    const dadosPrecoVsPeso = () => {
+        const dadosGrafico = [];
+        desembarques.forEach(d => {
+            if (d.capturas && d.capturas.length > 0) {
+                d.capturas.forEach(c => {
+                    const peso = parseFloat(c.peso_kg) || 0;
+                    const precoTotal = parseFloat(c.preco_total) || 0;
+                    const especieNome = c.especie?.Nome_popular || `Espécie #${c.ID_especie}`;
+                    
+                    if (peso > 0 && precoTotal > 0) {
+                        dadosGrafico.push({
+                            peso,
+                            preco: precoTotal,
+                            precoKg: precoTotal / peso,
+                            especie: especieNome,
+                            data: d.data_coleta,
+                            municipio: d.municipio
+                        });
+                    }
+                });
+            }
+        });
+        
+        // Ordenar por peso para melhor visualização
+        return dadosGrafico.sort((a, b) => a.peso - b.peso);
+    };
+
     const formatarValor = (valor) => {
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
@@ -132,7 +172,7 @@ function AnalyticsContent() {
             let csv = '\uFEFF'; // BOM para UTF-8
             csv += 'Codigo Desembarque;Data Coleta;Municipio;Localidade;Pescador;CPF;Embarcacao;Codigo Embarcacao;Tripulantes;';
             csv += 'Quadrante 1;Quadrante 2;Quadrante 3;';
-            csv += 'Especie;Peso (kg);Preco por kg;Preco Total;Comprimento (cm);';
+            csv += 'Especies Capturadas;Detalhes das Capturas;';
             csv += 'Artes de Pesca;Tamanho das Artes (m);';
             csv += 'Combustivel (L);Tipo Combustivel;Gelo (kg);Rancho (R$);Destino Pescado;Total Desembarque (R$)\n';
 
@@ -161,74 +201,78 @@ function AnalyticsContent() {
                     ? d.artes.map(a => (a.tamanho || '0')).join(' + ') 
                     : '';
 
-                // Se tem capturas, criar uma linha para cada captura
+                // Agrupar todas as espécies em uma string
+                let especiesCapturadas = '';
+                let detalhesCaptura = '';
+                
                 if (d.capturas && d.capturas.length > 0) {
-                    d.capturas.forEach(c => {
-                        const especieNome = c.especie?.Nome_popular || 'Especie #' + c.ID_especie;
-                        const especie = especieNome.replace(/;/g, ',');
-                        
-                        const linha = [
-                            d.cod_desembarque || '',
-                            dataFormatada,
-                            municipio,
-                            localidade,
-                            pescador,
-                            cpf,
-                            embarcacao,
-                            codigoEmb,
-                            d.numero_tripulantes || '0',
-                            d.quadrante1 || '',
-                            d.quadrante2 || '',
-                            d.quadrante3 || '',
-                            especie,
-                            c.peso_kg || '0',
-                            c.preco_kg || '0',
-                            c.preco_total || '0',
-                            c.comprimento_cm || '',
-                            artes,
-                            tamanhosArte,
-                            combustivel,
-                            tipoCombustivel,
-                            gelo,
-                            rancho,
-                            d.destino_pescado || '',
-                            d.total_desembarque || '0'
-                        ];
-                        
-                        csv += linha.join(';') + '\n';
-                    });
-                } else {
-                    // Sem capturas, criar linha com dados básicos
-                    const linha = [
-                        d.cod_desembarque || '',
-                        dataFormatada,
-                        municipio,
-                        localidade,
-                        pescador,
-                        cpf,
-                        embarcacao,
-                        codigoEmb,
-                        d.numero_tripulantes || '0',
-                        d.quadrante1 || '',
-                        d.quadrante2 || '',
-                        d.quadrante3 || '',
-                        '', // especie
-                        '', // peso
-                        '', // preco_kg
-                        '', // preco_total
-                        '', // comprimento
-                        artes,
-                        tamanhosArte,
-                        combustivel,
-                        tipoCombustivel,
-                        gelo,
-                        rancho,
-                        d.destino_pescado || '',
-                        d.total_desembarque || '0'
-                    ];
+                    const especiesList = [];
+                    const detalhesList = [];
                     
-                    csv += linha.join(';') + '\n';
+                    d.capturas.forEach(c => {
+                        // Melhorar exibição do nome da espécie
+                        let especieNome = '';
+                        if (c.especie?.Nome_popular) {
+                            especieNome = c.especie.Nome_popular;
+                            if (c.especie.Nome_cientifico) {
+                                especieNome += ` (${c.especie.Nome_cientifico})`;
+                            }
+                        } else if (c.especie?.Nome_cientifico) {
+                            especieNome = c.especie.Nome_cientifico;
+                        } else {
+                            especieNome = `Espécie ID #${c.ID_especie}`;
+                        }
+                        
+                        especiesList.push(especieNome.replace(/;/g, ','));
+                        
+                        // Detalhes da captura
+                        let detalhes = `${especieNome}: ${c.peso_kg || 0}kg`;
+                        if (c.preco_kg) detalhes += ` × R$${c.preco_kg}/kg`;
+                        if (c.preco_total) detalhes += ` = R$${c.preco_total}`;
+                        if (c.comprimento_cm) detalhes += ` (${c.comprimento_cm}cm)`;
+                        
+                        // Adicionar dados dos indivíduos se existirem
+                        if (c.individuos && c.individuos.length > 0) {
+                            const individuosData = c.individuos.map(ind => 
+                                `[${ind.peso_g}g/${ind.comprimento_cm}cm]`
+                            ).join(' ');
+                            detalhes += ` ${individuosData}`;
+                        }
+                        
+                        detalhesList.push(detalhes.replace(/;/g, ','));
+                    });
+                    
+                    especiesCapturadas = especiesList.join(' | ');
+                    detalhesCaptura = detalhesList.join(' | ');
                 }
+
+                // Criar linha única por desembarque
+                const linha = [
+                    d.cod_desembarque || '',
+                    dataFormatada,
+                    municipio,
+                    localidade,
+                    pescador,
+                    cpf,
+                    embarcacao,
+                    codigoEmb,
+                    d.numero_tripulantes || '0',
+                    d.quadrante1 || '',
+                    d.quadrante2 || '',
+                    d.quadrante3 || '',
+                    especiesCapturadas,
+                    detalhesCaptura,
+                    artes,
+                    tamanhosArte,
+                    combustivel,
+                    tipoCombustivel,
+                    gelo,
+                    rancho,
+                    d.destino_pescado || '',
+                    d.total_desembarque || '0'
+                ];
+                
+                csv += linha.join(';') + '\n';
             });
 
             // Fazer download do CSV
@@ -485,6 +529,101 @@ function AnalyticsContent() {
                                         <p className={`text-sm mt-1 ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>{arte}</p>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* 5. Gráfico Preço vs Peso */}
+                        <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
+                            <h2 className={`text-xl font-bold mb-4 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                💰 Relação Preço vs Peso do Pescado
+                            </h2>
+                            <div className="relative">
+                                {/* Eixos do gráfico */}
+                                <div className="relative h-80 border-l-2 border-b-2 border-gray-300 ml-12 mb-8">
+                                    {/* Label eixo Y */}
+                                    <div className={`absolute -left-10 top-1/2 transform -rotate-90 -translate-y-1/2 text-sm font-medium ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>
+                                        Preço Total (R$)
+                                    </div>
+                                    
+                                    {/* Label eixo X */}
+                                    <div className={`absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-medium ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>
+                                        Peso (kg)
+                                    </div>
+
+                                    {/* Pontos do gráfico */}
+                                    {(() => {
+                                        const dados = dadosPrecoVsPeso();
+                                        const maxPeso = Math.max(...dados.map(d => d.peso), 1);
+                                        const maxPreco = Math.max(...dados.map(d => d.preco), 1);
+                                        
+                                        return dados.slice(0, 100).map((ponto, index) => {
+                                            const x = (ponto.peso / maxPeso) * 100;
+                                            const y = 100 - (ponto.preco / maxPreco) * 100;
+                                            
+                                            // Cores diferentes para diferentes espécies
+                                            const cores = ['bg-blue-500', 'bg-red-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'];
+                                            const corIndex = ponto.especie.charCodeAt(0) % cores.length;
+                                            const cor = cores[corIndex];
+                                            
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className={`absolute w-3 h-3 ${cor} rounded-full cursor-pointer transform -translate-x-1/2 -translate-y-1/2 hover:scale-150 transition-transform`}
+                                                    style={{ left: `${x}%`, top: `${y}%` }}
+                                                    title={`${ponto.especie}: ${ponto.peso}kg - ${formatarValor(ponto.preco)} (${formatarValor(ponto.precoKg)}/kg)`}
+                                                />
+                                            );
+                                        });
+                                    })()}
+
+                                    {/* Linhas de grade */}
+                                    <div className="absolute inset-0 pointer-events-none">
+                                        {[20, 40, 60, 80].map(pos => (
+                                            <div key={`h-${pos}`} className={`absolute w-full border-t border-dashed ${temaEscuro ? 'border-gray-600' : 'border-gray-200'}`} style={{ top: `${pos}%` }} />
+                                        ))}
+                                        {[20, 40, 60, 80].map(pos => (
+                                            <div key={`v-${pos}`} className={`absolute h-full border-l border-dashed ${temaEscuro ? 'border-gray-600' : 'border-gray-200'}`} style={{ left: `${pos}%` }} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Legenda */}
+                                <div className="mt-4">
+                                    <h3 className={`text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        Estatísticas do Gráfico:
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                        {(() => {
+                                            const dados = dadosPrecoVsPeso();
+                                            const precoMedio = dados.length > 0 ? dados.reduce((sum, d) => sum + d.precoKg, 0) / dados.length : 0;
+                                            const pesoMedio = dados.length > 0 ? dados.reduce((sum, d) => sum + d.peso, 0) / dados.length : 0;
+                                            const especies = new Set(dados.map(d => d.especie)).size;
+                                            
+                                            return (
+                                                <>
+                                                    <div className={`p-3 rounded ${temaEscuro ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                                        <span className={`block font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                                            {formatarValor(precoMedio)}
+                                                        </span>
+                                                        <span className={temaEscuro ? 'text-gray-400' : 'text-gray-600'}>Preço/kg médio</span>
+                                                    </div>
+                                                    <div className={`p-3 rounded ${temaEscuro ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                                        <span className={`block font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                                            {pesoMedio.toFixed(2)} kg
+                                                        </span>
+                                                        <span className={temaEscuro ? 'text-gray-400' : 'text-gray-600'}>Peso médio</span>
+                                                    </div>
+                                                    <div className={`p-3 rounded ${temaEscuro ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                                        <span className={`block font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                                            {especies}
+                                                        </span>
+                                                        <span className={temaEscuro ? 'text-gray-400' : 'text-gray-600'}>Espécies diferentes</span>
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

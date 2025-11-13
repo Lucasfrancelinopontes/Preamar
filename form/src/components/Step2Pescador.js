@@ -46,9 +46,8 @@ export default function Step2Pescador({ nextStep, prevStep }) {
             errors.nomePescador = 'Digite o nome do pescador';
         }
         
-        if (!formFields.cpfPescador) {
-            errors.cpfPescador = 'Digite o CPF do pescador';
-        } else if (!validarCPF(formFields.cpfPescador)) {
+        // CPF agora é opcional
+        if (formFields.cpfPescador && !validarCPF(formFields.cpfPescador)) {
             errors.cpfPescador = 'CPF inválido';
         }
 
@@ -121,7 +120,7 @@ export default function Step2Pescador({ nextStep, prevStep }) {
             {/* CPF do Pescador */}
             <div>
                 <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
-                    CPF*
+                    CPF (opcional)
                 </label>
                 <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2">

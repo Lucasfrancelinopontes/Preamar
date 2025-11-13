@@ -19,6 +19,13 @@ import {
   deletarPescador
 } from './controllers/pescadorController.js';
 import {
+  listarEspecies,
+  criarEspecie,
+  buscarEspecie,
+  atualizarEspecie,
+  deletarEspecie
+} from './controllers/especieController.js';
+import {
   listarEmbarcacoes,
   criarEmbarcacao,
   buscarEmbarcacao,
@@ -91,10 +98,18 @@ router.delete('/embarcacoes/:id', verificarAutenticacao, deletarEmbarcacao);
 // ROTAS ADMINISTRATIVAS (apenas Administradores)
 // ========================================
 
+// Gestão de Usuários
 router.get('/usuarios', verificarAutenticacao, verificarAdmin, listarUsuarios);
 router.post('/usuarios', verificarAutenticacao, verificarAdmin, criarUsuario);
 router.get('/usuarios/:id', verificarAutenticacao, verificarAdmin, buscarUsuario);
 router.put('/usuarios/:id', verificarAutenticacao, verificarAdmin, atualizarUsuario);
 router.delete('/usuarios/:id', verificarAutenticacao, verificarAdmin, deletarUsuario);
+
+// Gestão de Espécies (apenas Admin) - nota: /especies GET é público acima
+router.get('/admin/especies', verificarAutenticacao, verificarAdmin, listarEspecies);
+router.post('/especies', verificarAutenticacao, verificarAdmin, criarEspecie);
+router.get('/especies/:id', verificarAutenticacao, verificarAdmin, buscarEspecie);
+router.put('/especies/:id', verificarAutenticacao, verificarAdmin, atualizarEspecie);
+router.delete('/especies/:id', verificarAutenticacao, verificarAdmin, deletarEspecie);
 
 export default router;
