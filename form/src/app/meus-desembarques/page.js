@@ -304,7 +304,7 @@ function MeusDesembarquesContent() {
                             {/* Pescador */}
                             {desembarqueSelecionado.pescador && (
                                 <div>
-                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                    <h3 className="heading-secondary">
                                         👤 Pescador
                                     </h3>
                                     <div className={`grid grid-cols-2 gap-4 p-4 rounded-lg ${
@@ -341,7 +341,7 @@ function MeusDesembarquesContent() {
                             {/* Embarcação */}
                             {desembarqueSelecionado.embarcacao && (
                                 <div>
-                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                    <h3 className="heading-secondary">
                                         ⛵ Embarcação
                                     </h3>
                                     <div className={`grid grid-cols-2 gap-4 p-4 rounded-lg ${
@@ -390,30 +390,24 @@ function MeusDesembarquesContent() {
                             {/* Quadrantes */}
                             {(desembarqueSelecionado.quadrante1 || desembarqueSelecionado.quadrante2 || desembarqueSelecionado.quadrante3) && (
                                 <div>
-                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                    <h3 className="heading-secondary">
                                         🗺️ Quadrantes de Pesca
                                     </h3>
                                     <div className={`flex gap-4 p-4 rounded-lg ${
                                         temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
                                     }`}>
                                         {desembarqueSelecionado.quadrante1 && (
-                                            <div className={`px-4 py-2 rounded font-mono font-bold ${
-                                                temaEscuro ? 'bg-teal-900/30 text-teal-300' : 'bg-teal-100 text-teal-800'
-                                            }`}>
+                                            <div className="badge-brand font-mono">
                                                 {desembarqueSelecionado.quadrante1}
                                             </div>
                                         )}
                                         {desembarqueSelecionado.quadrante2 && (
-                                            <div className={`px-4 py-2 rounded font-mono font-bold ${
-                                                temaEscuro ? 'bg-teal-900/30 text-teal-300' : 'bg-teal-100 text-teal-800'
-                                            }`}>
+                                            <div className="badge-brand font-mono">
                                                 {desembarqueSelecionado.quadrante2}
                                             </div>
                                         )}
                                         {desembarqueSelecionado.quadrante3 && (
-                                            <div className={`px-4 py-2 rounded font-mono font-bold ${
-                                                temaEscuro ? 'bg-teal-900/30 text-teal-300' : 'bg-teal-100 text-teal-800'
-                                            }`}>
+                                            <div className="badge-brand font-mono">
                                                 {desembarqueSelecionado.quadrante3}
                                             </div>
                                         )}
@@ -424,7 +418,7 @@ function MeusDesembarquesContent() {
                             {/* Artes de Pesca */}
                             {desembarqueSelecionado.artes && desembarqueSelecionado.artes.length > 0 && (
                                 <div>
-                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                    <h3 className="heading-secondary">
                                         🎣 Artes de Pesca
                                     </h3>
                                     <div className={`p-4 rounded-lg ${
@@ -444,7 +438,7 @@ function MeusDesembarquesContent() {
                             {/* Capturas */}
                             {desembarqueSelecionado.capturas && desembarqueSelecionado.capturas.length > 0 && (
                                 <div>
-                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                    <h3 className="heading-secondary">
                                         🐟 Espécies Capturadas
                                     </h3>
                                     <div className={`p-4 rounded-lg space-y-3 ${
@@ -492,7 +486,7 @@ function MeusDesembarquesContent() {
 
                             {/* Despesas */}
                             <div>
-                                <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                <h3 className="heading-secondary">
                                     💰 Despesas
                                 </h3>
                                 <div className={`grid grid-cols-3 gap-4 p-4 rounded-lg ${
@@ -525,7 +519,7 @@ function MeusDesembarquesContent() {
                             {/* Destino do Pescado */}
                             {desembarqueSelecionado.destino_pescado && (
                                 <div>
-                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                    <h3 className="heading-secondary">
                                         🎯 Destino do Pescado
                                     </h3>
                                     <div className={`p-4 rounded-lg ${
@@ -544,9 +538,7 @@ function MeusDesembarquesContent() {
                             )}
 
                             {/* Total */}
-                            <div className={`p-6 rounded-lg ${
-                                temaEscuro ? 'bg-green-900/30 border border-green-700' : 'bg-green-50 border border-green-200'
-                            }`}>
+                            <div className="alert-success">
                                 <div className="flex items-center justify-between">
                                     <p className={`text-lg font-semibold ${temaEscuro ? 'text-green-300' : 'text-green-800'}`}>
                                         Total do Desembarque:
@@ -564,7 +556,7 @@ function MeusDesembarquesContent() {
                         }`}>
                             <button
                                 onClick={fecharDetalhes}
-                                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                className="btn-primary w-full"
                             >
                                 Fechar
                             </button>

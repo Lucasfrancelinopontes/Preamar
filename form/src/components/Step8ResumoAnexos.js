@@ -43,9 +43,8 @@ export default function Step8ResumoAnexos({ prevStep }) {
   }
 
   const prepararDadosEnvio = () => {
-    // Gerar código de desembarque usando a data de saída
-    const dataSaida = formData.dataSaida || new Date().toISOString();
-    const dataColeta = dataSaida.split('T')[0]; // Extrai YYYY-MM-DD
+    // Usar a data de coleta para gerar o código (não a data de saída)
+    const dataColetaOriginal = formData.dataColeta || new Date().toISOString().split('T')[0];
     const consecutivo = formData.consecutivo || 1;
     const municipio = formData.municipio || 'LOCAL';
     const localidade = formData.localidade || 'PRAIA';
@@ -53,7 +52,7 @@ export default function Step8ResumoAnexos({ prevStep }) {
     const codDesembarque = gerarCodigoDesembarque(
       municipio,
       localidade,
-      dataColeta,
+      dataColetaOriginal,
       consecutivo
     )
 
@@ -85,7 +84,7 @@ export default function Step8ResumoAnexos({ prevStep }) {
       municipio_code: formData.municipioCode || null,
       localidade: localidade,
       localidade_code: formData.localidadeCode || null,
-      data_coleta: dataColeta,
+      data_coleta: dataColetaOriginal,
       consecutivo: consecutivo,
       data_saida: formData.dataSaida || null,
       hora_saida: formData.horaSaida || null,
@@ -267,14 +266,17 @@ export default function Step8ResumoAnexos({ prevStep }) {
         <div className="space-y-6">
           {/* Local */}
           <div>
-            <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Local</h3>
+            <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Local e Datas</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div><span className="text-gray-500">Município:</span> {formData.municipio}</div>
               <div><span className="text-gray-500">Localidade:</span> {formData.localidade}</div>
               <div><span className="text-gray-500">Código de Coleta:</span> {formData.codigoColeta}</div>
               <div><span className="text-gray-500">Consecutivo:</span> {formData.consecutivo}</div>
-              <div><span className="text-gray-500">Data de Saída:</span> {formData.dataSaida ? new Date(formData.dataSaida).toLocaleString('pt-BR') : 'Não informado'}</div>
-              <div><span className="text-gray-500">Data de Chegada:</span> {formData.dataChegada ? new Date(formData.dataChegada).toLocaleString('pt-BR') : 'Não informado'}</div>
+              <div className="col-span-2 bg-yellow-50 dark:bg-yellow-900/30 p-2 rounded border border-yellow-200 dark:border-yellow-800">
+                <span className="text-gray-500 font-semibold">📅 Data de Coleta (coletor):</span> {formData.dataColeta ? new Date(formData.dataColeta + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informado'}
+              </div>
+              <div><span className="text-gray-500">⛵ Data de Saída (embarcação):</span> {formData.dataSaida ? new Date(formData.dataSaida).toLocaleString('pt-BR') : 'Não informado'}</div>
+              <div><span className="text-gray-500">🚢 Data de Chegada (embarcação):</span> {formData.dataChegada ? new Date(formData.dataChegada).toLocaleString('pt-BR') : 'Não informado'}</div>
             </div>
           </div>
 

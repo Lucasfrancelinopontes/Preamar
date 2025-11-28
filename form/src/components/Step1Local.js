@@ -22,6 +22,7 @@ export default function Step1Local({ nextStep, prevStep }) {
         consecutivo: formData.consecutivo || "",
         codigoColeta: formData.codigoColeta || "",
         codigoFoto: formData.codigoFoto || "",
+        dataColeta: formData.dataColeta || "",
         dataSaida: formData.dataSaida || "",
         dataChegada: formData.dataChegada || "",
     });
@@ -42,10 +43,10 @@ export default function Step1Local({ nextStep, prevStep }) {
         }
     }, [formFields.municipio, municipios]);
 
-    // Auto-generate codigo de coleta when components change
+    // Auto-generate codigo de coleta when components change - AGORA BASEADO NA DATA DE COLETA
     useEffect(() => {
-        if (formFields.municipioCode && formFields.localidadeCode && formFields.dataSaida && formFields.consecutivo) {
-            const date = new Date(formFields.dataSaida);
+        if (formFields.municipioCode && formFields.localidadeCode && formFields.dataColeta && formFields.consecutivo) {
+            const date = new Date(formFields.dataColeta);
             const day = String(date.getDate()).padStart(2, '0');
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const year = String(date.getFullYear()).slice(-2);
@@ -58,7 +59,7 @@ export default function Step1Local({ nextStep, prevStep }) {
                 codigoColeta: codigoGerado
             }));
         }
-    }, [formFields.municipioCode, formFields.localidadeCode, formFields.dataSaida, formFields.consecutivo]);
+    }, [formFields.municipioCode, formFields.localidadeCode, formFields.dataColeta, formFields.consecutivo]);
 
     const carregarMunicipios = async () => {
         try {
@@ -124,12 +125,16 @@ export default function Step1Local({ nextStep, prevStep }) {
             errors.consecutivo = 'Digite o número consecutivo';
         }
         
+        if (!formFields.dataColeta) {
+            errors.dataColeta = 'Selecione a data de coleta dos dados';
+        }
+        
         if (!formFields.dataSaida) {
-            errors.dataSaida = 'Selecione a data de saída';
+            errors.dataSaida = 'Selecione a data de saída da embarcação';
         }
         
         if (!formFields.dataChegada) {
-            errors.dataChegada = 'Selecione a data de chegada';
+            errors.dataChegada = 'Selecione a data de chegada da embarcação';
         }
 
         // Validar se data de chegada é posterior à data de saída
@@ -159,16 +164,14 @@ export default function Step1Local({ nextStep, prevStep }) {
         <form onSubmit={handleSubmit} className="space-y-6">
             {/* Município */}
             <div>
-                <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className="label-standard">
                     Município*
                 </label>
                 <select
                     name="municipio"
                     value={formFields.municipio}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg ${
-                        temaEscuro ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
-                    } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                    className="select-standard"
                     disabled={loading}
                 >
                     <option value="">Selecione um município</option>
@@ -179,22 +182,20 @@ export default function Step1Local({ nextStep, prevStep }) {
                     ))}
                 </select>
                 {fieldErrors.municipio && (
-                    <p className="mt-2 text-sm text-red-600">{fieldErrors.municipio}</p>
+                    <p className="error-message">{fieldErrors.municipio}</p>
                 )}
             </div>
 
             {/* Localidade */}
             <div>
-                <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className="label-standard">
                     Localidade*
                 </label>
                 <select
                     name="localidade"
                     value={formFields.localidade}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg ${
-                        temaEscuro ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
-                    } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                    className="select-standard"
                     disabled={!selectedMunicipioObj}
                 >
                     <option value="">Selecione uma localidade</option>
@@ -205,56 +206,72 @@ export default function Step1Local({ nextStep, prevStep }) {
                     ))}
                 </select>
                 {fieldErrors.localidade && (
-                    <p className="mt-2 text-sm text-red-600">{fieldErrors.localidade}</p>
+                    <p className="error-message">{fieldErrors.localidade}</p>
                 )}
             </div>
 
-            {/* Data de Saída */}
+            {/* Data de Coleta dos Dados */}
             <div>
-                <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Data de saída*
+                <label className="label-standard">
+                    Data de coleta dos dados pelo coletor*
+                </label>
+                <input
+                    type="date"
+                    name="dataColeta"
+                    value={formFields.dataColeta}
+                    onChange={handleInputChange}
+                    className="input-standard"
+                />
+                {fieldErrors.dataColeta && (
+                    <p className="error-message">{fieldErrors.dataColeta}</p>
+                )}
+                <p className="helper-text">
+                    Esta data será usada para gerar o código de coleta
+                </p>
+            </div>
+
+            {/* Data de Saída da Embarcação */}
+            <div>
+                <label className="label-standard">
+                    Data de saída da embarcação*
                 </label>
                 <input
                     type="datetime-local"
                     name="dataSaida"
                     value={formFields.dataSaida}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg ${
-                        temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                    } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                    className="input-standard"
                 />
                 {fieldErrors.dataSaida && (
-                    <p className="mt-2 text-sm text-red-600">{fieldErrors.dataSaida}</p>
+                    <p className="error-message">{fieldErrors.dataSaida}</p>
                 )}
             </div>
 
-            {/* Data de Chegada */}
+            {/* Data de Chegada da Embarcação */}
             <div>
-                <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Data de chegada*
+                <label className="label-standard">
+                    Data de chegada da embarcação*
                 </label>
                 <input
                     type="datetime-local"
                     name="dataChegada"
                     value={formFields.dataChegada}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg ${
-                        temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                    } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                    className="input-standard"
                 />
                 {fieldErrors.dataChegada && (
-                    <p className="mt-2 text-sm text-red-600">{fieldErrors.dataChegada}</p>
+                    <p className="error-message">{fieldErrors.dataChegada}</p>
                 )}
             </div>
 
             {/* Número Consecutivo */}
             <div>
-                <div className={`mb-2 p-3 rounded-lg ${temaEscuro ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50 border border-blue-200'}`}>
-                    <p className={`text-sm ${temaEscuro ? 'text-blue-300' : 'text-blue-700'}`}>
-                        ℹ️ O formulário monta automaticamente o código de coleta baseado no município, localidade, data de saída e número consecutivo.
+                <div className="alert-info">
+                    <p>
+                        ℹ️ O formulário monta automaticamente o código de coleta baseado no município, localidade, <strong>data de coleta dos dados</strong> e número consecutivo.
                     </p>
                 </div>
-                <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className="label-standard">
                     Número Consecutivo*
                 </label>
                 <input
@@ -262,26 +279,22 @@ export default function Step1Local({ nextStep, prevStep }) {
                     name="consecutivo"
                     value={formFields.consecutivo}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg ${
-                        temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                    } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                    className="input-standard"
                     placeholder="Digite o número consecutivo (ex: 1, 2, 3...)"
                     min="1"
                 />
                 {fieldErrors.consecutivo && (
-                    <p className="mt-2 text-sm text-red-600">{fieldErrors.consecutivo}</p>
+                    <p className="error-message">{fieldErrors.consecutivo}</p>
                 )}
             </div>
 
             {/* Código de Coleta (gerado automaticamente) */}
             {formFields.codigoColeta && (
                 <div>
-                    <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className="label-standard">
                         Código de coleta (gerado automaticamente)
                     </label>
-                    <div className={`w-full px-4 py-3 rounded-lg ${
-                        temaEscuro ? 'bg-gray-900 border-gray-700 text-green-400' : 'bg-gray-100 border-gray-300 text-green-700'
-                    } border font-mono font-semibold text-lg`}>
+                    <div className="bg-gray-100 border border-gray-300 rounded-xl px-4 py-3 font-mono font-semibold text-lg text-brand">
                         {formFields.codigoColeta}
                     </div>
                 </div>
@@ -289,7 +302,7 @@ export default function Step1Local({ nextStep, prevStep }) {
 
             {/* Código da Foto */}
             <div>
-                <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className="label-standard">
                     Código da foto
                 </label>
                 <input
@@ -297,9 +310,7 @@ export default function Step1Local({ nextStep, prevStep }) {
                     name="codigoFoto"
                     value={formFields.codigoFoto}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg ${
-                        temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                    } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                    className="input-standard"
                     placeholder="Digite o código da foto (opcional)"
                 />
             </div>
@@ -309,17 +320,13 @@ export default function Step1Local({ nextStep, prevStep }) {
                 <button
                     type="button"
                     onClick={prevStep}
-                    className={`flex-1 px-4 py-3 rounded-lg border ${
-                        temaEscuro 
-                            ? 'border-gray-600 text-gray-300 hover:bg-gray-800' 
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    } font-medium transition-colors`}
+                    className="btn-secondary flex-1"
                 >
                     Voltar
                 </button>
                 <button
                     type="submit"
-                    className="flex-1 px-4 py-3 rounded-lg bg-teal-600 text-white font-medium hover:bg-teal-700 transition-colors"
+                    className="btn-primary flex-1"
                 >
                     Próximo
                 </button>

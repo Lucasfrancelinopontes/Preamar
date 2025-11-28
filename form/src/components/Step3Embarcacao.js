@@ -58,13 +58,13 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-8 p-4 max-w-2xl mx-auto">
       {/* Seção Embarcação */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+      <div className="card">
+        <h2 className="heading-secondary">
           Embarcação
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="label-standard">
               Nome da embarcação *
             </label>
             <input
@@ -72,13 +72,13 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               name="nomeEmbarcacao"
               value={formData.nomeEmbarcacao || ''}
               onChange={handleChange}
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-standard"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="label-standard">
               Código da embarcação *
             </label>
             <input
@@ -86,13 +86,13 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               name="codigoEmbarcacao"
               value={formData.codigoEmbarcacao || ''}
               onChange={handleChange}
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-standard"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="label-standard">
               N° de tripulantes *
             </label>
             <input
@@ -101,13 +101,13 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               value={formData.numTripulantes || ''}
               onChange={handleChange}
               min="1"
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-standard"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="label-standard">
               N° de pesqueiros *
             </label>
             <input
@@ -116,92 +116,84 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               value={formData.numPesqueiros || ''}
               onChange={handleChange}
               min="1"
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-standard"
               required
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="label-standard">
               Coordenadas ida *
             </label>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <input
-                  type="number"
-                  name="coordenadasIdaLat"
-                  value={formData.coordenadasIdaLat || ''}
-                  onChange={handleChange}
-                  placeholder="Latitude"
-                  step="any"
-                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
-                />
-              </div>
-              <div>
-                <input
-                  type="number"
-                  name="coordenadasIdaLong"
-                  value={formData.coordenadasIdaLong || ''}
-                  onChange={handleChange}
-                  placeholder="Longitude"
-                  step="any"
-                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
-                />
-              </div>
+              <input
+                type="number"
+                name="coordenadasIdaLat"
+                value={formData.coordenadasIdaLat || ''}
+                onChange={handleChange}
+                placeholder="Latitude"
+                step="any"
+                className="input-standard"
+                required
+              />
+              <input
+                type="number"
+                name="coordenadasIdaLong"
+                value={formData.coordenadasIdaLong || ''}
+                onChange={handleChange}
+                placeholder="Longitude"
+                step="any"
+                className="input-standard"
+                required
+              />
             </div>
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="label-standard">
               Coordenadas volta *
             </label>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <input
-                  type="number"
-                  name="coordenadasVoltaLat"
-                  value={formData.coordenadasVoltaLat || ''}
-                  onChange={handleChange}
-                  placeholder="Latitude"
-                  step="any"
-                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
-                />
-              </div>
-              <div>
-                <input
-                  type="number"
-                  name="coordenadasVoltaLong"
-                  value={formData.coordenadasVoltaLong || ''}
-                  onChange={handleChange}
-                  placeholder="Longitude"
-                  step="any"
-                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
-                />
-              </div>
+              <input
+                type="number"
+                name="coordenadasVoltaLat"
+                value={formData.coordenadasVoltaLat || ''}
+                onChange={handleChange}
+                placeholder="Latitude"
+                step="any"
+                className="input-standard"
+                required
+              />
+              <input
+                type="number"
+                name="coordenadasVoltaLong"
+                value={formData.coordenadasVoltaLong || ''}
+                onChange={handleChange}
+                placeholder="Longitude"
+                step="any"
+                className="input-standard"
+                required
+              />
             </div>
           </div>
         </div>
       </div>
 
       {/* Seção Tipo de embarcação */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+      <div className="card">
+        <h2 className="heading-secondary">
           Tipo de embarcação
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="label-standard">
               Tipo de embarcação *
             </label>
             <select
               name="tipoEmbarcacao"
               value={formData.tipoEmbarcacao || ''}
               onChange={handleChange}
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="select-standard"
               required
             >
               <option value="">Selecione um tipo</option>
@@ -214,7 +206,7 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="label-standard">
               Comprimento (m) *
             </label>
             <input
@@ -224,13 +216,13 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               onChange={handleChange}
               step="0.01"
               min="0"
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-standard"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="label-standard">
               Capacidade de estocagem (kg) *
             </label>
             <input
@@ -239,13 +231,13 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               value={formData.capacidadeEstocagem || ''}
               onChange={handleChange}
               min="0"
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-standard"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="label-standard">
               Força do motor (HP) *
             </label>
             <input
@@ -254,7 +246,7 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               value={formData.forcaMotor || ''}
               onChange={handleChange}
               min="0"
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-standard"
               required
             />
           </div>
@@ -262,8 +254,8 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
       </div>
 
       {/* Seção Possui */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+      <div className="card">
+        <h2 className="heading-secondary">
           Possui *
         </h2>
         <div className="space-y-4">
@@ -276,12 +268,12 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
                 value={opcao.value}
                 checked={formData.armazenamento === opcao.value}
                 onChange={handleChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                className="h-4 w-4 text-brand focus:ring-brand border-gray-300"
                 required
               />
               <label
                 htmlFor={opcao.value}
-                className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="label-standard ml-2 mb-0"
               >
                 {opcao.label}
               </label>
@@ -295,13 +287,13 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
         <button
           type="button"
           onClick={prevStep}
-          className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          className="btn-secondary"
         >
           &lt; Voltar
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="btn-primary"
         >
           Próximo &gt;
         </button>

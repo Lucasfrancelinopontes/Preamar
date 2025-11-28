@@ -81,23 +81,20 @@ export default function LoginPage() {
                 {/* Formulário */}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <label className="label-standard">
                             Email
                         </label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className={`w-full px-4 py-3 rounded-lg ${
-                                temaEscuro ? 'bg-gray-800 border-gray-700 focus:border-teal-500'
-                                : 'bg-white border-gray-300 focus:border-teal-600'
-                            } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                            className="input-standard"
                             placeholder="seu@email.com"
                         />
                     </div>
 
                     <div>
-                        <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <label className="label-standard">
                             Senha
                         </label>
                         <div className="relative">
@@ -105,18 +102,13 @@ export default function LoginPage() {
                                 type={mostrarSenha ? "text" : "password"}
                                 value={senha}
                                 onChange={(e) => setSenha(e.target.value)}
-                                className={`w-full px-4 py-3 rounded-lg ${
-                                    temaEscuro ? 'bg-gray-800 border-gray-700 focus:border-teal-500'
-                                    : 'bg-white border-gray-300 focus:border-teal-600'
-                                } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                                className="input-standard"
                                 placeholder="••••••••"
                             />
                             <button
                                 type="button"
                                 onClick={() => setMostrarSenha(!mostrarSenha)}
-                                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full ${
-                                    temaEscuro ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
-                                }`}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100"
                             >
                                 {mostrarSenha ? (
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,9 +125,7 @@ export default function LoginPage() {
                     </div>
 
                     {erro && (
-                        <div className={`p-4 rounded-lg ${
-                            temaEscuro ? 'bg-red-900/50 text-red-200' : 'bg-red-50 text-red-600'
-                        }`}>
+                        <div className="alert-error">
                             {erro}
                         </div>
                     )}
@@ -143,16 +133,11 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={carregando}
-                        className={`w-full py-3 rounded-lg bg-teal-600 text-white font-semibold 
-                            ${carregando ? 'opacity-50 cursor-not-allowed' : 'hover:bg-teal-700'} 
-                            transition-colors flex items-center justify-center gap-2`}
+                        className="btn-primary w-full"
                     >
                         {carregando ? (
                             <>
-                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                                </svg>
+                                <span className="spinner inline-block w-5 h-5 mr-2"></span>
                                 <span>Entrando...</span>
                             </>
                         ) : (
@@ -161,12 +146,12 @@ export default function LoginPage() {
                     </button>
 
                     <div className="text-center">
-                        <p className={temaEscuro ? 'text-gray-400' : 'text-gray-600'}>
+                        <p className="text-gray-600">
                             Não tem uma conta?{' '}
                             <button
                                 type="button"
                                 onClick={() => router.push('/register')}
-                                className="text-teal-600 hover:text-teal-700 font-medium"
+                                className="link"
                             >
                                 Criar conta
                             </button>

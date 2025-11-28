@@ -68,7 +68,7 @@ export default function Step2Pescador({ nextStep, prevStep }) {
         <form onSubmit={handleSubmit} className="space-y-6">
             {/* Nome do Pescador */}
             <div>
-                <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className="label-standard">
                     Nome do pescador*
                 </label>
                 <div className="relative">
@@ -82,20 +82,18 @@ export default function Step2Pescador({ nextStep, prevStep }) {
                         name="nomePescador"
                         value={formFields.nomePescador}
                         onChange={handleInputChange}
-                        className={`w-full pl-10 pr-4 py-3 rounded-lg ${
-                            temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                        } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                        className="input-standard pl-10"
                         placeholder="Nome completo do pescador"
                     />
                 </div>
                 {fieldErrors.nomePescador && (
-                    <p className="mt-2 text-sm text-red-600">{fieldErrors.nomePescador}</p>
+                    <p className="error-message">{fieldErrors.nomePescador}</p>
                 )}
             </div>
 
             {/* Apelido do Pescador */}
             <div>
-                <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className="label-standard">
                     Apelido do pescador
                 </label>
                 <div className="relative">
@@ -109,9 +107,7 @@ export default function Step2Pescador({ nextStep, prevStep }) {
                         name="apelidoPescador"
                         value={formFields.apelidoPescador}
                         onChange={handleInputChange}
-                        className={`w-full pl-10 pr-4 py-3 rounded-lg ${
-                            temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                        } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                        className="input-standard pl-10"
                         placeholder="Apelido (opcional)"
                     />
                 </div>
@@ -119,7 +115,7 @@ export default function Step2Pescador({ nextStep, prevStep }) {
 
             {/* CPF do Pescador */}
             <div>
-                <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className="label-standard">
                     CPF (opcional)
                 </label>
                 <div className="relative">
@@ -134,14 +130,12 @@ export default function Step2Pescador({ nextStep, prevStep }) {
                         value={formFields.cpfPescador}
                         onChange={handleInputChange}
                         maxLength={14}
-                        className={`w-full pl-10 pr-4 py-3 rounded-lg ${
-                            temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                        } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
+                        className="input-standard pl-10"
                         placeholder="000.000.000-00"
                     />
                 </div>
                 {fieldErrors.cpfPescador && (
-                    <p className="mt-2 text-sm text-red-600">{fieldErrors.cpfPescador}</p>
+                    <p className="error-message">{fieldErrors.cpfPescador}</p>
                 )}
             </div>
 
@@ -150,17 +144,13 @@ export default function Step2Pescador({ nextStep, prevStep }) {
                 <button
                     type="button"
                     onClick={prevStep}
-                    className={`flex-1 px-4 py-3 rounded-lg border ${
-                        temaEscuro 
-                            ? 'border-gray-600 text-gray-300 hover:bg-gray-800' 
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    } font-medium transition-colors`}
+                    className="btn-secondary flex-1"
                 >
                     Voltar
                 </button>
                 <button
                     type="submit"
-                    className="flex-1 px-4 py-3 rounded-lg bg-teal-600 text-white font-medium hover:bg-teal-700 transition-colors"
+                    className="btn-primary flex-1"
                 >
                     Próximo
                 </button>

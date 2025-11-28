@@ -109,6 +109,13 @@ export default function Step7Especies({ nextStep, prevStep }) {
           Espécies & pesagens
         </h2>
 
+        {/* Informação sobre múltiplas espécies */}
+        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-md">
+          <p className="text-green-700 dark:text-green-300 text-sm">
+            ✅ Você pode adicionar quantas espécies quiser! Use o botão "+ Adicionar Espécie" no final da lista.
+          </p>
+        </div>
+
         {erro && (
           <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-md">
             <p className="text-red-700 dark:text-red-300 text-sm">{erro}</p>

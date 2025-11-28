@@ -347,7 +347,7 @@ function AnalyticsContent() {
                     <div className="space-y-6">
                         {/* Cards de Estatísticas Gerais */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
+                            <div className="card-brand">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Total Desembarques</p>
@@ -361,7 +361,7 @@ function AnalyticsContent() {
                                 </div>
                             </div>
 
-                            <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
+                            <div className="card-brand">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Receita Total</p>
@@ -377,7 +377,7 @@ function AnalyticsContent() {
                                 </div>
                             </div>
 
-                            <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
+                            <div className="card-brand">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Peso Total</p>
@@ -393,7 +393,7 @@ function AnalyticsContent() {
                                 </div>
                             </div>
 
-                            <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
+                            <div className="card-brand">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Pescadores</p>
@@ -407,7 +407,7 @@ function AnalyticsContent() {
                                 </div>
                             </div>
 
-                            <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
+                            <div className="card-brand">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Embarcações</p>
@@ -421,7 +421,7 @@ function AnalyticsContent() {
                                 </div>
                             </div>
 
-                            <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
+                            <div className="card-brand">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Ticket Médio</p>
@@ -439,8 +439,8 @@ function AnalyticsContent() {
                         </div>
 
                         {/* 1. Desembarques por Município */}
-                        <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
-                            <h2 className={`text-xl font-bold mb-4 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                        <div className="card">
+                            <h2 className="heading-secondary">
                                 📍 Desembarques por Município
                             </h2>
                             <div className="space-y-3">
@@ -462,8 +462,8 @@ function AnalyticsContent() {
                         </div>
 
                         {/* 2. Espécies Mais Capturadas */}
-                        <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
-                            <h2 className={`text-xl font-bold mb-4 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                        <div className="card">
+                            <h2 className="heading-secondary">
                                 🐟 Top 10 Espécies Mais Capturadas
                             </h2>
                             <div className="overflow-x-auto">
@@ -493,8 +493,8 @@ function AnalyticsContent() {
                         </div>
 
                         {/* 3. Receita por Mês */}
-                        <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
-                            <h2 className={`text-xl font-bold mb-4 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                        <div className="card">
+                            <h2 className="heading-secondary">
                                 📈 Receita por Mês
                             </h2>
                             <div className="space-y-3">
@@ -518,8 +518,8 @@ function AnalyticsContent() {
                         </div>
 
                         {/* 4. Artes de Pesca Mais Utilizadas */}
-                        <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
-                            <h2 className={`text-xl font-bold mb-4 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                        <div className="card">
+                            <h2 className="heading-secondary">
                                 🎣 Artes de Pesca Mais Utilizadas
                             </h2>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -533,8 +533,8 @@ function AnalyticsContent() {
                         </div>
 
                         {/* 5. Gráfico Preço vs Peso */}
-                        <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
-                            <h2 className={`text-xl font-bold mb-4 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                        <div className="card">
+                            <h2 className="heading-secondary">
                                 💰 Relação Preço vs Peso do Pescado
                             </h2>
                             <div className="relative">
@@ -628,24 +628,24 @@ function AnalyticsContent() {
                         </div>
 
                         {/* Botão de Exportação */}
-                        <div className={`p-6 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
+                        <div className="card">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h2 className={`text-xl font-bold ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                    <h2 className="heading-secondary mb-1">
                                         📊 Exportar Dados
                                     </h2>
-                                    <p className={`text-sm mt-1 ${temaEscuro ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    <p className="helper-text">
                                         Exportar todos os desembarques em formato CSV para análise externa
                                     </p>
                                 </div>
                                 <button
                                     onClick={exportarCSV}
                                     disabled={exportando}
-                                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    className="btn-accent flex items-center gap-2"
                                 >
                                     {exportando ? (
                                         <>
-                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                            <span className="spinner w-5 h-5 border-2" />
                                             Exportando...
                                         </>
                                     ) : (
