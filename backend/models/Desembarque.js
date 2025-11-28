@@ -75,41 +75,21 @@ export const Desembarque = sequelize.define('Desembarque', {
     comment: 'Pesqueiros ou locais de pesca'
   },
   // Coordenadas
-  lat_deg1: {
-    type: DataTypes.INTEGER
+  lat_ida: {
+    type: DataTypes.DECIMAL(10, 8),
+    comment: 'Latitude do ponto de ida (decimal)'
   },
-  lat_min1: {
-    type: DataTypes.INTEGER
+  long_ida: {
+    type: DataTypes.DECIMAL(11, 8),
+    comment: 'Longitude do ponto de ida (decimal)'
   },
-  lat_sec1: {
-    type: DataTypes.DECIMAL(5, 2)
+  lat_volta: {
+    type: DataTypes.DECIMAL(10, 8),
+    comment: 'Latitude do ponto de volta (decimal)'
   },
-  lat_deg2: {
-    type: DataTypes.INTEGER
-  },
-  lat_min2: {
-    type: DataTypes.INTEGER
-  },
-  lat_sec2: {
-    type: DataTypes.DECIMAL(5, 2)
-  },
-  long_deg1: {
-    type: DataTypes.INTEGER
-  },
-  long_min1: {
-    type: DataTypes.INTEGER
-  },
-  long_sec1: {
-    type: DataTypes.DECIMAL(5, 2)
-  },
-  long_deg2: {
-    type: DataTypes.INTEGER
-  },
-  long_min2: {
-    type: DataTypes.INTEGER
-  },
-  long_sec2: {
-    type: DataTypes.DECIMAL(5, 2)
+  long_volta: {
+    type: DataTypes.DECIMAL(11, 8),
+    comment: 'Longitude do ponto de volta (decimal)'
   },
   quadrante1: {
     type: DataTypes.STRING(50)

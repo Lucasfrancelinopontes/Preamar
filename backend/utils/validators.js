@@ -39,36 +39,15 @@ export const gerarCodigoDesembarque = (municipio, localidade, data, consecutivo)
   return `${municipio}-${localidade}-${dia}-${mes}-${ano}-${consec}`;
 };
 
-// Validar coordenadas
-export const validarCoordenadas = (graus, minutos, segundos, tipo) => {
-  const limiteGraus = tipo === 'lat' ? 90 : 180;
-  
-  if (graus < -limiteGraus || graus > limiteGraus) return false;
-  if (minutos < 0 || minutos >= 60) return false;
-  if (segundos < 0 || segundos >= 60) return false;
-  
+// Validar coordenadas decimais
+export const validarCoordenadasDecimal = (lat, long) => {
+  if (lat !== undefined && lat !== null) {
+    if (lat < -90 || lat > 90) return false;
+  }
+  if (long !== undefined && long !== null) {
+    if (long < -180 || long > 180) return false;
+  }
   return true;
-};
-
-// Converter coordenadas DMS para decimal
-export const dmsParaDecimal = (graus, minutos, segundos) => {
-  const decimal = Math.abs(graus) + (minutos / 60) + (segundos / 3600);
-  return graus < 0 ? -decimal : decimal;
-};
-
-// Converter coordenadas decimal para DMS
-export const decimalParaDMS = (decimal) => {
-  const abs = Math.abs(decimal);
-  const graus = Math.floor(abs);
-  const minutosDecimal = (abs - graus) * 60;
-  const minutos = Math.floor(minutosDecimal);
-  const segundos = (minutosDecimal - minutos) * 60;
-  
-  return {
-    graus: decimal < 0 ? -graus : graus,
-    minutos,
-    segundos: Math.round(segundos * 100) / 100
-  };
 };
 
 // Validar dados de desembarque
@@ -89,16 +68,16 @@ export const validarDesembarque = (dados) => {
     }
   }
   
-  // Validar coordenadas se fornecidas
-  if (dados.lat_deg1 !== undefined) {
-    if (!validarCoordenadas(dados.lat_deg1, dados.lat_min1 || 0, dados.lat_sec1 || 0, 'lat')) {
-      erros.push('Coordenadas de latitude inválidas');
+  // Validar coordenadas decimais
+  if (dados.lat_ida !== undefined || dados.long_ida !== undefined) {
+    if (!validarCoordenadasDecimal(dados.lat_ida, dados.long_ida)) {
+      erros.push('Coordenadas de ida inválidas (Latitude: -90 a 90, Longitude: -180 a 180)');
     }
   }
-  
-  if (dados.long_deg1 !== undefined) {
-    if (!validarCoordenadas(dados.long_deg1, dados.long_min1 || 0, dados.long_sec1 || 0, 'long')) {
-      erros.push('Coordenadas de longitude inválidas');
+
+  if (dados.lat_volta !== undefined || dados.long_volta !== undefined) {
+    if (!validarCoordenadasDecimal(dados.lat_volta, dados.long_volta)) {
+      erros.push('Coordenadas de volta inválidas (Latitude: -90 a 90, Longitude: -180 a 180)');
     }
   }
   
