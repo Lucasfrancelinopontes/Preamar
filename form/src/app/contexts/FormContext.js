@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 
 const FormContext = createContext();
 
@@ -83,23 +83,23 @@ export function FormProvider({ children }) {
 
     const [errors, setErrors] = useState({});
 
-    const updateFormData = (newData) => {
+    const updateFormData = useCallback((newData) => {
         setFormData(prevData => ({
             ...prevData,
             ...newData
         }));
-    };
+    }, []);
 
-    const clearErrors = () => {
+    const clearErrors = useCallback(() => {
         setErrors({});
-    };
+    }, []);
 
-    const addError = (field, message) => {
+    const addError = useCallback((field, message) => {
         setErrors(prev => ({
             ...prev,
             [field]: message
         }));
-    };
+    }, []);
 
     const resetForm = () => {
         setFormData({

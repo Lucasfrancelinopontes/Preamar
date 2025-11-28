@@ -28,7 +28,6 @@ export const validarCPF = (cpf) => {
   return true;
 };
 
-// Gerar código de desembarque
 export const gerarCodigoDesembarque = (municipio, localidade, data, consecutivo) => {
   const dataObj = new Date(data);
   const dia = String(dataObj.getDate()).padStart(2, '0');
@@ -39,18 +38,6 @@ export const gerarCodigoDesembarque = (municipio, localidade, data, consecutivo)
   return `${municipio}-${localidade}-${dia}-${mes}-${ano}-${consec}`;
 };
 
-// Validar coordenadas decimais
-export const validarCoordenadasDecimal = (lat, long) => {
-  if (lat !== undefined && lat !== null) {
-    if (lat < -90 || lat > 90) return false;
-  }
-  if (long !== undefined && long !== null) {
-    if (long < -180 || long > 180) return false;
-  }
-  return true;
-};
-
-// Validar dados de desembarque
 export const validarDesembarque = (dados) => {
   const erros = [];
   
@@ -68,17 +55,21 @@ export const validarDesembarque = (dados) => {
     }
   }
   
-  // Validar coordenadas decimais
-  if (dados.lat_ida !== undefined || dados.long_ida !== undefined) {
-    if (!validarCoordenadasDecimal(dados.lat_ida, dados.long_ida)) {
-      erros.push('Coordenadas de ida inválidas (Latitude: -90 a 90, Longitude: -180 a 180)');
-    }
-  }
+  // NOVA VALIDAÇÃO: Coordenadas Decimais
+  const validarLat = (lat) => !isNaN(lat) && lat >= -90 && lat <= 90;
+  const validarLong = (long) => !isNaN(long) && long >= -180 && long <= 180;
 
-  if (dados.lat_volta !== undefined || dados.long_volta !== undefined) {
-    if (!validarCoordenadasDecimal(dados.lat_volta, dados.long_volta)) {
-      erros.push('Coordenadas de volta inválidas (Latitude: -90 a 90, Longitude: -180 a 180)');
-    }
+  if (dados.lat_ida && !validarLat(parseFloat(dados.lat_ida))) {
+    erros.push('Latitude de ida inválida (deve estar entre -90 e 90)');
+  }
+  if (dados.long_ida && !validarLong(parseFloat(dados.long_ida))) {
+    erros.push('Longitude de ida inválida (deve estar entre -180 e 180)');
+  }
+  if (dados.lat_volta && !validarLat(parseFloat(dados.lat_volta))) {
+    erros.push('Latitude de volta inválida (deve estar entre -90 e 90)');
+  }
+  if (dados.long_volta && !validarLong(parseFloat(dados.long_volta))) {
+    erros.push('Longitude de volta inválida (deve estar entre -180 e 180)');
   }
   
   return {

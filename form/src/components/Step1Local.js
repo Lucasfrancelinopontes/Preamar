@@ -1,335 +1,186 @@
-"use client";
+// form/src/components/Step1Local.js
+'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useFormContext } from '@/app/contexts/FormContext';
 import api from '@/services/api';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
-export default function Step1Local({ nextStep, prevStep }) {
+// Schema de Validação (Zod)
+const step1Schema = z.object({
+    municipio: z.string().min(1, 'Selecione um município'),
+    localidade: z.string().min(1, 'Selecione uma localidade'),
+    dataColeta: z.string().min(1, 'Data de coleta é obrigatória'),
+    consecutivo: z.coerce.number().min(1, 'Número consecutivo inválido'),
+    codigoFoto: z.string().optional(),
+    dataSaida: z.string().min(1, 'Data de saída é obrigatória'),
+    dataChegada: z.string().min(1, 'Data de chegada é obrigatória'),
+}).refine((data) => {
+    if (data.dataSaida && data.dataChegada) {
+        return new Date(data.dataChegada) >= new Date(data.dataSaida);
+    }
+    return true;
+}, {
+    message: 'A data de chegada deve ser posterior à data de saída',
+    path: ['dataChegada'],
+});
+
+export default function Step1Local({ nextStep }) {
     const { formData, updateFormData } = useFormContext();
-    
     const [municipios, setMunicipios] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [selectedMunicipioObj, setSelectedMunicipioObj] = useState(null);
-    const [temaEscuro, setTemaEscuro] = useState(false);
-    
-    // Campos do formulário
-    const [formFields, setFormFields] = useState({
-        municipio: formData.municipio || "",
-        municipioCode: formData.municipioCode || "",
-        localidade: formData.localidade || "",
-        localidadeCode: formData.localidadeCode || "",
-        consecutivo: formData.consecutivo || "",
-        codigoColeta: formData.codigoColeta || "",
-        codigoFoto: formData.codigoFoto || "",
-        dataColeta: formData.dataColeta || "",
-        dataSaida: formData.dataSaida || "",
-        dataChegada: formData.dataChegada || "",
+
+    // Configuração do React Hook Form
+    const {
+        register,
+        handleSubmit,
+        watch,
+        setValue,
+        formState: { errors }
+    } = useForm({
+        resolver: zodResolver(step1Schema),
+        defaultValues: formData // Carrega dados salvos no contexto
     });
 
-    const [fieldErrors, setFieldErrors] = useState({});
+    // Estado local para código de coleta
+    const [codigoColeta, setCodigoColeta] = useState(formData.codigoColeta || '');
+
+    // Monitorar campos para lógica dependente
+    const selectedMunicipio = watch('municipio');
+    const selectedLocalidade = watch('localidade');
+    const dataColeta = watch('dataColeta');
+    const consecutivo = watch('consecutivo');
 
     useEffect(() => {
-        carregarMunicipios();
+        api.getMunicipios().then(setMunicipios).catch(console.error);
     }, []);
 
+    // Atualizar objeto de município quando a seleção muda
     useEffect(() => {
-        // Quando municipio muda, encontrar o objeto correspondente
-        if (formFields.municipio && municipios.length > 0) {
-            const munObj = municipios.find(m => m.municipio === formFields.municipio);
-            setSelectedMunicipioObj(munObj || null);
-        } else {
-            setSelectedMunicipioObj(null);
-        }
-    }, [formFields.municipio, municipios]);
+        const mun = municipios.find(m => m.municipio === selectedMunicipio);
+        setSelectedMunicipioObj(mun || null);
+    }, [selectedMunicipio, municipios]);
 
-    // Auto-generate codigo de coleta when components change - AGORA BASEADO NA DATA DE COLETA
+    // Gerar Código de Coleta Automaticamente
     useEffect(() => {
-        if (formFields.municipioCode && formFields.localidadeCode && formFields.dataColeta && formFields.consecutivo) {
-            const date = new Date(formFields.dataColeta);
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = String(date.getFullYear()).slice(-2);
-            const consecutivoFormatted = String(formFields.consecutivo).padStart(2, '0');
-            
-            const codigoGerado = `${formFields.municipioCode} ${formFields.localidadeCode} ${day} ${month} ${year} ${consecutivoFormatted}`;
-            
-            setFormFields(prev => ({
-                ...prev,
-                codigoColeta: codigoGerado
-            }));
-        }
-    }, [formFields.municipioCode, formFields.localidadeCode, formFields.dataColeta, formFields.consecutivo]);
-
-    const carregarMunicipios = async () => {
-        try {
-            const data = await api.getMunicipios();
-            setMunicipios(data);
-            setLoading(false);
-        } catch (err) {
-            console.error('Erro ao carregar municípios:', err);
-            setError('Erro ao carregar municípios');
-            setLoading(false);
-        }
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        
-        if (name === 'municipio') {
-            // Encontrar o objeto do município selecionado
-            const munObj = municipios.find(m => m.municipio === value);
-            setFormFields(prev => ({
-                ...prev,
-                municipio: value,
-                municipioCode: munObj?.municipioCode || "",
-                localidade: '', // Reset localidade when municipio changes
-                localidadeCode: ''
-            }));
-        } else if (name === 'localidade') {
-            // Encontrar o código da localidade selecionada
-            const locObj = selectedMunicipioObj?.localidades.find(l => l.localidade === value);
-            setFormFields(prev => ({
-                ...prev,
-                localidade: value,
-                localidadeCode: locObj?.localidadeCode || ""
-            }));
-        } else {
-            setFormFields(prev => ({
-                ...prev,
-                [name]: value
-            }));
-        }
-
-        // Limpar erro do campo quando ele for alterado
-        if (fieldErrors[name]) {
-            setFieldErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
-        }
-    };
-
-    const validateForm = () => {
-        const errors = {};
-        
-        if (!formFields.municipio) {
-            errors.municipio = 'Selecione um município';
-        }
-        
-        if (!formFields.localidade) {
-            errors.localidade = 'Selecione uma localidade';
-        }
-        
-        if (!formFields.consecutivo) {
-            errors.consecutivo = 'Digite o número consecutivo';
-        }
-        
-        if (!formFields.dataColeta) {
-            errors.dataColeta = 'Selecione a data de coleta dos dados';
-        }
-        
-        if (!formFields.dataSaida) {
-            errors.dataSaida = 'Selecione a data de saída da embarcação';
-        }
-        
-        if (!formFields.dataChegada) {
-            errors.dataChegada = 'Selecione a data de chegada da embarcação';
-        }
-
-        // Validar se data de chegada é posterior à data de saída
-        if (formFields.dataSaida && formFields.dataChegada) {
-            const saida = new Date(formFields.dataSaida);
-            const chegada = new Date(formFields.dataChegada);
-            
-            if (chegada < saida) {
-                errors.dataChegada = 'A data de chegada deve ser posterior à data de saída';
+        if (selectedMunicipioObj && selectedLocalidade && dataColeta && consecutivo) {
+            const locObj = selectedMunicipioObj.localidades.find(l => l.localidade === selectedLocalidade);
+            if (locObj) {
+                const date = new Date(dataColeta);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = String(date.getFullYear()).slice(-2);
+                const consec = String(consecutivo).padStart(2, '0');
+                
+                const codigo = `${selectedMunicipioObj.municipioCode} ${locObj.localidadeCode} ${day} ${month} ${year} ${consec}`;
+                setCodigoColeta(codigo);
             }
+        } else {
+            setCodigoColeta('');
         }
+    }, [selectedMunicipioObj, selectedLocalidade, dataColeta, consecutivo]);
 
-        setFieldErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const onSubmit = (data) => {
+        const locObj = selectedMunicipioObj?.localidades.find(l => l.localidade === data.localidade);
         
-        if (validateForm()) {
-            updateFormData(formFields);
-            nextStep();
-        }
+        updateFormData({
+            ...data,
+            municipioCode: selectedMunicipioObj?.municipioCode,
+            localidadeCode: locObj?.localidadeCode,
+            codigoColeta: codigoColeta
+        });
+        nextStep();
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Município */}
-            <div>
-                <label className="label-standard">
-                    Município*
-                </label>
-                <select
-                    name="municipio"
-                    value={formFields.municipio}
-                    onChange={handleInputChange}
-                    className="select-standard"
-                    disabled={loading}
-                >
-                    <option value="">Selecione um município</option>
-                    {municipios.map(mun => (
-                        <option key={mun.municipioCode} value={mun.municipio}>
-                            {mun.municipio}
-                        </option>
-                    ))}
-                </select>
-                {fieldErrors.municipio && (
-                    <p className="error-message">{fieldErrors.municipio}</p>
-                )}
-            </div>
-
-            {/* Localidade */}
-            <div>
-                <label className="label-standard">
-                    Localidade*
-                </label>
-                <select
-                    name="localidade"
-                    value={formFields.localidade}
-                    onChange={handleInputChange}
-                    className="select-standard"
-                    disabled={!selectedMunicipioObj}
-                >
-                    <option value="">Selecione uma localidade</option>
-                    {selectedMunicipioObj?.localidades.map(loc => (
-                        <option key={loc.localidadeCode} value={loc.localidade}>
-                            {loc.localidade}
-                        </option>
-                    ))}
-                </select>
-                {fieldErrors.localidade && (
-                    <p className="error-message">{fieldErrors.localidade}</p>
-                )}
-            </div>
-
-            {/* Data de Coleta dos Dados */}
-            <div>
-                <label className="label-standard">
-                    Data de coleta dos dados pelo coletor*
-                </label>
-                <input
-                    type="date"
-                    name="dataColeta"
-                    value={formFields.dataColeta}
-                    onChange={handleInputChange}
-                    className="input-standard"
-                />
-                {fieldErrors.dataColeta && (
-                    <p className="error-message">{fieldErrors.dataColeta}</p>
-                )}
-                <p className="helper-text">
-                    Esta data será usada para gerar o código de coleta
-                </p>
-            </div>
-
-            {/* Data de Saída da Embarcação */}
-            <div>
-                <label className="label-standard">
-                    Data de saída da embarcação*
-                </label>
-                <input
-                    type="datetime-local"
-                    name="dataSaida"
-                    value={formFields.dataSaida}
-                    onChange={handleInputChange}
-                    className="input-standard"
-                />
-                {fieldErrors.dataSaida && (
-                    <p className="error-message">{fieldErrors.dataSaida}</p>
-                )}
-            </div>
-
-            {/* Data de Chegada da Embarcação */}
-            <div>
-                <label className="label-standard">
-                    Data de chegada da embarcação*
-                </label>
-                <input
-                    type="datetime-local"
-                    name="dataChegada"
-                    value={formFields.dataChegada}
-                    onChange={handleInputChange}
-                    className="input-standard"
-                />
-                {fieldErrors.dataChegada && (
-                    <p className="error-message">{fieldErrors.dataChegada}</p>
-                )}
-            </div>
-
-            {/* Número Consecutivo */}
-            <div>
-                <div className="alert-info">
-                    <p>
-                        ℹ️ O formulário monta automaticamente o código de coleta baseado no município, localidade, <strong>data de coleta dos dados</strong> e número consecutivo.
-                    </p>
+        <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 bg-white p-6 rounded-lg shadow-sm'>
+            <h2 className='text-xl font-bold text-gray-800 border-b pb-2 mb-4'>Local e Identificação</h2>
+            
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div className='space-y-1'>
+                    <label className='block text-sm font-medium text-gray-700'>Município *</label>
+                    <select
+                        {...register('municipio')}
+                        className='w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                    >
+                        <option value=''>Selecione...</option>
+                        {municipios.map(m => (
+                            <option key={m.municipioCode} value={m.municipio}>{m.municipio}</option>
+                        ))}
+                    </select>
+                    {errors.municipio && <p className='text-red-500 text-sm'>{errors.municipio.message}</p>}
                 </div>
-                <label className="label-standard">
-                    Número Consecutivo*
-                </label>
-                <input
-                    type="number"
-                    name="consecutivo"
-                    value={formFields.consecutivo}
-                    onChange={handleInputChange}
-                    className="input-standard"
-                    placeholder="Digite o número consecutivo (ex: 1, 2, 3...)"
-                    min="1"
-                />
-                {fieldErrors.consecutivo && (
-                    <p className="error-message">{fieldErrors.consecutivo}</p>
-                )}
+
+                <div className='space-y-1'>
+                    <label className='block text-sm font-medium text-gray-700'>Localidade *</label>
+                    <select
+                        {...register('localidade')}
+                        className='w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                        disabled={!selectedMunicipio}
+                    >
+                        <option value=''>Selecione...</option>
+                        {selectedMunicipioObj?.localidades.map(l => (
+                            <option key={l.localidadeCode} value={l.localidade}>{l.localidade}</option>
+                        ))}
+                    </select>
+                    {errors.localidade && <p className='text-red-500 text-sm'>{errors.localidade.message}</p>}
+                </div>
             </div>
 
-            {/* Código de Coleta (gerado automaticamente) */}
-            {formFields.codigoColeta && (
-                <div>
-                    <label className="label-standard">
-                        Código de coleta (gerado automaticamente)
-                    </label>
-                    <div className="bg-gray-100 border border-gray-300 rounded-xl px-4 py-3 font-mono font-semibold text-lg text-brand">
-                        {formFields.codigoColeta}
-                    </div>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <Input
+                    label='Data de Coleta *'
+                    type='date'
+                    {...register('dataColeta')}
+                    error={errors.dataColeta?.message}
+                />
+                
+                <Input
+                    label='Número Consecutivo *'
+                    type='number'
+                    min='1'
+                    {...register('consecutivo')}
+                    error={errors.consecutivo?.message}
+                />
+            </div>
+
+            {codigoColeta && (
+                <div className='p-4 bg-blue-50 border border-blue-200 rounded-md'>
+                    <p className='text-sm text-blue-600 font-semibold'>Código de Coleta Gerado:</p>
+                    <p className='text-lg font-mono text-blue-800'>{codigoColeta}</p>
                 </div>
             )}
 
-            {/* Código da Foto */}
-            <div>
-                <label className="label-standard">
-                    Código da foto
-                </label>
-                <input
-                    type="text"
-                    name="codigoFoto"
-                    value={formFields.codigoFoto}
-                    onChange={handleInputChange}
-                    className="input-standard"
-                    placeholder="Digite o código da foto (opcional)"
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <Input
+                    label='Data/Hora Saída *'
+                    type='datetime-local'
+                    {...register('dataSaida')}
+                    error={errors.dataSaida?.message}
+                />
+                
+                <Input
+                    label='Data/Hora Chegada *'
+                    type='datetime-local'
+                    {...register('dataChegada')}
+                    error={errors.dataChegada?.message}
                 />
             </div>
 
-            {/* Botões */}
-            <div className="flex gap-4 pt-4">
-                <button
-                    type="button"
-                    onClick={prevStep}
-                    className="btn-secondary flex-1"
-                >
-                    Voltar
-                </button>
-                <button
-                    type="submit"
-                    className="btn-primary flex-1"
-                >
+            <Input
+                label='Código da Foto'
+                {...register('codigoFoto')}
+                placeholder='Opcional'
+            />
+
+            <div className='flex justify-end pt-4'>
+                <Button type='submit'>
                     Próximo
-                </button>
+                </Button>
             </div>
         </form>
     );
