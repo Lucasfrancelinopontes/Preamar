@@ -142,10 +142,9 @@ function MeusDesembarquesContent() {
                         {desembarques.map((desembarque) => (
                             <div 
                                 key={desembarque.cod_desembarque}
-                                className={`p-6 rounded-lg shadow hover:shadow-lg transition-all cursor-pointer ${
+                                className={`p-6 rounded-lg shadow hover:shadow-lg transition-all ${
                                     temaEscuro ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'
                                 }`}
-                                onClick={() => abrirDetalhes(desembarque)}
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
@@ -199,12 +198,27 @@ function MeusDesembarquesContent() {
                                                 </p>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Seta para indicar que é clicável */}
-                                    <svg className={`w-6 h-6 ml-4 ${temaEscuro ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
+                                        {/* Botões de Ação */}
+                                        <div className="flex gap-3 mt-4">
+                                            <button
+                                                onClick={() => router.push(`/meus-desembarques/${desembarque.ID_desembarque}`)}
+                                                className="flex-1 bg-brand hover:bg-brand-dark text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                <span>📄</span> Ver Detalhes Completos
+                                            </button>
+                                            <button
+                                                onClick={() => abrirDetalhes(desembarque)}
+                                                className={`px-4 py-2 rounded-lg transition-colors ${
+                                                    temaEscuro 
+                                                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' 
+                                                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                                                }`}
+                                            >
+                                                <span>👁️</span> Prévia
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ))}

@@ -55,21 +55,73 @@ export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
     if (!novaLista[especieIndex].individuos[individuoIndex]) {
       novaLista[especieIndex].individuos[individuoIndex] = {}
     }
+    
+    // Validação em tempo real para peso
+    if (field === 'peso' && value) {
+      const pesoNum = parseFloat(value)
+      const PESO_MAXIMO_G = 1000000 // 1 tonelada = 1.000kg = 1.000.000g (limite razoável para pesca artesanal)
+      
+      if (pesoNum < 0) {
+        setErro('Peso não pode ser negativo')
+        return
+      }
+      if (pesoNum > PESO_MAXIMO_G) {
+        setErro(`Peso muito alto! Máximo permitido: ${PESO_MAXIMO_G.toLocaleString('pt-BR')}g (1 tonelada)`)
+        return
+      }
+    }
+    
+    // Validação em tempo real para comprimento
+    if (field === 'comprimento' && value) {
+      const compNum = parseFloat(value)
+      const COMPRIMENTO_MAXIMO_CM = 500 // 5 metros (limite razoável para peixes)
+      
+      if (compNum < 0) {
+        setErro('Comprimento não pode ser negativo')
+        return
+      }
+      if (compNum > COMPRIMENTO_MAXIMO_CM) {
+        setErro(`Comprimento muito alto! Máximo permitido: ${COMPRIMENTO_MAXIMO_CM}cm (5 metros)`)
+        return
+      }
+    }
+    
+    setErro(null)
     novaLista[especieIndex].individuos[individuoIndex][field] = value
     setEspeciesIndividuos(novaLista)
   }
 
   const validarIndividuos = () => {
+    const PESO_MAXIMO_G = 1000000 // 1 tonelada
+    const COMPRIMENTO_MAXIMO_CM = 500 // 5 metros
+    
     for (const especie of especiesIndividuos) {
       if (especie.individuos && especie.individuos.length > 0) {
         for (const individuo of especie.individuos) {
-          if (individuo.peso && parseFloat(individuo.peso) <= 0) {
-            setErro('Peso do indivíduo deve ser maior que zero')
-            return false
+          // Validar peso
+          if (individuo.peso) {
+            const peso = parseFloat(individuo.peso)
+            if (peso <= 0) {
+              setErro('Peso do indivíduo deve ser maior que zero')
+              return false
+            }
+            if (peso > PESO_MAXIMO_G) {
+              setErro(`Peso inválido ou muito alto! Máximo: ${PESO_MAXIMO_G.toLocaleString('pt-BR')}g (1 tonelada)`)
+              return false
+            }
           }
-          if (individuo.comprimento && parseFloat(individuo.comprimento) <= 0) {
-            setErro('Comprimento do indivíduo deve ser maior que zero')
-            return false
+          
+          // Validar comprimento
+          if (individuo.comprimento) {
+            const comp = parseFloat(individuo.comprimento)
+            if (comp <= 0) {
+              setErro('Comprimento do indivíduo deve ser maior que zero')
+              return false
+            }
+            if (comp > COMPRIMENTO_MAXIMO_CM) {
+              setErro(`Comprimento muito alto! Máximo: ${COMPRIMENTO_MAXIMO_CM}cm (5 metros)`)
+              return false
+            }
           }
         }
       }
@@ -174,10 +226,15 @@ export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
                         value={individuo.peso || ''}
                         onChange={(e) => atualizarIndividuo(especieIndex, individuoIndex, 'peso', e.target.value)}
                         min="0"
+                        max="1000000"
                         step="1"
-                        placeholder="Ex: 250"
+                        placeholder="Ex: 250 (máx: 1.000.000g)"
                         className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        title="Peso em gramas. Máximo: 1.000.000g (1 tonelada)"
                       />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Máx: 1.000.000g (1 ton)
+                      </p>
                     </div>
 
                     {/* Comprimento */}
@@ -190,10 +247,15 @@ export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
                         value={individuo.comprimento || ''}
                         onChange={(e) => atualizarIndividuo(especieIndex, individuoIndex, 'comprimento', e.target.value)}
                         min="0"
+                        max="500"
                         step="0.1"
-                        placeholder="Ex: 25.5"
+                        placeholder="Ex: 25.5 (máx: 500cm)"
                         className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        title="Comprimento em centímetros. Máximo: 500cm (5 metros)"
                       />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Máx: 500cm (5m)
+                      </p>
                     </div>
 
                     {/* Remove Button */}

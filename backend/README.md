@@ -56,6 +56,57 @@ npm run db:sync:alter
 npm run db:sync:force
 ```
 
+### Scripts de Manutenção
+
+#### Atualizar Schema do Banco de Dados
+Se você atualizou os modelos Sequelize mas o banco de dados ainda não reflete essas mudanças:
+
+```bash
+# Via NPM (recomendado)
+npm run db:update-schema
+
+# Ou diretamente
+node scripts/atualizarSchemaNativo.js
+```
+
+Este script:
+- ✅ Adiciona novas colunas automaticamente (lat_ida, long_ida, lat_volta, long_volta)
+- ✅ Preserva dados existentes
+- ✅ Usa driver MariaDB nativo (evita bugs do Sequelize)
+- ⚠️ **Recomendação:** Faça backup antes de executar em produção
+
+#### Migrar Coordenadas DMS para Decimal
+Se você tinha dados nas colunas antigas de coordenadas (lat_deg1, lat_min1, etc.) e precisa convertê-los para o novo formato decimal:
+
+```bash
+# Via NPM (recomendado)
+npm run db:migrate-coords
+
+# Ou diretamente
+node scripts/migrarCoordenadasNativo.js
+```
+
+Este script:
+- ✅ Converte coordenadas DMS (Graus, Minutos, Segundos) para formato Decimal
+- ✅ Atualiza as colunas `lat_ida`, `long_ida`, `lat_volta`, `long_volta`
+- ✅ Preserva os dados originais nas colunas antigas
+- ✅ Usa transação para garantir integridade
+- ℹ️ Execute apenas se tiver dados antigos para migrar
+
+#### Popular Espécies
+Popula a tabela de espécies a partir do JSON:
+
+```bash
+npm run db:populate-especies
+```
+
+#### Corrigir Enum de Destino
+Corrige valores do enum de destino do pescado:
+
+```bash
+npm run db:fix-enum
+```
+
 ## Executar o Servidor
 
 ```bash
@@ -179,7 +230,13 @@ GET /api/desembarques?municipio=JP&localidade=TU&data_inicio=2025-01-01&data_fim
 ## Notas Importantes
 
 1. O campo `cod_desembarque` deve seguir o formato: `MUNICIPIO-LOCALIDADE-DIA-MES-ANO-CONSECUTIVO`
-2. Coordenadas são armazenadas em graus, minutos e segundos separadamente
+2. **Coordenadas são armazenadas em formato DECIMAL** (lat_ida, long_ida, lat_volta, long_volta)
+   - Antiga estrutura DMS (12 colunas) foi substituída por 4 colunas decimais
+   - Latitude: DECIMAL(10, 8) - precisão de ~1.1mm
+   - Longitude: DECIMAL(11, 8) - precisão de ~1.1mm
 3. O total do desembarque é calculado automaticamente com base nas capturas
 4. CPF do pescador deve ser único no sistema
 5. Código da embarcação deve ser único no sistema
+6. **Validação de Peso e Comprimento:**
+   - Peso máximo: 1.000.000g (1 tonelada) no frontend, até ~100 ton no backend
+   - Comprimento máximo: 500cm (5 metros) no frontend, até ~100m no backend

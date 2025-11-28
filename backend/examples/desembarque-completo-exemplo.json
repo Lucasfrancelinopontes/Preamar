@@ -1,0 +1,147 @@
+{
+  "pescador": {
+    "nome": "João da Silva Santos",
+    "apelido": "Joãozinho",
+    "cpf": "123.456.789-00",
+    "nascimento": "1980-05-15",
+    "municipio": "João Pessoa",
+    "localidade": "Tambaú",
+    "telefone": "(83) 99999-9999",
+    "sexo": "M",
+    "rg": "1234567",
+    "rgp": "RGP-12345"
+  },
+  "embarcacao": {
+    "nome_embarcacao": "Estrela do Mar",
+    "codigo_embarcacao": "JP-EST-001",
+    "tipo": "barco",
+    "comprimento": 12.5,
+    "capacidade": 1000,
+    "hp": 90,
+    "proprietario": "José Santos",
+    "matricula": "MAT-12345",
+    "rgp": "RGP-EMB-001",
+    "ano_fabricacao": 2015
+  },
+  "desembarque": {
+    "cod_desembarque": "JP-TB-28-11-2025-001",
+    "municipio": "João Pessoa",
+    "municipio_code": "JP",
+    "localidade": "Tambaú",
+    "localidade_code": "TB",
+    "data_coleta": "2025-11-28",
+    "consecutivo": 1,
+    "data_saida": "2025-11-27T05:00:00",
+    "hora_saida": "05:00:00",
+    "data_chegada": "2025-11-28T16:00:00",
+    "hora_desembarque": "16:00:00",
+    "numero_tripulantes": 3,
+    "pesqueiros": "Costão rochoso, 5 milhas da costa",
+    "lat_ida": -7.14300278,
+    "long_ida": -34.84204722,
+    "lat_volta": -7.14500000,
+    "long_volta": -34.84500000,
+    "quadrante1": "7S-34W",
+    "quadrante2": "8S-34W",
+    "quadrante3": "",
+    "proprietario": "José Santos",
+    "apelido_proprietario": "Zé",
+    "atuou_pesca": "S",
+    "origem": "João Pessoa",
+    "desp_diesel": true,
+    "desp_gasolina": false,
+    "litros": 50,
+    "gelo_kg": 30,
+    "rancho_valor": 150.00,
+    "destino_pescado": "atravessador",
+    "destino_apelido": "Seu Mané",
+    "destino_outros_qual": null,
+    "arte_obs": "Redes em bom estado",
+    "coletor": "Maria Oliveira",
+    "data_coletor": "2025-11-28",
+    "revisor": null,
+    "data_revisor": null,
+    "digitador": null,
+    "data_digitador": null
+  },
+  "artes": [
+    {
+      "arte": "rede_de_emalhe",
+      "tamanho": "100",
+      "unidade": "m",
+      "quantidade": 2
+    },
+    {
+      "arte": "espinhel",
+      "tamanho": "200",
+      "unidade": "m",
+      "quantidade": 1
+    }
+  ],
+  "especies": [
+    {
+      "ID_especie": 1,
+      "captura": {
+        "peso_kg": 50.5,
+        "preco_kg": 15.00
+      },
+      "individuos": [
+        {
+          "numero_individuo": 1,
+          "comprimento": 45.5,
+          "comprimento_total": 50.2,
+          "comprimento_forquilha": 48.0,
+          "peso": 950,
+          "sexo": "M",
+          "estadio_gonadal": "II"
+        },
+        {
+          "numero_individuo": 2,
+          "comprimento": 42.3,
+          "comprimento_total": 46.8,
+          "peso": 820,
+          "sexo": "F",
+          "estadio_gonadal": "III"
+        },
+        {
+          "numero_individuo": 3,
+          "comprimento": 48.7,
+          "peso": 1050,
+          "sexo": "M",
+          "estadio_gonadal": "II"
+        }
+      ]
+    },
+    {
+      "ID_especie": 2,
+      "captura": {
+        "peso_kg": 35.0,
+        "preco_kg": 20.00
+      },
+      "individuos": [
+        {
+          "numero_individuo": 1,
+          "comprimento": 60.5,
+          "peso": 2500,
+          "sexo": "F",
+          "estadio_gonadal": "IV"
+        },
+        {
+          "numero_individuo": 2,
+          "comprimento": 55.2,
+          "peso": 2100,
+          "sexo": "M",
+          "estadio_gonadal": "III"
+        }
+      ]
+    },
+    {
+      "ID_especie": 3,
+      "captura": {
+        "peso_kg": 25.0,
+        "preco_kg": 18.00
+      },
+      "individuos": []
+    }
+  ]
+}

@@ -1,14 +1,30 @@
 @import "tailwindcss";
 
 @theme {
+  /* Cores da marca Preamar */
   --color-brand: #00a88d;
   --color-brand-light: #00c4a7;
+  --color-brand-dark: #008f7a;
   --color-accent: #c0e218;
+  --color-accent-dark: #a8c314;
   --color-dark: #2c3e50;
+  
+  /* Cores para Dark Mode */
+  --color-dark-bg: #0f172a;
+  --color-dark-surface: #1e293b;
+  --color-dark-border: #334155;
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  background-color: rgb(249 250 251);
+  color: rgb(17 24 39);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.dark body {
+  background-color: var(--color-dark-bg);
+  color: rgb(243 244 246);
 }
 
 /* =========== BOTÕES =========== */

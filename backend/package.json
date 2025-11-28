@@ -13,6 +13,10 @@
     "db:populate": "node examples/populaBancoDados.js",
     "db:queries": "node examples/consultasExemplo.js",
     "db:create-admin": "node scripts/criarAdmin.js",
+    "db:update-schema": "node scripts/atualizarSchemaNativo.js",
+    "db:migrate-coords": "node scripts/migrarCoordenadasNativo.js",
+    "db:populate-especies": "node scripts/popularEspecies.js",
+    "db:fix-enum": "node scripts/corrigirEnumDestino.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:watch": "nodemon examples/testarAPI.js"
   },

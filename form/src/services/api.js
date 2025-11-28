@@ -33,24 +33,111 @@ const getAuthHeaders = () => {
 };
 
 const handleResponse = async (response) => {
-  const data = await response.json();
-  
   // Se retornar 401 (não autorizado), redirecionar para login
   if (response.status === 401 && typeof window !== 'undefined') {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
     window.location.href = '/login';
+    throw new ApiError('Não autorizado', 401, null);
   }
   
+  let data = null;
+  let errorMessage = 'Erro na requisição';
+  
+  // Verificar se há conteúdo na resposta
+  const contentType = response.headers.get('content-type');
+  const hasContent = response.headers.get('content-length') !== '0';
+  
+  try {
+    // Tentar parsear JSON se o content-type indicar JSON
+    if (contentType && contentType.includes('application/json') && hasContent) {
+      data = await response.json();
+      errorMessage = data.message || data.error || errorMessage;
+      
+      // Tratamento especial para erros de banco de dados
+      errorMessage = parseErrorMessage(errorMessage, data);
+    } else if (hasContent) {
+      // Se não for JSON, tentar ler como texto
+      const text = await response.text();
+      errorMessage = text || errorMessage;
+      
+      // Tentar parsear o texto como JSON (fallback)
+      try {
+        data = JSON.parse(text);
+        errorMessage = data.message || data.error || errorMessage;
+        errorMessage = parseErrorMessage(errorMessage, data);
+      } catch {
+        // Se não for JSON válido, manter o texto como mensagem
+        data = { message: text };
+        errorMessage = parseErrorMessage(text, data);
+      }
+    }
+  } catch (parseError) {
+    // Se falhar ao parsear, usar mensagens padrão baseadas no status
+    console.error('Erro ao parsear resposta:', parseError);
+    errorMessage = getErrorMessageByStatus(response.status);
+  }
+  
+  // Se a resposta não for ok, lançar erro
   if (!response.ok) {
     throw new ApiError(
-      data.message || 'Erro na requisição',
+      typeof errorMessage === 'string' ? errorMessage : 'Erro na requisição',
       response.status,
       data
     );
   }
   
   return data;
+};
+
+// Função para interpretar mensagens de erro do banco de dados
+const parseErrorMessage = (errorMessage, data) => {
+  if (!errorMessage) return 'Erro na requisição';
+  
+  const errorStr = typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage);
+  
+  // Detectar erros de SequelizeDatabaseError ou Out of range
+  if (errorStr.includes('SequelizeDatabaseError') || 
+      errorStr.includes('Out of range') || 
+      errorStr.includes('out of range')) {
+    
+    // Identificar campo específico se possível
+    if (errorStr.includes('peso_g')) {
+      return 'Peso muito alto ou inválido. O valor do peso excede o limite permitido pelo banco de dados (máximo: ~100 toneladas).';
+    }
+    if (errorStr.includes('comprimento')) {
+      return 'Comprimento muito alto ou inválido. O valor excede o limite permitido pelo banco de dados (máximo: ~100 metros).';
+    }
+    
+    return 'Um dos valores enviados excede o limite permitido pelo banco de dados. Verifique os valores de peso e comprimento.';
+  }
+  
+  // Detectar erros de validação
+  if (errorStr.includes('Validation error')) {
+    return 'Erro de validação: um ou mais campos contêm valores inválidos.';
+  }
+  
+  // Detectar erros de constraint
+  if (errorStr.includes('constraint') || errorStr.includes('foreign key')) {
+    return 'Erro de integridade: referência inválida a outro registro do banco de dados.';
+  }
+  
+  return errorMessage;
+};
+
+// Função auxiliar para mensagens de erro padrão
+const getErrorMessageByStatus = (status) => {
+  const statusMessages = {
+    400: 'Requisição inválida',
+    401: 'Não autorizado',
+    403: 'Acesso negado',
+    404: 'Recurso não encontrado',
+    500: 'Erro interno do servidor',
+    502: 'Serviço indisponível',
+    503: 'Serviço temporariamente indisponível'
+  };
+  
+  return statusMessages[status] || `Erro ${status}: Falha na requisição`;
 };
 
 const api = {

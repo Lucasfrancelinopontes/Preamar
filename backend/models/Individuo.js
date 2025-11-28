@@ -23,11 +23,19 @@ export const Individuo = sequelize.define('Individuo', {
   },
   comprimento_padrao_cm: {
     type: DataTypes.DECIMAL(6, 2),
-    comment: 'Comprimento padrão em cm'
+    comment: 'Comprimento padrão em cm (máx: 9.999,99cm ~ 100 metros)',
+    validate: {
+      min: 0,
+      max: 9999.99
+    }
   },
   peso_g: {
-    type: DataTypes.DECIMAL(8, 2),
-    comment: 'Peso em gramas'
+    type: DataTypes.DECIMAL(10, 2),
+    comment: 'Peso em gramas (máx: 99.999.999,99g ~ 100 toneladas)',
+    validate: {
+      min: 0,
+      max: 99999999.99
+    }
   },
   numero_individuo: {
     type: DataTypes.INTEGER,

@@ -1,5 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from '@/components/ThemeProvider';
+import ClientProvider from './contexts/ClientProvider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,17 +18,17 @@ export const metadata = {
   description: "Formulário para coleta de dados - Preamar",
 };
 
-import ClientProvider from './contexts/ClientProvider';
-
 export default function RootLayout({ children }) {
   return (
-    <html lang="pt-br">
+    <html lang="pt-br" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ClientProvider>
-          {children}
-        </ClientProvider>
+        <ThemeProvider>
+          <ClientProvider>
+            {children}
+          </ClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
