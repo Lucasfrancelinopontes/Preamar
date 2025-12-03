@@ -23,7 +23,7 @@ export const Pescador = sequelize.define('Pescador', {
     type: DataTypes.DATEONLY
   },
   municipio: {
-    type: DataTypes.STRING(50) // Expandido de 100 para 50 chars para consistência
+    type: DataTypes.STRING(50) 
   }
 }, {
   tableName: 'pescadores',

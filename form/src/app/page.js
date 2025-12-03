@@ -9,7 +9,7 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
-            {/* Header com navegação */}
+            {/*Header*/}
             <header className="bg-white shadow-md">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">
@@ -19,8 +19,8 @@ export default function Home() {
                             </svg>
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-gray-800">Sistema Preamar</h1>
-                            <p className="text-xs text-gray-500">Monitoramento de Desembarque</p>
+                            <h1 className="text-xl font-bold text-gray-800">Sistema de formulário</h1>
+                            <p className="text-xs text-gray-500">Desembarque</p>
                         </div>
                     </div>
 
@@ -53,10 +53,10 @@ export default function Home() {
                     <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
                         {/* Content */}
                         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-8 text-white">
-                            <h2 className="text-3xl font-bold mb-2">Bem-vindo ao Sistema</h2>
+                            <h2 className="text-3xl font-bold mb-2">Bem-vindo</h2>
                             <p className="text-lg opacity-90">
                                 {estaAutenticado() 
-                                    ? `Olá, ${usuario?.nome}! Escolha uma opção abaixo.`
+                                    ? `Olá, ${usuario?.nome}! Escolha uma das funcionalidades abaixo.`
                                     : 'Faça login para acessar o sistema completo.'
                                 }
                             </p>
@@ -67,16 +67,13 @@ export default function Home() {
                                 <>
                                     <div className="mb-8">
                                         <h3 className="text-xl font-semibold text-gray-800 mb-4">Funcionalidades</h3>
-                                        <p className="text-gray-600">
-                                            Sistema de registro completo de desembarques pesqueiros marítimos.
-                                        </p>
                                     </div>
 
                                     <div className="flex flex-col gap-4 max-w-md mx-auto">
-                                        {/* Botão: Novo Desembarque Marítimo */}
+                                        {/* Botão: Novo Desembarque */}
                                         <button
                                             onClick={() => router.push('/desembarque')}
-                                            className="card card-brand hover:shadow-2xl transition-all group cursor-pointer"
+                                            className="card hover:shadow-2xl transition-all group cursor-pointer border-l-4 border-brand-light"
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
@@ -86,7 +83,7 @@ export default function Home() {
                                                         </svg>
                                                     </div>
                                                     <div className="text-left">
-                                                        <h4 className="heading-secondary">Novo Desembarque Marítimo</h4>
+                                                        <h4 className="heading-secondary">Novo Desembarque</h4>
                                                         <p className="helper-text">Registrar novo desembarque</p>
                                                     </div>
                                                 </div>
@@ -123,7 +120,7 @@ export default function Home() {
 
                                         {/* Dashboard e Analytics */}
                                         {ehAdmin() && (
-                                            <button onClick={() => router.push('/analytics')} className="btn-accent w-full justify-between">
+                                            <button onClick={() => router.push('/analytics')} className="btn-outline w-full justify-between">
                                                 <span className="flex items-center gap-2">
                                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                                                     Dashboard & Análises
@@ -164,38 +161,6 @@ export default function Home() {
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
                                             </button>
                                         )}
-                                    </div>
-
-                                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                            <div className="text-blue-600 mb-2">
-                                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                </svg>
-                                            </div>
-                                            <h4 className="font-semibold text-gray-800 mb-1">Formulário Simples</h4>
-                                            <p className="text-sm text-gray-600">Interface intuitiva dividida em etapas</p>
-                                        </div>
-
-                                        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                                            <div className="text-green-600 mb-2">
-                                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                            </div>
-                                            <h4 className="font-semibold text-gray-800 mb-1">Validação Automática</h4>
-                                            <p className="text-sm text-gray-600">Verificação de dados em tempo real</p>
-                                        </div>
-
-                                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                                            <div className="text-purple-600 mb-2">
-                                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                                                </svg>
-                                            </div>
-                                            <h4 className="font-semibold text-gray-800 mb-1">Sistema Seguro</h4>
-                                            <p className="text-sm text-gray-600">Autenticação e controle de acesso</p>
-                                        </div>
                                     </div>
                                 </>
                             ) : (

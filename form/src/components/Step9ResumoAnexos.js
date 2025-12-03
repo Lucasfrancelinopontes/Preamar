@@ -19,7 +19,6 @@ export default function Step9ResumoAnexos({ prevStep }) {
     const files = Array.from(e.target.files)
     setAnexos(files)
 
-    // Generate preview URLs for images
     const urls = files.map(file => {
       if (file.type.startsWith('image/')) {
         return URL.createObjectURL(file)
@@ -33,7 +32,6 @@ export default function Step9ResumoAnexos({ prevStep }) {
     const newAnexos = anexos.filter((_, i) => i !== index)
     const newPreviews = previewUrls.filter((_, i) => i !== index)
     
-    // Revoke URL to free memory
     if (previewUrls[index]) {
       URL.revokeObjectURL(previewUrls[index])
     }
@@ -43,27 +41,19 @@ export default function Step9ResumoAnexos({ prevStep }) {
   }
 
   const obterNomeEspecie = (id) => {
-    // In a real application, you would have the species list available
-    // For now, just return the ID
     return `Espécie #${id}`
   }
-
+  // console.log((formData));
   const prepararDadosEnvio = () => {
     // Gerar código de desembarque usando a data de saída
-    const dataSaida = formData.dataSaida || new Date().toISOString();
+    const dataSaida = formData.dataSaida || new Date().toISOString(); //data de coleta
     const dataColeta = dataSaida.split('T')[0]; // Extrai YYYY-MM-DD
     const consecutivo = formData.consecutivo || 1;
     const municipio = formData.municipio || 'LOCAL';
     const localidade = formData.localidade || 'PRAIA';
     
-    const codDesembarque = gerarCodigoDesembarque(
-      municipio,
-      localidade,
-      dataColeta,
-      consecutivo
-    )
+    const codDesembarque = formData.codigoColeta;
 
-    // Preparar dados do pescador
     const pescador = {
       nome: formData.nomePescador || '',
       apelido: formData.apelidoPescador || null,
@@ -104,9 +94,9 @@ export default function Step9ResumoAnexos({ prevStep }) {
       quadrante2: formData.quadrante2 || null,
       quadrante3: formData.quadrante3 || null,
       origem: null,
-      desp_diesel: formData.combustivelTipo === 'Diesel',
-      desp_gasolina: formData.combustivelTipo === 'Gasolina',
-      litros: formData.combustivelLitros ? parseFloat(formData.combustivelLitros) : null,
+      desp_diesel: formData.tipoCombustivel === 'Diesel',
+      desp_gasolina: formData.tipoCombustivel === 'Gasolina',
+      litros: formData.litrosCombustivel ? parseFloat(formData.litrosCombustivel) : null,
       gelo_kg: formData.quantidadeGelo ? parseFloat(formData.quantidadeGelo) : null,
       rancho_valor: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
       destino_pescado: formData.destinoPescado ? formData.destinoPescado.toLowerCase() : null,

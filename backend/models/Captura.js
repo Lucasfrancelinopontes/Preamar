@@ -34,6 +34,11 @@ export const Captura = sequelize.define('Captura', {
   comprimento_cm: {
     type: DataTypes.DECIMAL(10, 2),
     comment: 'Comprimento do pescado em centímetros'
+  },
+  com_tripa: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    comment: 'Indica se o pescado foi pesado com tripa'
   }
 }, {
   tableName: 'capturas',
