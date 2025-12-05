@@ -37,15 +37,14 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
     e.preventDefault()
 
     // Validar CPF
-    if (!validarCPF(formData.cpfProprietario)) {
-      alert('Por favor, insira um CPF válido.')
-      return
-    }
+    // if (!validarCPF(formData.cpfProprietario)) {
+    //   alert('Por favor, insira um CPF válido.')
+    //   return
+    // }
 
     // Validar campos obrigatórios
     const requiredFields = [
       'nomeProprietario',
-      'cpfProprietario',
       'atuouNaPesca',
       'litrosCombustivel',
       'tipoCombustivel'
@@ -103,7 +102,7 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              CPF *
+              CPF 
             </label>
             <input
               type="text"
@@ -113,7 +112,6 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
               maxLength="14"
               placeholder="000.000.000-00"
               className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              required
             />
           </div>
 

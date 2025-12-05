@@ -17,7 +17,7 @@ export const Pescador = sequelize.define('Pescador', {
   cpf: {
     type: DataTypes.STRING(14),
     unique: true,
-    allowNull: false
+    allowNull: true
   },
   nascimento: {
     type: DataTypes.DATEONLY

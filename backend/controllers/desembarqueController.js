@@ -227,6 +227,7 @@ export const listarDesembarques = async (req, res) => {
         {
           model: Captura,
           as: 'capturas',
+          attributes: ['ID_captura', 'ID_especie', 'peso_kg', 'preco_kg', 'preco_total'],
           include: [{
             model: Especie,
             as: 'especie',
@@ -307,11 +308,10 @@ export const buscarDesembarque = async (req, res) => {
           model: DesembarqueArte, 
           as: 'artes',
           attributes: [
-            'ID_desembarque_arte',
+            'ID',
             'arte',
             'tamanho',
-            'unidade',
-            'quantidade'
+            'unidade'
           ]
         },
         // Capturas com Espécie
@@ -332,8 +332,7 @@ export const buscarDesembarque = async (req, res) => {
               'ID_especie',
               'nome_popular',
               'nome_cientifico',
-              'familia',
-              'grupo'
+              'familia'
             ]
           }]
         },
