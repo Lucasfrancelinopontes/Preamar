@@ -1,4 +1,5 @@
 import { connectDB } from './db.js';
+import { fileURLToPath } from 'url';
 import { 
   Pescador, 
   Embarcacao, 
@@ -94,7 +95,7 @@ const seedPetrechos = async () => {
 };
 
 // Executar sincronização se chamado diretamente
-if (process.argv[1] === new URL(import.meta.url).pathname) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const force = args.includes('--force');
   const alter = args.includes('--alter');

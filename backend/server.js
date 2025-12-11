@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
+import { fileURLToPath } from 'url';
 import router from './router.js';
 import { connectDB } from './db.js';
 import { defineAssociations } from './models/index.js';
@@ -61,8 +62,10 @@ const start = async () => {
         // Definir associações entre os modelos
         defineAssociations();
         
-        app.listen(PORT, () => {
-            console.log(`
+        // Apenas inicia o servidor se não estiver rodando na Vercel (serverless)
+        if (process.env.VERCEL !== '1') {
+            app.listen(PORT, () => {
+                console.log(`
 ╔════════════════════════════════════════════╗
 ║   Servidor Preamar rodando com sucesso!    ║
 ║                                            ║
@@ -71,21 +74,28 @@ const start = async () => {
 ║                                            ║
 ║   Banco: ${process.env.DB_NAME || 'preamar'}                        ║
 ╚════════════════════════════════════════════╝
-            `);
-        });
+                `);
+            });
+        }
     } catch (err) {
         console.error('❌ Falha ao conectar com o banco de dados:', err.message || err);
         const skip = (process.env.SKIP_DB_ON_ERROR || 'false').toLowerCase();
-        if (skip === 'true') {
+        if (skip === 'true' && process.env.VERCEL !== '1') {
             console.warn('⚠️  SKIP_DB_ON_ERROR=true — iniciando servidor mesmo com erro no DB.');
             app.listen(PORT, () => {
                 console.log(`⚠️  Servidor rodando em http://localhost:${PORT} (SEM BANCO DE DADOS)`);
             });
-        } else {
+        } else if (process.env.VERCEL !== '1') {
             console.error('💥 Encerrando processo. Para forçar inicialização mesmo com erro no DB, defina SKIP_DB_ON_ERROR=true no .env');
             process.exit(1);
         }
     }
 };
 
-start();
+// Inicia o servidor apenas se for o arquivo principal
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    start();
+}
+
+// Exportar app para Vercel Serverless Functions
+export default app;
