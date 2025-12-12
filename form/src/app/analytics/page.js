@@ -170,9 +170,9 @@ function AnalyticsContent() {
         try {
             // Criar CSV com todos os dados (adicionar BOM para UTF-8)
             let csv = '\uFEFF'; // BOM para UTF-8
-            csv += 'Codigo Desembarque;Data Coleta;Municipio;Localidade;Pescador;CPF;Embarcacao;Codigo Embarcacao;Tripulantes;';
-            csv += 'Quadrante 1;Quadrante 2;Quadrante 3;';
-            csv += 'Especies Capturadas;Detalhes das Capturas;';
+            csv += 'Codigo Desembarque;Data Coleta;Municipio;Localidade;Pescador;CPF;Embarcacao;Codigo Embarcacao;Proprietario;CPF Proprietario;Tripulantes;';
+            csv += 'Lat Ida;Long Ida;Lat Volta;Long Volta;';
+            csv += 'Especies Capturadas;Detalhes das Capturas;Individuos (Biometria);';
             csv += 'Artes de Pesca;Tamanho das Artes (m);';
             csv += 'Combustivel (L);Tipo Combustivel;Gelo (kg);Rancho (R$);Destino Pescado;Total Desembarque (R$)\n';
 
@@ -181,6 +181,8 @@ function AnalyticsContent() {
                 const cpf = d.pescador?.cpf || '';
                 const embarcacao = (d.embarcacao?.nome_embarcacao || '').replace(/;/g, ',');
                 const codigoEmb = d.embarcacao?.codigo_embarcacao || '';
+                const proprietario = (d.embarcacao?.proprietario || '').replace(/;/g, ',');
+                const cpfProprietario = d.embarcacao?.cpf_proprietario || '';
                 const municipio = (d.municipio || '').replace(/;/g, ',');
                 const localidade = (d.localidade || '').replace(/;/g, ',');
                 
@@ -212,13 +214,13 @@ function AnalyticsContent() {
                     d.capturas.forEach(c => {
                         // Melhorar exibição do nome da espécie
                         let especieNome = '';
-                        if (c.especie?.Nome_popular) {
-                            especieNome = c.especie.Nome_popular;
-                            if (c.especie.Nome_cientifico) {
-                                especieNome += ` (${c.especie.Nome_cientifico})`;
+                        if (c.especie?.nome_popular) {
+                            especieNome = c.especie.nome_popular;
+                            if (c.especie.nome_cientifico) {
+                                especieNome += ` (${c.especie.nome_cientifico})`;
                             }
-                        } else if (c.especie?.Nome_cientifico) {
-                            especieNome = c.especie.Nome_cientifico;
+                        } else if (c.especie?.nome_cientifico) {
+                            especieNome = c.especie.nome_cientifico;
                         } else {
                             especieNome = `Espécie ID #${c.ID_especie}`;
                         }
@@ -229,21 +231,29 @@ function AnalyticsContent() {
                         let detalhes = `${especieNome}: ${c.peso_kg || 0}kg`;
                         if (c.preco_kg) detalhes += ` × R$${c.preco_kg}/kg`;
                         if (c.preco_total) detalhes += ` = R$${c.preco_total}`;
-                        if (c.comprimento_cm) detalhes += ` (${c.comprimento_cm}cm)`;
-                        
-                        // Adicionar dados dos indivíduos se existirem
-                        if (c.individuos && c.individuos.length > 0) {
-                            const individuosData = c.individuos.map(ind => 
-                                `[${ind.peso_g}g/${ind.comprimento_cm}cm]`
-                            ).join(' ');
-                            detalhes += ` ${individuosData}`;
-                        }
                         
                         detalhesList.push(detalhes.replace(/;/g, ','));
                     });
                     
                     especiesCapturadas = especiesList.join(' | ');
                     detalhesCaptura = detalhesList.join(' | ');
+                }
+
+                // Agrupar indivíduos (Biometria)
+                let individuosBiometria = '';
+                if (d.individuos && d.individuos.length > 0) {
+                    individuosBiometria = d.individuos.map(ind => {
+                        const esp = ind.especie?.nome_popular || `ID#${ind.ID_especie}`;
+                        const dados = [];
+                        if (ind.comprimento_total_cm) dados.push(`CT:${ind.comprimento_total_cm}cm`);
+                        if (ind.comprimento_padrao_cm) dados.push(`CP:${ind.comprimento_padrao_cm}cm`);
+                        if (ind.comprimento_forquilha_cm) dados.push(`CF:${ind.comprimento_forquilha_cm}cm`);
+                        if (ind.peso_g) dados.push(`P:${ind.peso_g}g`);
+                        if (ind.sexo) dados.push(`S:${ind.sexo}`);
+                        if (ind.estadio_gonadal) dados.push(`E:${ind.estadio_gonadal}`);
+                        
+                        return `${esp} [${dados.join(', ')}]`;
+                    }).join(' | ');
                 }
 
                 // Criar linha única por desembarque
@@ -256,12 +266,16 @@ function AnalyticsContent() {
                     cpf,
                     embarcacao,
                     codigoEmb,
+                    proprietario,
+                    cpfProprietario,
                     d.numero_tripulantes || '0',
-                    d.quadrante1 || '',
-                    d.quadrante2 || '',
-                    d.quadrante3 || '',
+                    d.lat_ida || '',
+                    d.long_ida || '',
+                    d.lat_volta || '',
+                    d.long_volta || '',
                     especiesCapturadas,
                     detalhesCaptura,
+                    individuosBiometria,
                     artes,
                     tamanhosArte,
                     combustivel,

@@ -237,6 +237,21 @@ const api = {
     }
   },
 
+  atualizarUsuario: async (id, dados) => {
+    try {
+      const response = await fetch(`${API_URL}/usuarios/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
+      throw error;
+    }
+  },
+
   deletarUsuario: async (id) => {
     try {
       const response = await fetch(`${API_URL}/usuarios/${id}`, {
@@ -374,6 +389,20 @@ const api = {
   },
 
   deletarDesembarque: async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/desembarques/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao deletar desembarque:', error);
+      throw error;
+    }
+  },
+
+  criarDesembarque: async (dados) => {
     try {
       const response = await fetch(`${API_URL}/desembarques/${id}`, {
         method: 'DELETE',

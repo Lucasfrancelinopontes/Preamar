@@ -9,6 +9,8 @@ export default function GerenciarUsuarios() {
     const [erro, setErro] = useState('');
     const [sucesso, setSucesso] = useState('');
     const [mostrarModal, setMostrarModal] = useState(false);
+    const [mostrarModalEdicao, setMostrarModalEdicao] = useState(false);
+    const [usuarioEditando, setUsuarioEditando] = useState(null);
     const [novoUsuario, setNovoUsuario] = useState({
         nome: '',
         email: '',
@@ -103,6 +105,49 @@ export default function GerenciarUsuarios() {
         } catch (error) {
             console.error('Erro:', error);
             setErro('Erro ao criar usuário');
+        }
+    };
+
+    const handleEditarUsuario = (usuario) => {
+        setUsuarioEditando({ ...usuario });
+        setMostrarModalEdicao(true);
+        setErro('');
+        setSucesso('');
+    };
+
+    const handleSalvarEdicao = async (e) => {
+        e.preventDefault();
+        setErro('');
+        setSucesso('');
+
+        try {
+            const response = await fetch(`http://localhost:3001/api/usuarios/${usuarioEditando.ID_usuario}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    nome: usuarioEditando.nome,
+                    email: usuarioEditando.email,
+                    funcao: usuarioEditando.funcao,
+                    ativo: usuarioEditando.ativo
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setSucesso('Usuário atualizado com sucesso!');
+                setMostrarModalEdicao(false);
+                setUsuarioEditando(null);
+                carregarUsuarios();
+            } else {
+                setErro(data.message || 'Erro ao atualizar usuário');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            setErro('Erro ao atualizar usuário');
         }
     };
 
@@ -247,8 +292,18 @@ export default function GerenciarUsuarios() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <button
+                                                onClick={() => handleEditarUsuario(usuario)}
+                                                className="text-blue-600 hover:text-blue-800 transition-colors mr-3"
+                                                title="Editar"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </button>
+                                            <button
                                                 onClick={() => handleDeletarUsuario(usuario.ID_usuario, usuario.nome)}
                                                 className="text-red-600 hover:text-red-800 transition-colors"
+                                                title="Excluir"
                                             >
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -346,6 +401,110 @@ export default function GerenciarUsuarios() {
                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                                 >
                                     Criar Usuário
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Editar Usuário */}
+            {mostrarModalEdicao && usuarioEditando && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6">Editar Usuário</h2>
+
+                        <form onSubmit={handleSalvarEdicao} className="space-y-4">
+                            {/* Nome */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Nome Completo <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={usuarioEditando.nome}
+                                    onChange={(e) => setUsuarioEditando({...usuarioEditando, nome: e.target.value})}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Nome completo"
+                                />
+                            </div>
+
+                            {/* Email */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Email <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="email"
+                                    value={usuarioEditando.email}
+                                    onChange={(e) => setUsuarioEditando({...usuarioEditando, email: e.target.value})}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="email@exemplo.com"
+                                />
+                            </div>
+
+                            {/* Função */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Função <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={usuarioEditando.funcao}
+                                    onChange={(e) => setUsuarioEditando({...usuarioEditando, funcao: e.target.value})}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="Administrador">Administrador</option>
+                                    <option value="Coletor">Coletor</option>
+                                    <option value="Revisor">Revisor</option>
+                                    <option value="Digitador">Digitador</option>
+                                </select>
+                            </div>
+
+                            {/* Status */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Status
+                                </label>
+                                <div className="flex items-center gap-4">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            checked={usuarioEditando.ativo}
+                                            onChange={() => setUsuarioEditando({...usuarioEditando, ativo: true})}
+                                            className="text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span>Ativo</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            checked={!usuarioEditando.ativo}
+                                            onChange={() => setUsuarioEditando({...usuarioEditando, ativo: false})}
+                                            className="text-red-600 focus:ring-red-500"
+                                        />
+                                        <span>Inativo</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Botões */}
+                            <div className="flex gap-4 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setMostrarModalEdicao(false);
+                                        setUsuarioEditando(null);
+                                        setErro('');
+                                    }}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                                >
+                                    Salvar Alterações
                                 </button>
                             </div>
                         </form>

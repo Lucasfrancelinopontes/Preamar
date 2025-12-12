@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/app/contexts/AuthContext';
 import api from '@/services/api';
 
 export default function DetalhesDesembarque() {
   const params = useParams();
   const router = useRouter();
+  const { usuario } = useAuth();
   const [desembarque, setDesembarque] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
@@ -86,7 +88,153 @@ export default function DetalhesDesembarque() {
   };
 
   const handleExportar = () => {
-    alert('Funcionalidade de exportar em desenvolvimento');
+    if (!desembarque) return;
+
+    // Criar CSV com todos os dados (adicionar BOM para UTF-8)
+    let csv = '\uFEFF'; // BOM para UTF-8
+    csv += 'Codigo Desembarque;Data Coleta;Municipio;Localidade;Pescador;CPF;Embarcacao;Codigo Embarcacao;Proprietario;CPF Proprietario;Tripulantes;';
+    csv += 'Lat Ida;Long Ida;Lat Volta;Long Volta;';
+    csv += 'Especies Capturadas;Detalhes das Capturas;Individuos (Biometria);';
+    csv += 'Artes de Pesca;Tamanho das Artes (m);';
+    csv += 'Combustivel (L);Tipo Combustivel;Gelo (kg);Rancho (R$);Destino Pescado;Total Desembarque (R$)\n';
+
+    const d = desembarque;
+    const pescador = (d.pescador?.nome || '').replace(/;/g, ',');
+    const cpf = d.pescador?.cpf || '';
+    const embarcacao = (d.embarcacao?.nome_embarcacao || '').replace(/;/g, ',');
+    const codigoEmb = d.embarcacao?.codigo_embarcacao || '';
+    const proprietario = (d.embarcacao?.proprietario || '').replace(/;/g, ',');
+    const cpfProprietario = d.embarcacao?.cpf_proprietario || '';
+    const municipio = (d.municipio || '').replace(/;/g, ',');
+    const localidade = (d.localidade || '').replace(/;/g, ',');
+    
+    // Formatar data para dd/mm/yyyy
+    const dataFormatada = d.data_coleta ? new Date(d.data_coleta).toLocaleDateString('pt-BR') : '';
+    
+    // Preparar dados de despesas
+    const combustivel = d.litros || '0';
+    const tipoCombustivel = d.desp_diesel ? 'Diesel' : d.desp_gasolina ? 'Gasolina' : '';
+    const gelo = d.gelo_kg || '0';
+    const rancho = d.rancho_valor || '0';
+    
+    // Preparar artes (apenas uma vez por desembarque)
+    const artes = d.artes && d.artes.length > 0 
+        ? d.artes.map(a => (a.arte || '').replace(/;/g, ',')).join(' + ') 
+        : '';
+    const tamanhosArte = d.artes && d.artes.length > 0 
+        ? d.artes.map(a => (a.tamanho || '0')).join(' + ') 
+        : '';
+
+    // Agrupar todas as espécies em uma string
+    let especiesCapturadas = '';
+    let detalhesCaptura = '';
+    
+    if (d.capturas && d.capturas.length > 0) {
+        const especiesList = [];
+        const detalhesList = [];
+        
+        d.capturas.forEach(c => {
+            // Melhorar exibição do nome da espécie
+            let especieNome = '';
+            if (c.especie?.nome_popular) {
+                especieNome = c.especie.nome_popular;
+                if (c.especie.nome_cientifico) {
+                    especieNome += ` (${c.especie.nome_cientifico})`;
+                }
+            } else if (c.especie?.nome_cientifico) {
+                especieNome = c.especie.nome_cientifico;
+            } else {
+                especieNome = `Espécie ID #${c.ID_especie}`;
+            }
+            
+            especiesList.push(especieNome.replace(/;/g, ','));
+            
+            // Detalhes da captura
+            let detalhes = `${especieNome}: ${c.peso_kg || 0}kg`;
+            if (c.preco_kg) detalhes += ` × R$${c.preco_kg}/kg`;
+            if (c.preco_total) detalhes += ` = R$${c.preco_total}`;
+            
+            detalhesList.push(detalhes.replace(/;/g, ','));
+        });
+        
+        especiesCapturadas = especiesList.join(' | ');
+        detalhesCaptura = detalhesList.join(' | ');
+    }
+
+    // Agrupar indivíduos (Biometria)
+    let individuosBiometria = '';
+    if (d.individuos && d.individuos.length > 0) {
+        individuosBiometria = d.individuos.map(ind => {
+            const esp = ind.especie?.nome_popular || `ID#${ind.ID_especie}`;
+            const dados = [];
+            if (ind.comprimento_total_cm) dados.push(`CT:${ind.comprimento_total_cm}cm`);
+            if (ind.comprimento_padrao_cm) dados.push(`CP:${ind.comprimento_padrao_cm}cm`);
+            if (ind.comprimento_forquilha_cm) dados.push(`CF:${ind.comprimento_forquilha_cm}cm`);
+            if (ind.peso_g) dados.push(`P:${ind.peso_g}g`);
+            if (ind.sexo) dados.push(`S:${ind.sexo}`);
+            if (ind.estadio_gonadal) dados.push(`E:${ind.estadio_gonadal}`);
+            
+            return `${esp} [${dados.join(', ')}]`;
+        }).join(' | ');
+    }
+
+    // Criar linha única por desembarque
+    const linha = [
+        d.cod_desembarque || '',
+        dataFormatada,
+        municipio,
+        localidade,
+        pescador,
+        cpf,
+        embarcacao,
+        codigoEmb,
+        proprietario,
+        cpfProprietario,
+        d.numero_tripulantes || '0',
+        d.lat_ida || '',
+        d.long_ida || '',
+        d.lat_volta || '',
+        d.long_volta || '',
+        especiesCapturadas,
+        detalhesCaptura,
+        individuosBiometria,
+        artes,
+        tamanhosArte,
+        combustivel,
+        tipoCombustivel,
+        gelo,
+        rancho,
+        d.destino_pescado || '',
+        d.total_desembarque || '0'
+    ];
+    
+    csv += linha.join(';') + '\n';
+
+    // Criar blob e link para download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `desembarque_${d.cod_desembarque || 'export'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExcluir = async () => {
+    if (!confirm('Tem certeza que deseja excluir este desembarque? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await api.deletarDesembarque(params.id);
+      router.push('/meus-desembarques');
+    } catch (error) {
+      console.error('Erro ao excluir desembarque:', error);
+      setErro(error.message || 'Erro ao excluir desembarque');
+      setLoading(false);
+    }
   };
 
   return (
@@ -161,6 +309,14 @@ export default function DetalhesDesembarque() {
               >
                 <span>📥</span> Exportar
               </button>
+              {usuario?.funcao === 'Administrador' && (
+                <button
+                  onClick={handleExcluir}
+                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <span>🗑️</span> Excluir
+                </button>
+              )}
             </div>
           </div>
 
@@ -299,16 +455,24 @@ export default function DetalhesDesembarque() {
                   <span className="text-gray-600 dark:text-gray-300">Tipo:</span>
                   <span className="font-medium text-gray-900 dark:text-white capitalize">{desembarque.embarcacao.tipo || '-'}</span>
                 </div>
-                {desembarque.embarcacao.comprimento && (
+                <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                  <span className="text-gray-600 dark:text-gray-300">Comprimento:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.comprimento ? `${desembarque.embarcacao.comprimento} m` : '-'}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                  <span className="text-gray-600 dark:text-gray-300">Potência:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.hp ? `${desembarque.embarcacao.hp} HP` : '-'}</span>
+                </div>
+                {desembarque.embarcacao.proprietario && (
                   <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <span className="text-gray-600 dark:text-gray-300">Comprimento:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.comprimento} m</span>
+                    <span className="text-gray-600 dark:text-gray-300">Proprietário:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.proprietario}</span>
                   </div>
                 )}
-                {desembarque.embarcacao.hp && (
+                {desembarque.embarcacao.cpf_proprietario && (
                   <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <span className="text-gray-600 dark:text-gray-300">Potência:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.hp} HP</span>
+                    <span className="text-gray-600 dark:text-gray-300">CPF Proprietário:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.cpf_proprietario}</span>
                   </div>
                 )}
               </div>
@@ -321,21 +485,86 @@ export default function DetalhesDesembarque() {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <span>🎣</span> Artes de Pesca
               </h2>
-              <div className="space-y-3">
-                {desembarque.artes.map((arte, index) => (
-                  <div key={index} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                    <p className="font-medium text-gray-900 dark:text-white capitalize">
-                      {arte.arte?.replace(/_/g, ' ')}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                      {arte.tamanho} {arte.unidade}
-                      {arte.quantidade && ` (Qtd: ${arte.quantidade})`}
-                    </p>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead>
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Arte</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tamanho</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unidade</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {desembarque.artes.map((arte, index) => (
+                      <tr key={index}>
+                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-white capitalize">{arte.arte?.replace(/_/g, ' ')}</td>
+                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{arte.tamanho || '-'}</td>
+                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{arte.unidade || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
+        </div>
+
+        {/* Despesas e Destino */}
+        <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 mt-6 print:shadow-none">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span>💰</span> Despesas e Destino
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-700 dark:text-gray-300 border-b pb-1">Combustível</h3>
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-300">Tipo:</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {desembarque.desp_diesel ? 'Diesel' : desembarque.desp_gasolina ? 'Gasolina' : '-'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-300">Quantidade:</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {desembarque.litros ? `${desembarque.litros} L` : '-'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-700 dark:text-gray-300 border-b pb-1">Outros Custos</h3>
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-300">Gelo:</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {desembarque.gelo_kg ? `${desembarque.gelo_kg} kg` : '-'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-300">Rancho:</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {formatarMoeda(desembarque.rancho_valor)}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3 md:col-span-2">
+              <h3 className="font-semibold text-gray-700 dark:text-gray-300 border-b pb-1">Destino do Pescado</h3>
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-300">Destino:</span>
+                <span className="font-medium text-gray-900 dark:text-white capitalize">
+                  {desembarque.destino_pescado || '-'}
+                </span>
+              </div>
+              {desembarque.destino_apelido && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-300">Comprador (Apelido):</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {desembarque.destino_apelido}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Capturas */}
@@ -426,7 +655,13 @@ export default function DetalhesDesembarque() {
                       Espécie
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Comp. (cm)
+                      Comp. Total (cm)
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Comp. Padrão (cm)
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Comp. Forquilha (cm)
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Peso (g)
@@ -451,10 +686,16 @@ export default function DetalhesDesembarque() {
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
-                        {individuo.comprimento_padrao_cm?.toFixed(2) || '-'}
+                        {individuo.comprimento_total_cm ? parseFloat(individuo.comprimento_total_cm).toFixed(2) : '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
-                        {individuo.peso_g?.toFixed(2) || '-'}
+                        {individuo.comprimento_padrao_cm ? parseFloat(individuo.comprimento_padrao_cm).toFixed(2) : '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
+                        {individuo.comprimento_forquilha_cm ? parseFloat(individuo.comprimento_forquilha_cm).toFixed(2) : '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
+                        {individuo.peso_g ? parseFloat(individuo.peso_g).toFixed(2) : '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900 dark:text-white uppercase">
                         {individuo.sexo || '-'}
