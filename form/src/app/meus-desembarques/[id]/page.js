@@ -380,7 +380,7 @@ export default function DetalhesDesembarque() {
                 <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
                   <span className="text-gray-600 dark:text-gray-300">Coordenadas Ida:</span>
                   <span className="font-medium text-gray-900 dark:text-white text-sm">
-                    {desembarque.lat_ida?.toFixed(6)}, {desembarque.long_ida?.toFixed(6)}
+                    {Number(desembarque.lat_ida)?.toFixed(6)}, {Number(desembarque.long_ida)?.toFixed(6)}
                   </span>
                 </div>
               )}
@@ -388,7 +388,7 @@ export default function DetalhesDesembarque() {
                 <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
                   <span className="text-gray-600 dark:text-gray-300">Coordenadas Volta:</span>
                   <span className="font-medium text-gray-900 dark:text-white text-sm">
-                    {desembarque.lat_volta?.toFixed(6)}, {desembarque.long_volta?.toFixed(6)}
+                    {Number(desembarque.lat_volta)?.toFixed(6)}, {Number(desembarque.long_volta)?.toFixed(6)}
                   </span>
                 </div>
               )}

@@ -21,14 +21,16 @@ export const criarDesembarque = async (req, res) => {
       embarcacao, 
       desembarque, 
       artes, 
-      especies // Array de espécies com capturas e indivíduos
+      capturas,
+      individuos
     } = req.body;
 
     console.log('📦 Criando desembarque:', {
       pescador: pescador?.nome,
       embarcacao: embarcacao?.nome_embarcacao,
       cod_desembarque: desembarque?.cod_desembarque,
-      total_especies: especies?.length || 0
+      total_capturas: capturas?.length || 0,
+      total_individuos: individuos?.length || 0
     });
 
     // Validar dados obrigatórios
@@ -90,49 +92,47 @@ export const criarDesembarque = async (req, res) => {
       console.log(`✅ ${artes.length} arte(s) de pesca salva(s)`);
     }
 
-    // 5. Processar espécies com capturas e indivíduos
+    // 5. Processar capturas e indivíduos
     let totalDesembarque = 0;
     let totalCapturas = 0;
     let totalIndividuos = 0;
 
-    if (especies && especies.length > 0) {
-      for (const especieData of especies) {
-        const { ID_especie, captura, individuos } = especieData;
-
-        // 5.1 Criar captura
-        if (captura && captura.peso_kg) {
+    // 5.1 Criar capturas
+    if (capturas && capturas.length > 0) {
+      for (const captura of capturas) {
+        if (captura.peso_kg) {
           const capturaDb = await Captura.create({
             ID_desembarque: desembarqueDb.ID_desembarque,
-            ID_especie: ID_especie,
+            ID_especie: captura.ID_especie,
             peso_kg: captura.peso_kg,
             preco_kg: captura.preco_kg || 0,
-            preco_total: (captura.peso_kg || 0) * (captura.preco_kg || 0)
+            preco_total: (captura.peso_kg || 0) * (captura.preco_kg || 0),
+            com_tripa: captura.com_tripa
           }, { transaction: t });
 
           totalDesembarque += capturaDb.preco_total;
           totalCapturas++;
         }
-
-        // 5.2 Criar indivíduos (biometria)
-        if (individuos && individuos.length > 0) {
-          const individuosData = individuos.map(ind => ({
-            ID_desembarque: desembarqueDb.ID_desembarque,
-            ID_especie: ID_especie,
-            numero_individuo: ind.numero_individuo || null,
-            comprimento_padrao_cm: ind.comprimento || null,
-            comprimento_total_cm: ind.comprimento_total || null,
-            comprimento_forquilha_cm: ind.comprimento_forquilha || null,
-            peso_g: ind.peso || null,
-            sexo: ind.sexo || null,
-            estadio_gonadal: ind.estadio_gonadal || null
-          }));
-
-          await Individuo.bulkCreate(individuosData, { transaction: t });
-          totalIndividuos += individuos.length;
-        }
       }
-
       console.log(`✅ ${totalCapturas} captura(s) salva(s)`);
+    }
+
+    // 5.2 Criar indivíduos (biometria)
+    if (individuos && individuos.length > 0) {
+      const individuosData = individuos.map(ind => ({
+        ID_desembarque: desembarqueDb.ID_desembarque,
+        ID_especie: ind.ID_especie,
+        numero_individuo: ind.numero_individuo || null,
+        comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null,
+        comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null,
+        comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null,
+        peso_g: ind.peso_g || ind.peso || null,
+        sexo: ind.sexo || null,
+        estadio_gonadal: ind.estadio_gonadal || null
+      }));
+
+      await Individuo.bulkCreate(individuosData, { transaction: t });
+      totalIndividuos = individuos.length;
       console.log(`✅ ${totalIndividuos} indivíduo(s) salvo(s)`);
     }
 
