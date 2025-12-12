@@ -12,7 +12,7 @@ export const listarPescadores = async (req, res) => {
     } = req.query;
 
     const where = {};
-    if (nome) where.nome = { [Op.iLike]: `%${nome}%` };
+    if (nome) where.nome = { [Op.like]: `%${nome}%` };
     if (cpf) where.cpf = cpf;
 
     const { count, rows } = await Pescador.findAndCountAll({

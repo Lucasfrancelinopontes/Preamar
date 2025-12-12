@@ -14,10 +14,6 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
       'codigoEmbarcacao',
       'numTripulantes',
       'numPesqueiros',
-      'coordenadasIdaLat',
-      'coordenadasIdaLong',
-      'coordenadasVoltaLat',
-      'coordenadasVoltaLong',
       'tipoEmbarcacao',
       'comprimento',
       'capacidadeEstocagem',
@@ -119,62 +115,6 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               className="input-standard"
               required
             />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="label-standard">
-              Coordenadas ida *
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="number"
-                name="coordenadasIdaLat"
-                value={formData.coordenadasIdaLat || ''}
-                onChange={handleChange}
-                placeholder="Latitude"
-                step="any"
-                className="input-standard"
-                required
-              />
-              <input
-                type="number"
-                name="coordenadasIdaLong"
-                value={formData.coordenadasIdaLong || ''}
-                onChange={handleChange}
-                placeholder="Longitude"
-                step="any"
-                className="input-standard"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="label-standard">
-              Coordenadas volta *
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="number"
-                name="coordenadasVoltaLat"
-                value={formData.coordenadasVoltaLat || ''}
-                onChange={handleChange}
-                placeholder="Latitude"
-                step="any"
-                className="input-standard"
-                required
-              />
-              <input
-                type="number"
-                name="coordenadasVoltaLong"
-                value={formData.coordenadasVoltaLong || ''}
-                onChange={handleChange}
-                placeholder="Longitude"
-                step="any"
-                className="input-standard"
-                required
-              />
-            </div>
           </div>
         </div>
       </div>

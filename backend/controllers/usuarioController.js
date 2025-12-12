@@ -7,8 +7,8 @@ export const listarUsuarios = async (req, res) => {
     const { nome, email, funcao, page = 1, limit = 50 } = req.query;
 
     const where = {};
-    if (nome) where.nome = { [Op.iLike]: `%${nome}%` };
-    if (email) where.email = { [Op.iLike]: `%${email}%` };
+    if (nome) where.nome = { [Op.like]: `%${nome}%` };
+    if (email) where.email = { [Op.like]: `%${email}%` };
     if (funcao) where.funcao = funcao;
 
     const { count, rows } = await Usuario.findAndCountAll({

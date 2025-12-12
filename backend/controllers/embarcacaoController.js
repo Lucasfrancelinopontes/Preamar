@@ -12,7 +12,7 @@ export const listarEmbarcacoes = async (req, res) => {
     } = req.query;
 
     const where = {};
-    if (nome) where.nome_embarcacao = { [Op.iLike]: `%${nome}%` };
+    if (nome) where.nome_embarcacao = { [Op.like]: `%${nome}%` };
     if (codigo) where.codigo_embarcacao = codigo;
     if (tipo) where.tipo = tipo;
 

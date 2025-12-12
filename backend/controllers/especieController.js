@@ -13,9 +13,9 @@ export const listarEspecies = async (req, res) => {
     } = req.query;
 
     const where = {};
-    if (nome_popular) where.nome_popular = { [Op.iLike]: `%${nome_popular}%` };
-    if (nome_cientifico) where.nome_cientifico = { [Op.iLike]: `%${nome_cientifico}%` };
-    if (familia) where.familia = { [Op.iLike]: `%${familia}%` };
+    if (nome_popular) where.nome_popular = { [Op.like]: `%${nome_popular}%` };
+    if (nome_cientifico) where.nome_cientifico = { [Op.like]: `%${nome_cientifico}%` };
+    if (familia) where.familia = { [Op.like]: `%${familia}%` };
     if (habitat) where.habitat = habitat;
 
     const { count, rows } = await Especie.findAndCountAll({

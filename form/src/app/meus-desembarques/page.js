@@ -61,6 +61,20 @@ function MeusDesembarquesContent() {
         }).format(valor);
     };
 
+    const handleDelete = async (id, e) => {
+        e.stopPropagation();
+        if (!confirm('Tem certeza que deseja excluir este desembarque? Esta ação não pode ser desfeita.')) return;
+        
+        try {
+            await api.deletarDesembarque(id);
+            setDesembarques(prev => prev.filter(d => d.ID_desembarque !== id));
+            alert('Desembarque excluído com sucesso!');
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao excluir desembarque: ' + (err.message || 'Erro desconhecido'));
+        }
+    };
+
     const abrirDetalhes = (desembarque) => {
         setDesembarqueSelecionado(desembarque);
     };
@@ -217,6 +231,19 @@ function MeusDesembarquesContent() {
                                             >
                                                 <span>👁️</span> Prévia
                                             </button>
+                                            {user?.funcao === 'admin' && (
+                                                <button
+                                                    onClick={(e) => handleDelete(desembarque.ID_desembarque, e)}
+                                                    className={`px-4 py-2 rounded-lg transition-colors ${
+                                                        temaEscuro 
+                                                            ? 'bg-red-900/50 hover:bg-red-900 text-red-200' 
+                                                            : 'bg-red-100 hover:bg-red-200 text-red-800'
+                                                    }`}
+                                                    title="Excluir Desembarque"
+                                                >
+                                                    <span>🗑️</span>
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
