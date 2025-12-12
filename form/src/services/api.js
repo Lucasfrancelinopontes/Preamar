@@ -402,20 +402,6 @@ const api = {
     }
   },
 
-  criarDesembarque: async (dados) => {
-    try {
-      const response = await fetch(`${API_URL}/desembarques/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
-      
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Erro ao deletar desembarque:', error);
-      throw error;
-    }
-  },
-
   // ==================== EMBARCAÇÕES ====================
 
   getEmbarcacoes: async () => {
