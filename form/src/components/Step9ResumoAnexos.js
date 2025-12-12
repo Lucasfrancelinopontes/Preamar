@@ -66,7 +66,8 @@ export default function Step9ResumoAnexos({ prevStep }) {
     const embarcacao = {
       nome_embarcacao: formData.nomeEmbarcacao,
       codigo_embarcacao: formData.codigoEmbarcacao,
-      proprietario: formData.proprietarioNome || formData.nomePescador,
+      proprietario: formData.nomeProprietario || formData.nomePescador,
+      cpf_proprietario: formData.cpfProprietario?.replace(/\D/g, '') || null,
       tipo: formData.tipoEmbarcacao,
       comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
       capacidade: formData.capacidadeEstocagem ? parseFloat(formData.capacidadeEstocagem) : null,
@@ -93,11 +94,22 @@ export default function Step9ResumoAnexos({ prevStep }) {
       quadrante1: formData.quadrante1 || null,
       quadrante2: formData.quadrante2 || null,
       quadrante3: formData.quadrante3 || null,
+      lat_ida: formData.latIda ? parseFloat(formData.latIda) : null,
+      long_ida: formData.longIda ? parseFloat(formData.longIda) : null,
+      lat_volta: formData.latVolta ? parseFloat(formData.latVolta) : null,
+      long_volta: formData.longVolta ? parseFloat(formData.longVolta) : null,
       origem: null,
       desp_diesel: formData.tipoCombustivel === 'Diesel',
       desp_gasolina: formData.tipoCombustivel === 'Gasolina',
       litros: formData.litrosCombustivel ? parseFloat(formData.litrosCombustivel) : null,
       gelo_kg: formData.quantidadeGelo ? parseFloat(formData.quantidadeGelo) : null,
+      rancho_valor: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
+      proprietario: formData.nomeProprietario || formData.nomePescador,
+      apelido_proprietario: formData.apelidoProprietario || null,
+      atuou_pesca: formData.atuouNaPesca ? 'S' : 'N',
+      destino_pescado: formData.destinoPescado || null,
+      destino_apelido: formData.apelidoDestino || null
+    }
       rancho_valor: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
       destino_pescado: formData.destinoPescado ? formData.destinoPescado.toLowerCase() : null,
       destino_apelido: formData.apelidoDestino || null,
@@ -335,7 +347,7 @@ export default function Step9ResumoAnexos({ prevStep }) {
           <div>
             <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Proprietário</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div><span className="text-gray-500">Nome:</span> {formData.proprietarioNome || 'Não informado'}</div>
+              <div><span className="text-gray-500">Nome:</span> {formData.nomeProprietario || 'Não informado'}</div>
               <div><span className="text-gray-500">CPF:</span> {formData.cpfProprietario || 'Não informado'}</div>
               <div><span className="text-gray-500">Atuou na pesca:</span> {formData.atuouNaPesca ? 'Sim' : 'Não'}</div>
             </div>
@@ -355,14 +367,25 @@ export default function Step9ResumoAnexos({ prevStep }) {
             </div>
           )}
 
-          {/* Quadrantes */}
-          {(formData.quadrante1 || formData.quadrante2 || formData.quadrante3) && (
+          {/* Quadrantes e Coordenadas */}
+          {(formData.quadrante1 || formData.quadrante2 || formData.quadrante3 || formData.latIda) && (
             <div>
-              <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Quadrantes de Pesca</h3>
+              <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Localização da Pesca</h3>
               <div className="space-y-1 text-sm">
                 {formData.quadrante1 && <div>• Quadrante 1: {formData.quadrante1}</div>}
                 {formData.quadrante2 && <div>• Quadrante 2: {formData.quadrante2}</div>}
                 {formData.quadrante3 && <div>• Quadrante 3: {formData.quadrante3}</div>}
+                
+                {(formData.latIda || formData.longIda) && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    <span className="font-medium">Ida:</span> {formData.latIda}, {formData.longIda}
+                  </div>
+                )}
+                {(formData.latVolta || formData.longVolta) && (
+                  <div className="text-xs text-gray-500">
+                    <span className="font-medium">Volta:</span> {formData.latVolta}, {formData.longVolta}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -411,7 +434,7 @@ export default function Step9ResumoAnexos({ prevStep }) {
           <div>
             <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Despesas</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div><span className="text-gray-500">Combustível:</span> {formData.combustivelLitros ? `${formData.combustivelLitros}L` : 'Não informado'} {formData.combustivelTipo ? `(${formData.combustivelTipo})` : ''}</div>
+              <div><span className="text-gray-500">Combustível:</span> {formData.litrosCombustivel ? `${formData.litrosCombustivel}L` : 'Não informado'} {formData.tipoCombustivel ? `(${formData.tipoCombustivel})` : ''}</div>
               <div><span className="text-gray-500">Gelo:</span> {formData.quantidadeGelo ? `${formData.quantidadeGelo}kg` : 'Não informado'}</div>
               <div><span className="text-gray-500">Rancho:</span> R${formData.valorRancho || '0,00'}</div>
             </div>

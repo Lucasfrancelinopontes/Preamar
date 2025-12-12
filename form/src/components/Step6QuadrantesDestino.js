@@ -74,10 +74,77 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
     <form onSubmit={handleSubmit} className="space-y-8 p-4 max-w-2xl mx-auto">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-          Quadrantes & destino do pescado
+          Coordenadas, Quadrantes & Destino
         </h2>
 
         <div className="space-y-6">
+          {/* Coordenadas */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Coordenadas (Opcional)
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="col-span-2">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Ponto de Ida</p>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Latitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  name="latIda"
+                  value={formData.latIda || ''}
+                  onChange={handleChange}
+                  placeholder="-0.000000"
+                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Longitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  name="longIda"
+                  value={formData.longIda || ''}
+                  onChange={handleChange}
+                  placeholder="-0.000000"
+                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Ponto de Volta</p>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Latitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  name="latVolta"
+                  value={formData.latVolta || ''}
+                  onChange={handleChange}
+                  placeholder="-0.000000"
+                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Longitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  name="longVolta"
+                  value={formData.longVolta || ''}
+                  onChange={handleChange}
+                  placeholder="-0.000000"
+                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Campos Quadrantes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">

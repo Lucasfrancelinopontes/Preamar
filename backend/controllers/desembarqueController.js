@@ -233,6 +233,16 @@ export const listarDesembarques = async (req, res) => {
             as: 'especie',
             attributes: ['nome_popular', 'nome_cientifico']
           }]
+        },
+        { 
+          model: DesembarqueArte, 
+          as: 'artes',
+          attributes: ['arte', 'tamanho', 'unidade']
+        },
+        {
+          model: Individuo,
+          as: 'individuos',
+          attributes: ['ID_especie', 'comprimento_total_cm', 'peso_g']
         }
       ],
       limit: parseInt(limit),
@@ -298,6 +308,7 @@ export const buscarDesembarque = async (req, res) => {
             'capacidade',
             'hp',
             'proprietario',
+            'cpf_proprietario',
             'rgp',
             'possui',
             'localidade'

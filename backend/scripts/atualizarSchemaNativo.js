@@ -35,7 +35,10 @@ const atualizarSchemaNativo = async () => {
       port: DB_PORT,
       user: DB_USER,
       password: DB_PASS,
-      database: DB_NAME
+      database: DB_NAME,
+      ssl: {
+        rejectUnauthorized: false
+      }
     });
     console.log('✅ Conexão estabelecida!\n');
 
@@ -46,28 +49,14 @@ const atualizarSchemaNativo = async () => {
     console.log(`   Total de colunas: ${nomesColunas.length}\n`);
 
     // Passo 3: Adicionar novas colunas
-    console.log('🔧 Passo 3: Adicionando novas colunas de coordenadas...\n');
+    console.log('🔧 Passo 3: Adicionando novas colunas...\n');
 
     const colunasParaAdicionar = [
       {
-        nome: 'lat_ida',
-        sql: "ALTER TABLE desembarques ADD COLUMN lat_ida DECIMAL(10, 8) NULL COMMENT 'Latitude do ponto de ida (decimal)'",
-        descricao: 'Latitude do ponto de ida (formato decimal)'
-      },
-      {
-        nome: 'long_ida',
-        sql: "ALTER TABLE desembarques ADD COLUMN long_ida DECIMAL(11, 8) NULL COMMENT 'Longitude do ponto de ida (decimal)'",
-        descricao: 'Longitude do ponto de ida (formato decimal)'
-      },
-      {
-        nome: 'lat_volta',
-        sql: "ALTER TABLE desembarques ADD COLUMN lat_volta DECIMAL(10, 8) NULL COMMENT 'Latitude do ponto de volta (decimal)'",
-        descricao: 'Latitude do ponto de volta (formato decimal)'
-      },
-      {
-        nome: 'long_volta',
-        sql: "ALTER TABLE desembarques ADD COLUMN long_volta DECIMAL(11, 8) NULL COMMENT 'Longitude do ponto de volta (decimal)'",
-        descricao: 'Longitude do ponto de volta (formato decimal)'
+        nome: 'cpf_proprietario',
+        tabela: 'embarcacoes',
+        sql: "ALTER TABLE embarcacoes ADD COLUMN cpf_proprietario VARCHAR(14) NULL",
+        descricao: 'CPF do proprietário da embarcação'
       }
     ];
 
@@ -76,13 +65,17 @@ const atualizarSchemaNativo = async () => {
     let erros = 0;
 
     for (const coluna of colunasParaAdicionar) {
-      if (nomesColunas.includes(coluna.nome)) {
-        console.log(`   ⏭️  ${coluna.nome.padEnd(12)} - Já existe, pulando...`);
+      // Verificar colunas da tabela específica
+      const colunasTabela = await conn.query(`SHOW COLUMNS FROM ${coluna.tabela}`);
+      const nomesColunasTabela = colunasTabela.map(c => c.Field);
+
+      if (nomesColunasTabela.includes(coluna.nome)) {
+        console.log(`   ⏭️  ${coluna.nome.padEnd(12)} - Já existe na tabela ${coluna.tabela}, pulando...`);
         jaExistiam++;
       } else {
         try {
           await conn.query(coluna.sql);
-          console.log(`   ✅ ${coluna.nome.padEnd(12)} - Adicionada! (${coluna.descricao})`);
+          console.log(`   ✅ ${coluna.nome.padEnd(12)} - Adicionada na tabela ${coluna.tabela}! (${coluna.descricao})`);
           adicionadas++;
         } catch (error) {
           console.error(`   ❌ ${coluna.nome.padEnd(12)} - Erro:`, error.message);
