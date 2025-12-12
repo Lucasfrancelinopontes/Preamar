@@ -2,12 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   // Otimizações para Vercel
-  swcMinify: true,
   output: 'standalone',
-  // Ignorar erros de lint/types no build para evitar falhas em produção
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },

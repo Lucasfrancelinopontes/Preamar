@@ -107,10 +107,6 @@ export default function Step9ResumoAnexos({ prevStep }) {
       proprietario: formData.nomeProprietario || formData.nomePescador,
       apelido_proprietario: formData.apelidoProprietario || null,
       atuou_pesca: formData.atuouNaPesca ? 'S' : 'N',
-      destino_pescado: formData.destinoPescado || null,
-      destino_apelido: formData.apelidoDestino || null
-    }
-      rancho_valor: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
       destino_pescado: formData.destinoPescado ? formData.destinoPescado.toLowerCase() : null,
       destino_apelido: formData.apelidoDestino || null,
       destino_outros_qual: null
