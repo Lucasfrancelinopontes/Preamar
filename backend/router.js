@@ -48,6 +48,7 @@ import {
 
 // Debug
 import { populateSpecies, checkDb } from './controllers/debugController.js';
+import { updateIndividuosSchema } from './controllers/schemaController.js';
 
 // Importar middlewares
 import {
@@ -118,5 +119,6 @@ router.delete('/especies/:id', verificarAutenticacao, verificarAdmin, deletarEsp
 // Rotas de Debug (remover em produção se necessário)
 router.get('/debug/populate', populateSpecies);
 router.get('/debug/check', checkDb);
+router.get('/debug/update-schema', updateIndividuosSchema);
 
 export default router;

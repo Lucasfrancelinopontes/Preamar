@@ -29,9 +29,17 @@ export const Individuo = sequelize.define('Individuo', {
       max: 9999.99
     }
   },
-  comprimento_cm: {
+  comprimento_total_cm: {
     type: DataTypes.DECIMAL(10, 2),
     comment: 'Comprimento total em cm',
+    validate: {
+      min: 0,
+      max: 9999.99
+    }
+  },
+  comprimento_forquilha_cm: {
+    type: DataTypes.DECIMAL(10, 2),
+    comment: 'Comprimento furcal/forquilha em cm',
     validate: {
       min: 0,
       max: 9999.99
@@ -44,6 +52,14 @@ export const Individuo = sequelize.define('Individuo', {
       min: 0,
       max: 99999999.99
     }
+  },
+  sexo: {
+    type: DataTypes.STRING(20),
+    comment: 'Sexo do indivíduo (Macho, Fêmea, Indeterminado)'
+  },
+  estadio_gonadal: {
+    type: DataTypes.STRING(50),
+    comment: 'Estágio de maturação gonadal'
   },
   numero_individuo: {
     type: DataTypes.INTEGER,
