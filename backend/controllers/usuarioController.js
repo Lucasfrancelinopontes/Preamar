@@ -33,7 +33,7 @@ export const listarUsuarios = async (req, res) => {
     console.error('Erro ao listar usuários:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro ao listar usuários',
+      message: `Erro ao listar usuários: ${error.message}`,
       error: error.message
     });
   }

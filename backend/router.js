@@ -46,6 +46,9 @@ import {
   deletarUsuario
 } from './controllers/usuarioController.js';
 
+// Debug
+import { populateSpecies, checkDb } from './controllers/debugController.js';
+
 // Importar middlewares
 import {
   verificarAutenticacao,
@@ -111,5 +114,9 @@ router.post('/especies', verificarAutenticacao, verificarAdmin, criarEspecie);
 router.get('/especies/:id', verificarAutenticacao, verificarAdmin, buscarEspecie);
 router.put('/especies/:id', verificarAutenticacao, verificarAdmin, atualizarEspecie);
 router.delete('/especies/:id', verificarAutenticacao, verificarAdmin, deletarEspecie);
+
+// Rotas de Debug (remover em produção se necessário)
+router.get('/debug/populate', populateSpecies);
+router.get('/debug/check', checkDb);
 
 export default router;

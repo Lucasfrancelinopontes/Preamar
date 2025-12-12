@@ -265,7 +265,7 @@ export const listarDesembarques = async (req, res) => {
     console.error('Erro ao listar desembarques:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro ao listar desembarques',
+      message: `Erro ao listar desembarques: ${error.message}`,
       error: error.message
     });
   }
@@ -557,7 +557,7 @@ export const estatisticasDesembarques = async (req, res) => {
     console.error('Erro ao gerar estatísticas:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro ao gerar estatísticas',
+      message: `Erro ao gerar estatísticas: ${error.message}`,
       error: error.message
     });
   }
