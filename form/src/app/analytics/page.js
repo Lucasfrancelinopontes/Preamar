@@ -27,7 +27,7 @@ function AnalyticsContent() {
             setLoading(false);
         } catch (err) {
             console.error('Erro ao carregar dados:', err);
-            setError('Erro ao carregar dados para análise');
+            setError(err.message || 'Erro ao carregar dados para análise');
             setLoading(false);
         }
     };

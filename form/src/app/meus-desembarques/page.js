@@ -36,7 +36,7 @@ function MeusDesembarquesContent() {
             setLoading(false);
         } catch (err) {
             console.error('Erro ao carregar desembarques:', err);
-            setError('Erro ao carregar desembarques');
+            setError(err.message || 'Erro ao carregar desembarques');
             setLoading(false);
         }
     };

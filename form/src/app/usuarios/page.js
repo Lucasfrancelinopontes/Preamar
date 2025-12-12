@@ -37,7 +37,8 @@ export default function GerenciarUsuarios() {
     const carregarUsuarios = async () => {
         try {
             setCarregando(true);
-            const response = await fetch('http://localhost:3001/api/usuarios', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+            const response = await fetch(`${apiUrl}/usuarios`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -52,7 +53,7 @@ export default function GerenciarUsuarios() {
             }
         } catch (error) {
             console.error('Erro:', error);
-            setErro('Erro ao carregar usuários');
+            setErro(error.message || 'Erro ao carregar usuários');
         } finally {
             setCarregando(false);
         }
