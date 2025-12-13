@@ -22,10 +22,10 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
     ]
 
     const missingFields = requiredFields.filter(field => !formData[field])
-    if (missingFields.length > 0) {
-      alert('Por favor, preencha todos os campos obrigatórios.')
-      return
-    }
+    // if (missingFields.length > 0) {
+    //   alert('Por favor, preencha todos os campos obrigatórios.')
+    //   return
+    // }
 
     nextStep()
   }

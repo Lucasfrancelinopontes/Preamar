@@ -39,10 +39,10 @@ export default function Step4ArtesPesca({ nextStep, prevStep }) {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    // Validate at least one arte is fully filled
-    const hasValidArte = artesList.some(item => 
-      item.arte && item.tamanho && item.tamanho > 0
-    )
+    // // Validate at least one arte is fully filled
+    // const hasValidArte = artesList.some(item => 
+    //   item.arte && item.tamanho && item.tamanho > 0
+    // )
 
     if (!hasValidArte) {
       alert('Por favor, adicione pelo menos uma arte de pesca com tamanho válido.')
