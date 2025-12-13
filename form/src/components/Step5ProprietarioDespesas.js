@@ -44,8 +44,8 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
 
     // Validar campos obrigatórios
     const requiredFields = [
-      'nomeProprietario',
-      'atuouNaPesca',
+      // 'nomeProprietario',
+      // 'atuouNaPesca',
       'litrosCombustivel',
       'tipoCombustivel'
     ]
