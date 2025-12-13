@@ -44,10 +44,10 @@ export default function Step4ArtesPesca({ nextStep, prevStep }) {
     //   item.arte && item.tamanho && item.tamanho > 0
     // )
 
-    if (!hasValidArte) {
-      alert('Por favor, adicione pelo menos uma arte de pesca com tamanho válido.')
-      return
-    }
+    // if (!hasValidArte) {
+    //   alert('Por favor, adicione pelo menos uma arte de pesca com tamanho válido.')
+    //   return
+    // }
 
     // Save to form context
     updateFormData({ arteSelecionadas: artesList })
