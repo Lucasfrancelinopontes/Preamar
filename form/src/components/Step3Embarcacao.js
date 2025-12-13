@@ -61,7 +61,7 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="label-standard">
-              Nome da embarcação *
+              Nome da embarcação 
             </label>
             <input
               type="text"
@@ -69,13 +69,12 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               value={formData.nomeEmbarcacao || ''}
               onChange={handleChange}
               className="input-standard"
-              required
             />
           </div>
 
           <div>
             <label className="label-standard">
-              Código da embarcação *
+              Código da embarcação
             </label>
             <input
               type="text"
@@ -83,13 +82,12 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               value={formData.codigoEmbarcacao || ''}
               onChange={handleChange}
               className="input-standard"
-              required
             />
           </div>
 
           <div>
             <label className="label-standard">
-              N° de tripulantes *
+              N° de tripulantes
             </label>
             <input
               type="number"
@@ -98,13 +96,12 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               onChange={handleChange}
               min="1"
               className="input-standard"
-              required
             />
           </div>
 
           <div>
             <label className="label-standard">
-              N° de pesqueiros *
+              N° de pesqueiros
             </label>
             <input
               type="number"
@@ -113,7 +110,6 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               onChange={handleChange}
               min="1"
               className="input-standard"
-              required
             />
           </div>
         </div>

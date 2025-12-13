@@ -75,7 +75,7 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nome do proprietário *
+              Nome do proprietário 
             </label>
             <input
               type="text"
@@ -83,7 +83,6 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
               value={formData.nomeProprietario || ''}
               onChange={handleChange}
               className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              required
             />
           </div>
 
@@ -130,7 +129,7 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Atuou na pesca? *
+              Atuou na pesca?
             </label>
             <div className="flex gap-4">
               <label className="inline-flex items-center">
@@ -141,7 +140,6 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
                   checked={formData.atuouNaPesca === true}
                   onChange={handleRadioChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                  required
                 />
                 <span className="ml-2 text-gray-700 dark:text-gray-300">Sim</span>
               </label>

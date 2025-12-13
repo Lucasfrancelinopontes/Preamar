@@ -85,7 +85,7 @@ export default function Step4ArtesPesca({ nextStep, prevStep }) {
 
               <div className="flex-1">
                 <label className="label-standard">
-                  Tamanho (m) *
+                  Tamanho (m) 
                 </label>
                 <input
                   type="number"
@@ -94,7 +94,6 @@ export default function Step4ArtesPesca({ nextStep, prevStep }) {
                   min="0"
                   step="0.1"
                   className="input-standard"
-                  required
                 />
               </div>
 

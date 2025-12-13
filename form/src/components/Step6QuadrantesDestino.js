@@ -42,10 +42,10 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
     const quadrante2 = formData.quadrante2 || ''
     const quadrante3 = formData.quadrante3 || ''
 
-    if (!quadrante1 && !quadrante2 && !quadrante3) {
-      alert('Por favor, informe pelo menos um quadrante de pesca.')
-      return
-    }
+    // if (!quadrante1 && !quadrante2 && !quadrante3) {
+    //   alert('Por favor, informe pelo menos um quadrante de pesca.')
+    //   return
+    // }
 
     // Validate that quadrantes have 3 digits if filled
     if (quadrante1 && quadrante1.length !== 3) {
@@ -148,7 +148,7 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
           {/* Campos Quadrantes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Quadrantes de pesca *
+              Quadrantes de pesca 
             </label>
             <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
               Informe até 3 quadrantes. Cada quadrante deve ter exatamente 3 algarismos.
