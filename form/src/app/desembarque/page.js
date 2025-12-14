@@ -79,21 +79,28 @@ function DesembarqueContent() {
                     // Step 1
                     municipio: data.municipio,
                     localidade: data.localidade,
-                    data: data.data_coleta ? data.data_coleta.split('T')[0] : '',
+                    dataColeta: data.data_coleta ? data.data_coleta.split('T')[0] : '',
+                    consecutivo: data.consecutivo,
+                    codigoFoto: data.cod_foto,
+                    dataSaida: data.data_saida ? data.data_saida.split('T')[0] : '',
+                    dataChegada: data.data_chegada ? data.data_chegada.split('T')[0] : '',
                     
                     // Step 2
                     nomePescador: data.pescador?.nome,
-                    apelido: data.pescador?.apelido,
-                    cpf: data.pescador?.cpf,
+                    apelidoPescador: data.pescador?.apelido,
+                    cpfPescador: data.pescador?.cpf,
                     nascimento: data.pescador?.nascimento ? data.pescador.nascimento.split('T')[0] : '',
 
                     // Step 3
                     nomeEmbarcacao: data.embarcacao?.nome_embarcacao,
                     codigoEmbarcacao: data.embarcacao?.codigo_embarcacao,
-                    tipoPetrecho: data.embarcacao?.tipo,
+                    tipoEmbarcacao: data.embarcacao?.tipo,
                     comprimento: data.embarcacao?.comprimento,
-                    forcaMotorHP: data.embarcacao?.hp,
-                    possui: data.embarcacao?.possui,
+                    forcaMotor: data.embarcacao?.hp,
+                    armazenamento: data.embarcacao?.possui,
+                    capacidadeEstocagem: data.embarcacao?.capacidade,
+                    numTripulantes: data.numero_tripulantes,
+                    numPesqueiros: data.pesqueiros,
 
                     // Step 4
                     arteSelecionadas: data.artes?.map(a => ({
@@ -102,20 +109,20 @@ function DesembarqueContent() {
                     })) || [],
 
                     // Step 5
-                    proprietario: data.proprietario || data.embarcacao?.proprietario,
+                    nomeProprietario: data.proprietario || data.embarcacao?.proprietario,
                     apelidoProprietario: data.apelido_proprietario,
-                    desp_diesel: data.desp_diesel,
-                    desp_gasolina: data.desp_gasolina,
-                    litros: data.litros,
-                    geloKg: data.gelo_kg,
-                    ranchoValor: data.rancho_valor,
+                    atuouNaPesca: data.atuou_pesca === 'S',
+                    quantidadeGelo: data.gelo_kg,
+                    valorRancho: data.rancho_valor,
+                    litrosCombustivel: data.litros,
+                    tipoCombustivel: data.desp_diesel ? 'Diesel' : (data.desp_gasolina ? 'Gasolina' : 'Outro'),
 
                     // Step 6
                     quadrante1: data.quadrante1,
                     quadrante2: data.quadrante2,
                     quadrante3: data.quadrante3,
                     destinoPescado: data.destino_pescado,
-                    destinoApelido: data.destino_apelido,
+                    apelidoDestino: data.destino_apelido,
                     
                     // Coordinates
                     lat_deg1: latIda.deg, lat_min1: latIda.min, lat_sec1: latIda.sec,
@@ -126,12 +133,6 @@ function DesembarqueContent() {
                     // Step 7 & 8
                     especiesCaptura,
                     especiesIndividuos,
-                    
-                    // Other fields
-                    numeroTripulantes: data.numero_tripulantes,
-                    pesqueiros: data.pesqueiros,
-                    dataSaida: data.data_saida ? data.data_saida.split('T')[0] : '',
-                    dataChegada: data.data_chegada ? data.data_chegada.split('T')[0] : '',
                 };
 
                 updateFormData(mappedData);
