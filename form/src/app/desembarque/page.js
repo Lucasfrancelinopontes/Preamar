@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFormContext } from '@/app/contexts/FormContext';
 import api from '@/services/api';
@@ -14,7 +14,7 @@ import Step7EspeciesCaptura from '@/components/Step7EspeciesCaptura';
 import Step8EspeciesIndividuos from '@/components/Step8EspeciesIndividuos';
 import Step9ResumoAnexos from '@/components/Step9ResumoAnexos';
 
-export default function DesembarquePage() {
+function DesembarqueContent() {
     const [step, setStep] = useState(1);
     const [temaEscuro, setTemaEscuro] = useState(false);
     const router = useRouter();
@@ -222,24 +222,20 @@ export default function DesembarquePage() {
                         />
                     </div>
                 </div>
-                <h2 className="text-xl font-bold mb-1">{steps[step - 1].title}</h2>
-                <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {step === 1 && "Informe os dados básicos do desembarque"}
-                    {step === 2 && "Identifique o pescador responsável"}
-                    {step === 3 && "Informe os dados da embarcação"}
-                    {step === 4 && "Registre as artes de pesca utilizadas"}
-                    {step === 5 && "Informe os dados do proprietário e despesas"}
-                    {step === 6 && "Informe os quadrantes de pesca e destino do pescado"}
-                    {step === 7 && "Registre as espécies e peso total capturado"}
-                    {step === 8 && "Adicione dados individuais dos peixes (opcional)"}
-                    {step === 9 && "Revise e confirme os dados informados"}
-                </p>
             </div>
 
-            {/* Componente da Etapa Atual */}
-            <div className="flex-1 px-4 pb-4">
+            {/* Conteúdo da Etapa */}
+            <div className="container mx-auto px-4 pb-12">
                 {renderStep()}
             </div>
         </main>
+    );
+}
+
+export default function DesembarquePage() {
+    return (
+        <Suspense fallback={<div>Carregando...</div>}>
+            <DesembarqueContent />
+        </Suspense>
     );
 }
