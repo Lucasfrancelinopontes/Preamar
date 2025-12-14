@@ -310,12 +310,20 @@ export default function DetalhesDesembarque() {
                 <span>📥</span> Exportar
               </button>
               {usuario?.funcao === 'Administrador' && (
-                <button
-                  onClick={handleExcluir}
-                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <span>🗑️</span> Excluir
-                </button>
+                <>
+                  <button
+                    onClick={() => router.push(`/desembarque?edit=${params.id}`)}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <span>✏️</span> Editar
+                  </button>
+                  <button
+                    onClick={handleExcluir}
+                    className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <span>🗑️</span> Excluir
+                  </button>
+                </>
               )}
             </div>
           </div>

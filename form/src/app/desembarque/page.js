@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useFormContext } from '@/app/contexts/FormContext';
+import api from '@/services/api';
 import Step1Local from '@/components/Step1Local';
 import Step2Pescador from '@/components/Step2Pescador';
 import Step3Embarcacao from '@/components/Step3Embarcacao';
@@ -17,7 +18,128 @@ export default function DesembarquePage() {
     const [step, setStep] = useState(1);
     const [temaEscuro, setTemaEscuro] = useState(false);
     const router = useRouter();
-    const { formData } = useFormContext();
+    const searchParams = useSearchParams();
+    const editId = searchParams.get('edit');
+    const { formData, updateFormData } = useFormContext();
+
+    useEffect(() => {
+        if (editId) {
+            carregarDadosEdicao(editId);
+        }
+    }, [editId]);
+
+    const carregarDadosEdicao = async (id) => {
+        try {
+            const response = await api.getDesembarque(id);
+            if (response.success) {
+                const data = response.data;
+                
+                // Helper for coordinates
+                const toDMS = (val) => {
+                    if (!val) return { deg: '', min: '', sec: '' };
+                    const d = Math.abs(Number(val));
+                    const deg = Math.floor(d);
+                    const minFloat = (d - deg) * 60;
+                    const min = Math.floor(minFloat);
+                    const sec = Math.round((minFloat - min) * 60);
+                    return { deg: String(deg), min: String(min), sec: String(sec) };
+                };
+
+                const latIda = toDMS(data.lat_ida);
+                const longIda = toDMS(data.long_ida);
+                const latVolta = toDMS(data.lat_volta);
+                const longVolta = toDMS(data.long_volta);
+
+                // Map Captures
+                const especiesCaptura = data.capturas?.map(c => ({
+                    id: c.ID_especie,
+                    peso: c.peso_kg,
+                    preco: c.preco_kg,
+                    comTripa: c.com_tripa
+                })) || [];
+
+                // Map Individuals
+                const individuosByEspecie = {};
+                data.individuos?.forEach(ind => {
+                    if (!individuosByEspecie[ind.ID_especie]) {
+                        individuosByEspecie[ind.ID_especie] = [];
+                    }
+                    individuosByEspecie[ind.ID_especie].push({
+                        peso: ind.peso_g,
+                        comprimento: ind.comprimento_total_cm || ind.comprimento_padrao_cm
+                    });
+                });
+
+                const especiesIndividuos = especiesCaptura.map(esp => ({
+                    especieId: esp.id,
+                    individuos: individuosByEspecie[esp.id] || []
+                }));
+
+                const mappedData = {
+                    // Step 1
+                    municipio: data.municipio,
+                    localidade: data.localidade,
+                    data: data.data_coleta ? data.data_coleta.split('T')[0] : '',
+                    
+                    // Step 2
+                    nomePescador: data.pescador?.nome,
+                    apelido: data.pescador?.apelido,
+                    cpf: data.pescador?.cpf,
+                    nascimento: data.pescador?.nascimento ? data.pescador.nascimento.split('T')[0] : '',
+
+                    // Step 3
+                    nomeEmbarcacao: data.embarcacao?.nome_embarcacao,
+                    codigoEmbarcacao: data.embarcacao?.codigo_embarcacao,
+                    tipoPetrecho: data.embarcacao?.tipo,
+                    comprimento: data.embarcacao?.comprimento,
+                    forcaMotorHP: data.embarcacao?.hp,
+                    possui: data.embarcacao?.possui,
+
+                    // Step 4
+                    arteSelecionadas: data.artes?.map(a => ({
+                        arte: a.arte,
+                        tamanho: a.tamanho
+                    })) || [],
+
+                    // Step 5
+                    proprietario: data.proprietario || data.embarcacao?.proprietario,
+                    apelidoProprietario: data.apelido_proprietario,
+                    desp_diesel: data.desp_diesel,
+                    desp_gasolina: data.desp_gasolina,
+                    litros: data.litros,
+                    geloKg: data.gelo_kg,
+                    ranchoValor: data.rancho_valor,
+
+                    // Step 6
+                    quadrante1: data.quadrante1,
+                    quadrante2: data.quadrante2,
+                    quadrante3: data.quadrante3,
+                    destinoPescado: data.destino_pescado,
+                    destinoApelido: data.destino_apelido,
+                    
+                    // Coordinates
+                    lat_deg1: latIda.deg, lat_min1: latIda.min, lat_sec1: latIda.sec,
+                    long_deg1: longIda.deg, long_min1: longIda.min, long_sec1: longIda.sec,
+                    lat_deg2: latVolta.deg, lat_min2: latVolta.min, lat_sec2: latVolta.sec,
+                    long_deg2: longVolta.deg, long_min2: longVolta.min, long_sec2: longVolta.sec,
+
+                    // Step 7 & 8
+                    especiesCaptura,
+                    especiesIndividuos,
+                    
+                    // Other fields
+                    numeroTripulantes: data.numero_tripulantes,
+                    pesqueiros: data.pesqueiros,
+                    dataSaida: data.data_saida ? data.data_saida.split('T')[0] : '',
+                    dataChegada: data.data_chegada ? data.data_chegada.split('T')[0] : '',
+                };
+
+                updateFormData(mappedData);
+            }
+        } catch (error) {
+            console.error("Erro ao carregar dados para edição", error);
+        }
+    };
 
     // Array de etapas para o indicador de progresso
     const steps = [
