@@ -429,33 +429,163 @@ export const buscarDesembarque = async (req, res) => {
 
 // Atualizar desembarque
 export const atualizarDesembarque = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { id } = req.params;
-    const dados = req.body;
+    const {
+      pescador,
+      embarcacao,
+      desembarque: desembarqueDados,
+      artes,
+      capturas,
+      individuos
+    } = req.body;
 
-    const desembarque = await Desembarque.findByPk(id);
-    
-    if (!desembarque) {
-      return res.status(404).json({
-        success: false,
-        message: 'Desembarque não encontrado'
-      });
+    const desembarqueDb = await Desembarque.findByPk(id, { transaction: t });
+    if (!desembarqueDb) {
+      await t.rollback();
+      return res.status(404).json({ success: false, message: 'Desembarque não encontrado' });
     }
 
-    await desembarque.update(dados);
+    // Validar CPF do pescador se fornecido
+    if (pescador?.cpf && !validarCPF(pescador.cpf)) {
+      await t.rollback();
+      return res.status(400).json({ success: false, message: 'CPF inválido' });
+    }
+
+    // Atualizar ou criar pescador
+    let pescadorDb = null;
+    if (pescador) {
+      if (pescador.cpf) {
+        [pescadorDb] = await Pescador.findOrCreate({
+          where: { cpf: pescador.cpf },
+          defaults: pescador,
+          transaction: t
+        });
+        // Atualizar com dados recentes
+        await pescadorDb.update(pescador, { transaction: t });
+      } else if (pescador.ID_pescador) {
+        pescadorDb = await Pescador.findByPk(pescador.ID_pescador, { transaction: t });
+        if (pescadorDb) await pescadorDb.update(pescador, { transaction: t });
+      }
+    }
+
+    // Atualizar ou criar embarcação
+    let embarcacaoDb = null;
+    if (embarcacao) {
+      if (embarcacao.codigo_embarcacao) {
+        [embarcacaoDb] = await Embarcacao.findOrCreate({
+          where: { codigo_embarcacao: embarcacao.codigo_embarcacao },
+          defaults: embarcacao,
+          transaction: t
+        });
+        await embarcacaoDb.update(embarcacao, { transaction: t });
+      } else if (embarcacao.ID_embarcacao) {
+        embarcacaoDb = await Embarcacao.findByPk(embarcacao.ID_embarcacao, { transaction: t });
+        if (embarcacaoDb) await embarcacaoDb.update(embarcacao, { transaction: t });
+      }
+    }
+
+    // Atualizar dados do desembarque
+    const updatePayload = {
+      ...(desembarqueDados || {}),
+      ID_pescador: pescadorDb?.ID_pescador ?? desembarqueDb.ID_pescador,
+      ID_embarcacao: embarcacaoDb?.ID_embarcacao ?? desembarqueDb.ID_embarcacao
+    };
+
+    await desembarqueDb.update(updatePayload, { transaction: t });
+
+    // Substituir registros relacionados (artes, capturas, individuos)
+    await Promise.all([
+      DesembarqueArte.destroy({ where: { ID_desembarque: id }, transaction: t }),
+      Captura.destroy({ where: { ID_desembarque: id }, transaction: t }),
+      Individuo.destroy({ where: { ID_desembarque: id }, transaction: t })
+    ]);
+
+    // 4. Criar artes de pesca
+    if (artes && artes.length > 0) {
+      const artesData = artes.map(arte => ({
+        ...arte,
+        ID_desembarque: id
+      }));
+      await DesembarqueArte.bulkCreate(artesData, { transaction: t });
+    }
+
+    // 5. Processar capturas e indivíduos
+    let totalDesembarque = 0;
+    let totalCapturas = 0;
+    let totalIndividuos = 0;
+
+    if (capturas && capturas.length > 0) {
+      for (const captura of capturas) {
+        if (captura.peso_kg) {
+          const capturaDb = await Captura.create({
+            ID_desembarque: id,
+            ID_especie: captura.ID_especie,
+            peso_kg: captura.peso_kg,
+            preco_kg: captura.preco_kg || 0,
+            preco_total: (captura.peso_kg || 0) * (captura.preco_kg || 0),
+            com_tripa: captura.com_tripa
+          }, { transaction: t });
+
+          totalDesembarque += capturaDb.preco_total;
+          totalCapturas++;
+        }
+      }
+    }
+
+    if (individuos && individuos.length > 0) {
+      const individuosData = individuos.map(ind => ({
+        ID_desembarque: id,
+        ID_especie: ind.ID_especie,
+        numero_individuo: ind.numero_individuo || null,
+        comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null,
+        comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null,
+        comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null,
+        peso_g: ind.peso_g || ind.peso || null,
+        sexo: ind.sexo || null,
+        estadio_gonadal: ind.estadio_gonadal || null
+      }));
+
+      await Individuo.bulkCreate(individuosData, { transaction: t });
+      totalIndividuos = individuos.length;
+    }
+
+    // Atualizar total do desembarque
+    await desembarqueDb.update({ total_desembarque: totalDesembarque }, { transaction: t });
+
+    await t.commit();
 
     res.json({
       success: true,
       message: 'Desembarque atualizado com sucesso',
-      data: desembarque
+      data: {
+        ID_desembarque: desembarqueDb.ID_desembarque,
+        cod_desembarque: desembarqueDb.cod_desembarque,
+        total_desembarque: totalDesembarque,
+        resumo: {
+          capturas: totalCapturas,
+          individuos: totalIndividuos,
+          artes: artes?.length || 0
+        }
+      }
     });
 
   } catch (error) {
-    console.error('Erro ao atualizar desembarque:', error);
+    await sequelize.transaction(async (tRollback) => tRollback.rollback());
+    console.error('❌ Erro ao atualizar desembarque:', {
+      message: error.message,
+      name: error.name,
+      sql: error.sql,
+      original: error.original?.message,
+      errors: error.errors?.map(e => ({ message: e.message, field: e.path }))
+    });
+
     res.status(500).json({
       success: false,
       message: 'Erro ao atualizar desembarque',
-      error: error.message
+      error: error.message,
+      details: error.original?.message || error.errors?.map(e => e.message).join(', ')
     });
   }
 };

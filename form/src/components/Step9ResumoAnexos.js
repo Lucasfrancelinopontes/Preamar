@@ -176,16 +176,27 @@ export default function Step9ResumoAnexos({ prevStep }) {
 
     try {
       setEnviando(true)
-      const resultado = await api.criarDesembarque(dadosEnvio)
-      
-      console.log('✅ Desembarque criado com sucesso:', resultado)
-      setSucesso(true)
-      
-      // Aguardar 2 segundos e redirecionar
-      setTimeout(() => {
-        resetForm()
-        router.push('/sucesso')
-      }, 2000)
+
+      let resultado = null
+      // Se estivermos editando (ID presente), chamar PUT de atualização
+      if (formData.ID_desembarque) {
+        resultado = await api.atualizarDesembarque(formData.ID_desembarque, dadosEnvio)
+        console.log('✅ Desembarque atualizado com sucesso:', resultado)
+        setSucesso(true)
+        // Aguardar 1s e voltar para lista de desembarques
+        setTimeout(() => {
+          router.push('/meus-desembarques')
+        }, 1000)
+      } else {
+        resultado = await api.criarDesembarque(dadosEnvio)
+        console.log('✅ Desembarque criado com sucesso:', resultado)
+        setSucesso(true)
+        // Aguardar 2 segundos e redirecionar
+        setTimeout(() => {
+          resetForm()
+          router.push('/sucesso')
+        }, 2000)
+      }
 
     } catch (error) {
       console.error('❌ Erro ao enviar:', error)

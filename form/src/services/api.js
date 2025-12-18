@@ -361,6 +361,21 @@ const api = {
     }
   },
 
+  atualizarDesembarque: async (id, dados) => {
+    try {
+      const response = await fetch(`${API_URL}/desembarques/${id}`, {
+        method: 'PUT',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao atualizar desembarque:', error);
+      throw error;
+    }
+  },
+
   listarDesembarques: async (filtros = {}) => {
     try {
       const params = new URLSearchParams(filtros);

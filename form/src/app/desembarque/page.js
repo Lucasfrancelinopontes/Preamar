@@ -76,6 +76,9 @@ function DesembarqueContent() {
                 }));
 
                 const mappedData = {
+                    // Identificador do desembarque (para edição)
+                    ID_desembarque: data.ID_desembarque,
+                    codigoColeta: data.cod_desembarque,
                     // Step 1
                     municipio: data.municipio,
                     localidade: data.localidade,
