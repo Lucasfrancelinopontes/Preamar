@@ -11,6 +11,18 @@ import {
 import { Op } from 'sequelize';
 import { validarCPF } from '../utils/validators.js';
 
+// Helper para gerar cod_desembarque a partir de município/localidade/data/consecutivo
+const gerarCodigoDesembarque = (municipio, localidade, data_coleta, consecutivo) => {
+  if (!municipio || !localidade || !data_coleta || !consecutivo) return null;
+  const dataObj = new Date(data_coleta);
+  if (isNaN(dataObj)) return null;
+  const dia = String(dataObj.getDate()).padStart(2, '0');
+  const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+  const ano = String(dataObj.getFullYear()).slice(-2);
+  const consec = String(consecutivo).padStart(2, '0');
+  return `${municipio}-${localidade}-${dia}-${mes}-${ano}-${consec}`;
+};
+
 // Criar novo desembarque completo com transação
 export const criarDesembarque = async (req, res) => {
   const t = await sequelize.transaction();
@@ -73,7 +85,13 @@ export const criarDesembarque = async (req, res) => {
       console.log('✅ Embarcação:', embarcacaoDb.nome_embarcacao, `(ID: ${embarcacaoDb.ID_embarcacao})`);
     }
 
-    // 3. Criar desembarque
+    // 3. Gerar cod_desembarque se não enviado
+    if (!desembarque.cod_desembarque) {
+      const generated = gerarCodigoDesembarque(desembarque.municipio, desembarque.localidade, desembarque.data_coleta || desembarque.data_saida || null, desembarque.consecutivo || 1);
+      if (generated) desembarque.cod_desembarque = generated;
+    }
+
+    // 4. Criar desembarque (com ID do pescador e embarcação)
     const desembarqueDb = await Desembarque.create({
       ...desembarque,
       ID_pescador: pescadorDb?.ID_pescador || null,
@@ -493,65 +511,110 @@ export const atualizarDesembarque = async (req, res) => {
       ID_embarcacao: embarcacaoDb?.ID_embarcacao ?? desembarqueDb.ID_embarcacao
     };
 
-    await desembarqueDb.update(updatePayload, { transaction: t });
-
-    // Substituir registros relacionados (artes, capturas, individuos)
-    await Promise.all([
-      DesembarqueArte.destroy({ where: { ID_desembarque: id }, transaction: t }),
-      Captura.destroy({ where: { ID_desembarque: id }, transaction: t }),
-      Individuo.destroy({ where: { ID_desembarque: id }, transaction: t })
-    ]);
-
-    // 4. Criar artes de pesca
-    if (artes && artes.length > 0) {
-      const artesData = artes.map(arte => ({
-        ...arte,
-        ID_desembarque: id
-      }));
-      await DesembarqueArte.bulkCreate(artesData, { transaction: t });
-    }
-
-    // 5. Processar capturas e indivíduos
-    let totalDesembarque = 0;
-    let totalCapturas = 0;
-    let totalIndividuos = 0;
-
-    if (capturas && capturas.length > 0) {
-      for (const captura of capturas) {
-        if (captura.peso_kg) {
-          const capturaDb = await Captura.create({
-            ID_desembarque: id,
-            ID_especie: captura.ID_especie,
-            peso_kg: captura.peso_kg,
-            preco_kg: captura.preco_kg || 0,
-            preco_total: (captura.peso_kg || 0) * (captura.preco_kg || 0),
-            com_tripa: captura.com_tripa
-          }, { transaction: t });
-
-          totalDesembarque += capturaDb.preco_total;
-          totalCapturas++;
+    // Gerar cod_desembarque se não fornecido, usando valores novos ou existentes
+    if (!updatePayload.cod_desembarque) {
+      const municipio = updatePayload.municipio || desembarqueDb.municipio;
+      const localidade = updatePayload.localidade || desembarqueDb.localidade;
+      const data_coleta = updatePayload.data_coleta || updatePayload.data_saida || desembarqueDb.data_coleta || desembarqueDb.data_saida;
+      const consecutivo = updatePayload.consecutivo || desembarqueDb.consecutivo || 1;
+      const generated = gerarCodigoDesembarque(municipio, localidade, data_coleta, consecutivo);
+      if (generated) {
+        // garantir unicidade (incremental simples se necessário)
+        let candidate = generated;
+        let suffix = 1;
+        while (true) {
+          const exists = await Desembarque.findOne({ where: { cod_desembarque: candidate } , transaction: t});
+          if (!exists || exists.ID_desembarque === desembarqueDb.ID_desembarque) break;
+          suffix += 1;
+          candidate = `${generated}-v${suffix}`;
         }
+        updatePayload.cod_desembarque = candidate;
       }
     }
 
-    if (individuos && individuos.length > 0) {
-      const individuosData = individuos.map(ind => ({
-        ID_desembarque: id,
-        ID_especie: ind.ID_especie,
-        numero_individuo: ind.numero_individuo || null,
-        comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null,
-        comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null,
-        comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null,
-        peso_g: ind.peso_g || ind.peso || null,
-        sexo: ind.sexo || null,
-        estadio_gonadal: ind.estadio_gonadal || null
-      }));
+    await desembarqueDb.update(updatePayload, { transaction: t });
 
-      await Individuo.bulkCreate(individuosData, { transaction: t });
-      totalIndividuos = individuos.length;
+    // Sincronizar artes (incremental): atualizar existentes, criar novos, apagar removidos
+    const existingArtes = await DesembarqueArte.findAll({ where: { ID_desembarque: id }, transaction: t });
+    const incomingArteIds = [];
+    if (Array.isArray(artes)) {
+      for (const arte of artes) {
+        const arteId = arte.ID || arte.id || null;
+        if (arteId) {
+          const arteDb = existingArtes.find(a => a.ID === arteId);
+          if (arteDb) {
+            await arteDb.update({ arte: arte.arte, tamanho: arte.tamanho, unidade: arte.unidade }, { transaction: t });
+            incomingArteIds.push(arteDb.ID);
+          } else {
+            const newA = await DesembarqueArte.create({ ...arte, ID_desembarque: id }, { transaction: t });
+            incomingArteIds.push(newA.ID);
+          }
+        } else {
+          const newA = await DesembarqueArte.create({ ...arte, ID_desembarque: id }, { transaction: t });
+          incomingArteIds.push(newA.ID);
+        }
+      }
     }
+    // Apagar artes removidas
+    await DesembarqueArte.destroy({ where: { ID_desembarque: id, ID: { [Op.notIn]: incomingArteIds.length ? incomingArteIds : [0] } }, transaction: t });
 
-    // Atualizar total do desembarque
+    // Sincronizar capturas (incremental)
+    const existingCapturas = await Captura.findAll({ where: { ID_desembarque: id }, transaction: t });
+    const incomingCapturaIds = [];
+    if (Array.isArray(capturas)) {
+      for (const captura of capturas) {
+        const capId = captura.ID_captura || captura.id || null;
+        if (capId) {
+          const capDb = existingCapturas.find(c => c.ID_captura === capId);
+          if (capDb) {
+            const precoKg = captura.preco_kg != null ? captura.preco_kg : capDb.preco_kg || 0;
+            const pesoKg = captura.peso_kg != null ? captura.peso_kg : capDb.peso_kg || 0;
+            const precoTotal = (pesoKg || 0) * (precoKg || 0);
+            await capDb.update({ ID_especie: captura.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa }, { transaction: t });
+            incomingCapturaIds.push(capDb.ID_captura);
+          } else {
+            const created = await Captura.create({ ID_desembarque: id, ID_especie: captura.ID_especie, peso_kg: captura.peso_kg, preco_kg: captura.preco_kg || 0, preco_total: (captura.peso_kg || 0) * (captura.preco_kg || 0), com_tripa: captura.com_tripa }, { transaction: t });
+            incomingCapturaIds.push(created.ID_captura);
+          }
+        } else {
+          const created = await Captura.create({ ID_desembarque: id, ID_especie: captura.ID_especie, peso_kg: captura.peso_kg, preco_kg: captura.preco_kg || 0, preco_total: (captura.peso_kg || 0) * (captura.preco_kg || 0), com_tripa: captura.com_tripa }, { transaction: t });
+          incomingCapturaIds.push(created.ID_captura);
+        }
+      }
+    }
+    // Apagar capturas removidas
+    await Captura.destroy({ where: { ID_desembarque: id, ID_captura: { [Op.notIn]: incomingCapturaIds.length ? incomingCapturaIds : [0] } }, transaction: t });
+
+    // Sincronizar indivíduos (incremental)
+    const existingIndividuos = await Individuo.findAll({ where: { ID_desembarque: id }, transaction: t });
+    const incomingIndividuoIds = [];
+    if (Array.isArray(individuos)) {
+      for (const ind of individuos) {
+        const indId = ind.ID_individuo || ind.id || null;
+        if (indId) {
+          const indDb = existingIndividuos.find(x => x.ID_individuo === indId);
+          if (indDb) {
+            await indDb.update({ ID_especie: ind.ID_especie, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
+            incomingIndividuoIds.push(indDb.ID_individuo);
+          } else {
+            const created = await Individuo.create({ ID_desembarque: id, ID_especie: ind.ID_especie, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
+            incomingIndividuoIds.push(created.ID_individuo);
+          }
+        } else {
+          const created = await Individuo.create({ ID_desembarque: id, ID_especie: ind.ID_especie, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
+          incomingIndividuoIds.push(created.ID_individuo);
+        }
+      }
+    }
+    // Apagar indivíduos removidos
+    await Individuo.destroy({ where: { ID_desembarque: id, ID_individuo: { [Op.notIn]: incomingIndividuoIds.length ? incomingIndividuoIds : [0] } }, transaction: t });
+
+    // Recalcular total do desembarque a partir das capturas atuais
+    const capturasAfter = await Captura.findAll({ where: { ID_desembarque: id }, transaction: t });
+    let totalDesembarque = capturasAfter.reduce((sum, c) => sum + (parseFloat(c.preco_total) || 0), 0);
+    const totalCapturas = capturasAfter.length;
+    const totalIndividuos = await Individuo.count({ where: { ID_desembarque: id }, transaction: t });
+
     await desembarqueDb.update({ total_desembarque: totalDesembarque }, { transaction: t });
 
     await t.commit();
@@ -572,20 +635,19 @@ export const atualizarDesembarque = async (req, res) => {
     });
 
   } catch (error) {
-    await sequelize.transaction(async (tRollback) => tRollback.rollback());
-    console.error('❌ Erro ao atualizar desembarque:', {
-      message: error.message,
-      name: error.name,
-      sql: error.sql,
-      original: error.original?.message,
-      errors: error.errors?.map(e => ({ message: e.message, field: e.path }))
-    });
+    try {
+      await t.rollback();
+    } catch (rbErr) {
+      console.error('Erro ao dar rollback na transação:', rbErr);
+    }
+
+    console.error('❌ Erro ao atualizar desembarque:', error);
 
     res.status(500).json({
       success: false,
       message: 'Erro ao atualizar desembarque',
       error: error.message,
-      details: error.original?.message || error.errors?.map(e => e.message).join(', ')
+      details: error.original?.message || (error.errors ? error.errors.map(e => e.message).join(', ') : undefined)
     });
   }
 };

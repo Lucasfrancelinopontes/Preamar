@@ -50,8 +50,9 @@ function DesembarqueContent() {
                 const latVolta = toDMS(data.lat_volta);
                 const longVolta = toDMS(data.long_volta);
 
-                // Map Captures
+                // Map Captures (preserve IDs for incremental update)
                 const especiesCaptura = data.capturas?.map(c => ({
+                    ID_captura: c.ID_captura,
                     id: c.ID_especie,
                     peso: c.peso_kg,
                     preco: c.preco_kg,
@@ -65,6 +66,7 @@ function DesembarqueContent() {
                         individuosByEspecie[ind.ID_especie] = [];
                     }
                     individuosByEspecie[ind.ID_especie].push({
+                        ID_individuo: ind.ID_individuo,
                         peso: ind.peso_g,
                         comprimento: ind.comprimento_total_cm || ind.comprimento_padrao_cm
                     });
@@ -105,8 +107,9 @@ function DesembarqueContent() {
                     numTripulantes: data.numero_tripulantes,
                     numPesqueiros: data.pesqueiros,
 
-                    // Step 4
+                    // Step 4 (preserve IDs for incremental update)
                     arteSelecionadas: data.artes?.map(a => ({
+                        ID: a.ID,
                         arte: a.arte,
                         tamanho: a.tamanho
                     })) || [],

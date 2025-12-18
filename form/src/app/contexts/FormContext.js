@@ -5,80 +5,67 @@ const FormContext = createContext();
 
 export function FormProvider({ children }) {
     const [formData, setFormData] = useState({
-        // Dados de desembarque
-        municipio: "",
-        localidade: "",
-        data: "",
-        consecutivo: "",
-        coletor: "",
-        dataC: "",
-        revisor: "",
-        dataR: "",
-        digitador: "",
-        dataD: "",
-        
-        // Dados do pescador
-        nomePescador: "",
-        apelido: "",
-        cpf: "",
-        nascimento: "",
-        
-        // Dados da embarcação
-        nomeEmbarcacao: "",
-        codigoEmbarcacao: "",
-        tipoPetrecho: "",
-        comprimento: "",
-        capacidadeEstocagem: "",
-        forcaMotorHP: "",
-        possui: "",
-        
-        // Dados da pesca
-        numeroTripulantes: "",
-        pesqueiros: "",
-        dataSaida: "",
-        horaSaida: "",
-        dataChegada: "",
-        horaDesembarque: "",
-        
-        // Artes de pesca
+        // Identificador quando em edição
+        ID_desembarque: null,
+        codigoColeta: '',
+
+        // Etapa 1 - Local e datas
+        municipio: '',
+        localidade: '',
+        dataColeta: '',
+        consecutivo: null,
+        dataSaida: '',
+        horaSaida: '',
+        dataChegada: '',
+        horaChegada: '',
+
+        // Etapa 2 - Pescador
+        nomePescador: '',
+        apelidoPescador: '',
+        cpfPescador: '',
+        nascimentoPescador: '',
+
+        // Etapa 3 - Embarcação
+        nomeEmbarcacao: '',
+        codigoEmbarcacao: '',
+        tipoEmbarcacao: '',
+        comprimento: '',
+        capacidadeEstocagem: '',
+        forcaMotor: '',
+        armazenamento: '',
+        numTripulantes: '',
+        numPesqueiros: '',
+
+        // Etapa 4 - Artes
         arteSelecionadas: [],
-        arte_obs: "",
-        
-        // Coordenadas
-        lat_deg1: "",
-        lat_min1: "",
-        lat_sec1: "",
-        lat_deg2: "",
-        lat_min2: "",
-        lat_sec2: "",
-        long_deg1: "",
-        long_min1: "",
-        long_sec1: "",
-        long_deg2: "",
-        long_min2: "",
-        long_sec2: "",
-        quadrante1: "",
-        quadrante2: "",
-        quadrante3: "",
-        
-        // Proprietário e despesas
-        proprietario: "",
-        apelidoProprietario: "",
-        atuouPesca: "",
-        origem: "",
-        desp_diesel: false,
-        desp_gasolina: false,
-        litros: "",
-        geloKg: "",
-        ranchoValor: "",
-        
-        // Destino
-        destinoPescado: "",
-        destinoApelido: "",
-        destinoOutrosQual: "",
-        
-        // Espécies capturadas
-        especies: []
+        arte_obs: '',
+
+        // Coordenadas / Quadrantes
+        latIda: '',
+        longIda: '',
+        latVolta: '',
+        longVolta: '',
+        quadrante1: '',
+        quadrante2: '',
+        quadrante3: '',
+
+        // Etapa 5 - Proprietário e despesas
+        nomeProprietario: '',
+        apelidoProprietario: '',
+        cpfProprietario: '',
+        atuouNaPesca: null,
+        quantidadeGelo: '',
+        valorRancho: '',
+        litrosCombustivel: '',
+        tipoCombustivel: '',
+
+        // Etapa 6 - Destino
+        destinoPescado: '',
+        apelidoDestino: '',
+
+        // Etapa 7/8 - Espécies
+        especiesCaptura: [],
+        especiesIndividuos: []
     });
 
     const [errors, setErrors] = useState({});
@@ -103,63 +90,50 @@ export function FormProvider({ children }) {
 
     const resetForm = () => {
         setFormData({
-            municipio: "",
-            localidade: "",
-            data: "",
-            consecutivo: "",
-            coletor: "",
-            dataC: "",
-            revisor: "",
-            dataR: "",
-            digitador: "",
-            dataD: "",
-            nomePescador: "",
-            apelido: "",
-            cpf: "",
-            nascimento: "",
-            nomeEmbarcacao: "",
-            codigoEmbarcacao: "",
-            tipoPetrecho: "",
-            comprimento: "",
-            capacidadeEstocagem: "",
-            forcaMotorHP: "",
-            possui: "",
-            numeroTripulantes: "",
-            pesqueiros: "",
-            dataSaida: "",
-            horaSaida: "",
-            dataChegada: "",
-            horaDesembarque: "",
+            ID_desembarque: null,
+            codigoColeta: '',
+            municipio: '',
+            localidade: '',
+            dataColeta: '',
+            consecutivo: null,
+            dataSaida: '',
+            horaSaida: '',
+            dataChegada: '',
+            horaChegada: '',
+            nomePescador: '',
+            apelidoPescador: '',
+            cpfPescador: '',
+            nascimentoPescador: '',
+            nomeEmbarcacao: '',
+            codigoEmbarcacao: '',
+            tipoEmbarcacao: '',
+            comprimento: '',
+            capacidadeEstocagem: '',
+            forcaMotor: '',
+            armazenamento: '',
+            numTripulantes: '',
+            numPesqueiros: '',
             arteSelecionadas: [],
-            arte_obs: "",
-            lat_deg1: "",
-            lat_min1: "",
-            lat_sec1: "",
-            lat_deg2: "",
-            lat_min2: "",
-            lat_sec2: "",
-            long_deg1: "",
-            long_min1: "",
-            long_sec1: "",
-            long_deg2: "",
-            long_min2: "",
-            long_sec2: "",
-            quadrante1: "",
-            quadrante2: "",
-            quadrante3: "",
-            proprietario: "",
-            apelidoProprietario: "",
-            atuouPesca: "",
-            origem: "",
-            desp_diesel: false,
-            desp_gasolina: false,
-            litros: "",
-            geloKg: "",
-            ranchoValor: "",
-            destinoPescado: "",
-            destinoApelido: "",
-            destinoOutrosQual: "",
-            especies: []
+            arte_obs: '',
+            latIda: '',
+            longIda: '',
+            latVolta: '',
+            longVolta: '',
+            quadrante1: '',
+            quadrante2: '',
+            quadrante3: '',
+            nomeProprietario: '',
+            apelidoProprietario: '',
+            cpfProprietario: '',
+            atuouNaPesca: null,
+            quantidadeGelo: '',
+            valorRancho: '',
+            litrosCombustivel: '',
+            tipoCombustivel: '',
+            destinoPescado: '',
+            apelidoDestino: '',
+            especiesCaptura: [],
+            especiesIndividuos: []
         });
         setErrors({});
     };

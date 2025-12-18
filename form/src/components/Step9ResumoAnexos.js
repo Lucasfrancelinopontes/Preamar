@@ -52,7 +52,12 @@ export default function Step9ResumoAnexos({ prevStep }) {
     const municipio = formData.municipio || 'LOCAL';
     const localidade = formData.localidade || 'PRAIA';
     
-    const codDesembarque = formData.codigoColeta;
+    // Gerar código automaticamente se não existir (baseado em data de coleta)
+    let codDesembarque = formData.codigoColeta;
+    if (!codDesembarque) {
+      const gen = gerarCodigoDesembarque(municipio, localidade, dataColeta, consecutivo);
+      if (gen) codDesembarque = gen;
+    }
 
     const pescador = {
       nome: formData.nomePescador || '',
