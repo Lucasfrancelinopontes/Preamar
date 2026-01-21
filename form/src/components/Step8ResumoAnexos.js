@@ -323,7 +323,10 @@ export default function Step8ResumoAnexos({ prevStep }) {
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div><span className="text-gray-500">Nome:</span> {formData.proprietarioNome || 'Não informado'}</div>
               <div><span className="text-gray-500">CPF:</span> {formData.cpfProprietario || 'Não informado'}</div>
-              <div><span className="text-gray-500">Atuou na pesca:</span> {formData.atuouNaPesca ? 'Sim' : 'Não'}</div>
+              <div>
+                <span className="text-gray-500">Atuou na pesca:</span>{' '}
+                {formData.atuouNaPesca === true ? 'Sim' : (formData.atuouNaPesca === false ? 'Não' : 'Não informado')}
+              </div>
             </div>
           </div>
 

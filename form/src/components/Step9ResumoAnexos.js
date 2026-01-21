@@ -111,7 +111,7 @@ export default function Step9ResumoAnexos({ prevStep }) {
       rancho_valor: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
       proprietario: formData.nomeProprietario || formData.nomePescador,
       apelido_proprietario: formData.apelidoProprietario || null,
-      atuou_pesca: formData.atuouNaPesca ? 'S' : 'N',
+      atuou_pesca: formData.atuouNaPesca === true ? 'S' : (formData.atuouNaPesca === false ? 'N' : null),
       destino_pescado: Array.isArray(formData.destinoPescado)
         ? (formData.destinoPescado.length ? formData.destinoPescado.map(v => String(v).toLowerCase()).join(',') : null)
         : (formData.destinoPescado ? String(formData.destinoPescado).toLowerCase() : null),
@@ -395,7 +395,10 @@ export default function Step9ResumoAnexos({ prevStep }) {
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div><span className="text-gray-500">Nome:</span> {formData.nomeProprietario || 'Não informado'}</div>
               <div><span className="text-gray-500">CPF:</span> {formData.cpfProprietario || 'Não informado'}</div>
-              <div><span className="text-gray-500">Atuou na pesca:</span> {formData.atuouNaPesca ? 'Sim' : 'Não'}</div>
+              <div>
+                <span className="text-gray-500">Atuou na pesca:</span>{' '}
+                {formData.atuouNaPesca === true ? 'Sim' : (formData.atuouNaPesca === false ? 'Não' : 'Não informado')}
+              </div>
             </div>
           </div>
 

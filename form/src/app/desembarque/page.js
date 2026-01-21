@@ -117,7 +117,7 @@ function DesembarqueContent() {
                     // Step 5
                     nomeProprietario: data.proprietario || data.embarcacao?.proprietario,
                     apelidoProprietario: data.apelido_proprietario,
-                    atuouNaPesca: data.atuou_pesca === 'S',
+                    atuouNaPesca: data.atuou_pesca === 'S' ? true : (data.atuou_pesca === 'N' ? false : null),
                     quantidadeGelo: data.gelo_kg,
                     valorRancho: data.rancho_valor,
                     litrosCombustivel: data.litros,

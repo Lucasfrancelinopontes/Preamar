@@ -42,26 +42,6 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
     //   return
     // }
 
-    // Validar campos obrigatórios
-    const requiredFields = [
-      // 'nomeProprietario',
-      // 'atuouNaPesca',
-      'litrosCombustivel',
-      'tipoCombustivel'
-    ]
-
-    const missingFields = requiredFields.filter(field => {
-      if (field === 'atuouNaPesca') {
-        return typeof formData[field] !== 'boolean'
-      }
-      return !formData[field]
-    })
-
-    if (missingFields.length > 0) {
-      alert('Por favor, preencha todos os campos obrigatórios.')
-      return
-    }
-
     nextStep()
   }
 
@@ -151,7 +131,6 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
                   checked={formData.atuouNaPesca === false}
                   onChange={handleRadioChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                  required
                 />
                 <span className="ml-2 text-gray-700 dark:text-gray-300">Não</span>
               </label>
@@ -198,7 +177,7 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Litros de combustível *
+              Litros de combustível
             </label>
             <input
               type="number"
@@ -208,20 +187,18 @@ export default function Step5ProprietarioDespesas({ nextStep, prevStep }) {
               min="0"
               step="0.1"
               className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tipo de combustível *
+              Tipo de combustível
             </label>
             <select
               name="tipoCombustivel"
               value={formData.tipoCombustivel || ''}
               onChange={handleChange}
               className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              required
             >
               <option value="">Selecione o tipo</option>
               {tiposCombustivel.map(tipo => (
