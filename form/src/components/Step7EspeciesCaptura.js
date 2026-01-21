@@ -63,14 +63,6 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
         setErro('Selecione a espécie')
         return false
       }
-      if (!especie.peso || parseFloat(especie.peso) <= 0) {
-        setErro('Peso deve ser maior que zero')
-        return false
-      }
-      if (!especie.preco || parseFloat(especie.preco) < 0) {
-        setErro('Preço deve ser maior ou igual a zero')
-        return false
-      }
     }
 
     setErro(null)
@@ -174,7 +166,7 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
                 {/* Peso Total Input */}
                 <div className="md:col-span-2">
                   <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Peso Total (kg) *
+                    Peso Total (kg) 
                   </label>
                   <input
                     type="number"
@@ -184,14 +176,13 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
                     step="0.01"
                     placeholder="0.00"
                     className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    required
                   />
                 </div>
 
                 {/* Preço Input */}
                 <div className="md:col-span-2">
                   <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Preço/kg (R$) *
+                    Preço/kg (R$)
                   </label>
                   <input
                     type="number"
@@ -201,7 +192,6 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
                     step="0.01"
                     placeholder="0.00"
                     className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    required
                   />
                 </div>
 
