@@ -127,8 +127,38 @@ function DesembarqueContent() {
                     quadrante1: data.quadrante1,
                     quadrante2: data.quadrante2,
                     quadrante3: data.quadrante3,
-                    destinoPescado: data.destino_pescado,
-                    apelidoDestino: data.destino_apelido,
+                                        destinoPescado: typeof data.destino_pescado === 'string'
+                                            ? data.destino_pescado
+                                                    .split(',')
+                                                    .map(s => s.trim())
+                                                    .filter(Boolean)
+                                                    .map(s => {
+                                                        const v = s.toLowerCase()
+                                                        if (v === 'atravessador') return 'Atravessador'
+                                                        if (v === 'armador') return 'Armador'
+                                                        if (v === 'consumidor') return 'Consumidor'
+                                                        if (v === 'outros' || v === 'outro') return 'Outros'
+                                                        return s
+                                                    })
+                                            : (Array.isArray(data.destino_pescado) ? data.destino_pescado : []),
+                                        apelidoDestino: data.destino_apelido,
+                                        apelidosDestino: typeof data.destino_apelido === 'string'
+                                            ? data.destino_apelido
+                                                    .split(',')
+                                                    .map(s => s.trim())
+                                                    .filter(Boolean)
+                                                    .reduce((acc, item) => {
+                                                        const [k, ...rest] = item.split(':')
+                                                        const key = (k || '').toLowerCase()
+                                                        const val = rest.join(':').trim()
+                                                        if (!val) return acc
+                                                        if (key === 'atravessador') acc.Atravessador = val
+                                                        if (key === 'armador') acc.Armador = val
+                                                        if (key === 'consumidor') acc.Consumidor = val
+                                                        return acc
+                                                    }, { Atravessador: '', Armador: '', Consumidor: '' })
+                                            : { Atravessador: '', Armador: '', Consumidor: '' },
+                                        outroDestino: data.destino_outros_qual,
                     
                     // Coordinates
                     lat_deg1: latIda.deg, lat_min1: latIda.min, lat_sec1: latIda.sec,

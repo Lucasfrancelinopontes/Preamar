@@ -115,7 +115,12 @@ export default function Step9ResumoAnexos({ prevStep }) {
       destino_pescado: Array.isArray(formData.destinoPescado)
         ? (formData.destinoPescado.length ? formData.destinoPescado.map(v => String(v).toLowerCase()).join(',') : null)
         : (formData.destinoPescado ? String(formData.destinoPescado).toLowerCase() : null),
-      destino_apelido: formData.apelidoDestino || null,
+      destino_apelido: (formData.apelidosDestino && typeof formData.apelidosDestino === 'object')
+        ? (Object.entries(formData.apelidosDestino)
+            .filter(([dest, apelido]) => Array.isArray(formData.destinoPescado) && formData.destinoPescado.includes(dest) && apelido)
+            .map(([dest, apelido]) => `${String(dest).toLowerCase()}:${String(apelido).trim()}`)
+            .join(',') || null)
+        : (formData.apelidoDestino || null),
       destino_outros_qual: formData.outroDestino || null
     }
 
@@ -464,9 +469,15 @@ export default function Step9ResumoAnexos({ prevStep }) {
                   ? (formData.destinoPescado.length ? formData.destinoPescado.join(', ') : '')
                   : formData.destinoPescado}
               </div>
-              {formData.apelidoDestino && (
-                <div><span className="text-gray-500">Apelido:</span> {formData.apelidoDestino}</div>
-              )}
+              {formData.apelidosDestino && typeof formData.apelidosDestino === 'object'
+                ? (Object.entries(formData.apelidosDestino)
+                    .filter(([dest, apelido]) => Array.isArray(formData.destinoPescado) && formData.destinoPescado.includes(dest) && apelido)
+                    .map(([dest, apelido]) => (
+                      <div key={dest}><span className="text-gray-500">Apelido {String(dest).toLowerCase()}:</span> {apelido}</div>
+                    )))
+                : (formData.apelidoDestino && (
+                    <div><span className="text-gray-500">Apelido:</span> {formData.apelidoDestino}</div>
+                  ))}
             </div>
           </div>
         </div>

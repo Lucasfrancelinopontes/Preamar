@@ -82,6 +82,13 @@ export default function Step8ResumoAnexos({ prevStep }) {
       ? (formData.destinoPescado.length ? formData.destinoPescado.map(v => String(v).toLowerCase()).join(',') : null)
       : (formData.destinoPescado ? String(formData.destinoPescado).toLowerCase() : null)
 
+    const destinoApelidoPayload = (formData.apelidosDestino && typeof formData.apelidosDestino === 'object')
+      ? Object.entries(formData.apelidosDestino)
+          .filter(([dest, apelido]) => (Array.isArray(formData.destinoPescado) ? formData.destinoPescado.includes(dest) : false) && apelido)
+          .map(([dest, apelido]) => `${String(dest).toLowerCase()}:${String(apelido).trim()}`)
+          .join(',') || null
+      : (formData.apelidoDestino || null)
+
     const desembarque = {
       cod_desembarque: codDesembarque,
       municipio: municipio,
@@ -107,7 +114,7 @@ export default function Step8ResumoAnexos({ prevStep }) {
       gelo_kg: formData.quantidadeGelo ? parseFloat(formData.quantidadeGelo) : null,
       rancho_valor: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
       destino_pescado: destinoPescadoLower,
-      destino_apelido: formData.apelidoDestino || null,
+      destino_apelido: destinoApelidoPayload,
       destino_outros_qual: formData.outroDestino || null
     }
 
@@ -392,9 +399,15 @@ export default function Step8ResumoAnexos({ prevStep }) {
                   ? (formData.destinoPescado.length ? formData.destinoPescado.join(', ') : '')
                   : formData.destinoPescado}
               </div>
-              {formData.apelidoDestino && (
-                <div><span className="text-gray-500">Apelido:</span> {formData.apelidoDestino}</div>
-              )}
+              {formData.apelidosDestino && typeof formData.apelidosDestino === 'object'
+                ? (Object.entries(formData.apelidosDestino)
+                    .filter(([dest, apelido]) => Array.isArray(formData.destinoPescado) && formData.destinoPescado.includes(dest) && apelido)
+                    .map(([dest, apelido]) => (
+                      <div key={dest}><span className="text-gray-500">Apelido {String(dest).toLowerCase()}:</span> {apelido}</div>
+                    )))
+                : (formData.apelidoDestino && (
+                    <div><span className="text-gray-500">Apelido:</span> {formData.apelidoDestino}</div>
+                  ))}
             </div>
           </div>
         </div>

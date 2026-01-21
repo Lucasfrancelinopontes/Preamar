@@ -28,8 +28,23 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
     ? formData.destinoPescado
     : (formData.destinoPescado ? [formData.destinoPescado] : [])
 
-  const precisaApelido = destinosSelecionados.some(v => ['Atravessador', 'Armador', 'Consumidor'].includes(v))
+  const opcoesComApelido = ['Atravessador', 'Armador', 'Consumidor']
+  const destinosComApelidoSelecionados = destinosSelecionados.filter(v => opcoesComApelido.includes(v))
+  const precisaApelido = destinosComApelidoSelecionados.length > 0
   const isOutrosSelecionado = destinosSelecionados.includes('Outros')
+
+  const apelidosDestino = (formData.apelidosDestino && typeof formData.apelidosDestino === 'object')
+    ? formData.apelidosDestino
+    : {}
+
+  const handleApelidoDestinoChange = (destino, value) => {
+    updateFormData({
+      apelidosDestino: {
+        ...apelidosDestino,
+        [destino]: value
+      }
+    })
+  }
 
   const handleDestinoToggle = (value) => {
     const isSelected = destinosSelecionados.includes(value)
@@ -42,8 +57,13 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
     const nextPrecisaApelido = nextValues.some(v => ['Atravessador', 'Armador', 'Consumidor'].includes(v))
     const nextIsOutros = nextValues.includes('Outros')
 
-    if (!nextPrecisaApelido && formData.apelidoDestino) {
-      updateFormData({ apelidoDestino: '' })
+    if (isSelected && ['Atravessador', 'Armador', 'Consumidor'].includes(value)) {
+      updateFormData({
+        apelidosDestino: {
+          ...apelidosDestino,
+          [value]: ''
+        }
+      })
     }
 
     if (!nextIsOutros && formData.outroDestino) {
@@ -79,9 +99,12 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
     }
 
     // Validate apelido/outro when destination requires it
-    if (precisaApelido && !formData.apelidoDestino) {
-      alert('Por favor, informe o apelido do destino.')
-      return
+    if (precisaApelido) {
+      const faltando = destinosComApelidoSelecionados.find(d => !apelidosDestino?.[d])
+      if (faltando) {
+        alert(`Por favor, informe o apelido ${faltando.toLowerCase()}.`)
+        return
+      }
     }
     if (isOutrosSelecionado && !formData.outroDestino) {
       alert('Por favor, informe o outro destino.')
@@ -261,22 +284,21 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
           </div>
 
           {/* Campo Apelido (condicional) */}
-          {precisaApelido && (
-            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
+          {destinosComApelidoSelecionados.map((destino) => (
+            <div key={destino} className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Apelido *
+                Apelido {destino.toLowerCase()} *
               </label>
               <input
                 type="text"
-                name="apelidoDestino"
-                value={formData.apelidoDestino || ''}
-                onChange={handleChange}
-                placeholder="Informe o apelido"
+                value={apelidosDestino?.[destino] || ''}
+                onChange={(e) => handleApelidoDestinoChange(destino, e.target.value)}
+                placeholder={`Informe o apelido ${destino.toLowerCase()}`}
                 className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required={precisaApelido}
+                required
               />
             </div>
-          )}
+          ))}
 
           {/* Campo Outro (condicional) */}
           {isOutrosSelecionado && (

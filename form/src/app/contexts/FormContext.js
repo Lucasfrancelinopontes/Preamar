@@ -60,8 +60,13 @@ export function FormProvider({ children }) {
         tipoCombustivel: '',
 
         // Etapa 6 - Destino
-        destinoPescado: '',
+        destinoPescado: [],
         apelidoDestino: '',
+        apelidosDestino: {
+            Atravessador: '',
+            Armador: '',
+            Consumidor: ''
+        },
         outroDestino: '',
 
         // Etapa 7/8 - Espécies
@@ -131,8 +136,13 @@ export function FormProvider({ children }) {
             valorRancho: '',
             litrosCombustivel: '',
             tipoCombustivel: '',
-            destinoPescado: '',
+            destinoPescado: [],
             apelidoDestino: '',
+            apelidosDestino: {
+                Atravessador: '',
+                Armador: '',
+                Consumidor: ''
+            },
             outroDestino: '',
             especiesCaptura: [],
             especiesIndividuos: []
