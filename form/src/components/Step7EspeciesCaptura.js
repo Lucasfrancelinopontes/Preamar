@@ -51,18 +51,11 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
 
   const validarEspecies = () => {
     // Filter only filled species
-    const especiesPreenchidas = especies.filter(e => e.id && e.peso)
+    const especiesPreenchidas = especies.filter(e => e.id)
     
     if (especiesPreenchidas.length === 0) {
       setErro('Adicione pelo menos uma espécie capturada')
       return false
-    }
-
-    for (const especie of especiesPreenchidas) {
-      if (!especie.id) {
-        setErro('Selecione a espécie')
-        return false
-      }
     }
 
     setErro(null)
@@ -83,11 +76,17 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
       return
     }
 
-    // Save to form context - only species with data
-    const especiesValidas = especies.filter(e => e.id && e.peso && e.preco)
+    // Save to form context - only species selected
+    const especiesValidas = especies.filter(e => e.id)
+    const individuosExistentesPorId = new Map(
+      (formData.especiesIndividuos || []).map(e => [String(e.id), e.individuos || []])
+    )
     updateFormData({ 
       especiesCaptura: especiesValidas,
-      especiesIndividuos: especiesValidas.map(e => ({ ...e, individuos: [] }))
+      especiesIndividuos: especiesValidas.map(e => ({
+        ...e,
+        individuos: individuosExistentesPorId.get(String(e.id)) || []
+      }))
     })
     nextStep()
   }
@@ -131,8 +130,8 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
             {/* Table Header - Hidden on mobile, visible on desktop */}
             <div className="hidden md:grid md:grid-cols-12 gap-4 font-medium text-sm text-gray-700 dark:text-gray-300 pb-2 border-b dark:border-gray-700">
               <div className="col-span-4">Espécie *</div>
-              <div className="col-span-2">Peso Total (kg) *</div>
-              <div className="col-span-2">Preço/kg (R$) *</div>
+              <div className="col-span-2">Peso Total (kg)</div>
+              <div className="col-span-2">Preço/kg (R$)</div>
               <div className="col-span-3">Condição do Peixe</div>
               <div className="col-span-1"></div>
             </div>

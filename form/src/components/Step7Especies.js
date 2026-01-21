@@ -51,18 +51,11 @@ export default function Step7Especies({ nextStep, prevStep }) {
 
   const validarEspecies = () => {
     // Filter only filled species
-    const especiesPreenchidas = especies.filter(e => e.id && e.peso)
+    const especiesPreenchidas = especies.filter(e => e.id)
     
     if (especiesPreenchidas.length === 0) {
       setErro('Adicione pelo menos uma espécie capturada')
       return false
-    }
-
-    for (const especie of especiesPreenchidas) {
-      if (!especie.id) {
-        setErro('Selecione a espécie')
-        return false
-      }
     }
 
     setErro(null)

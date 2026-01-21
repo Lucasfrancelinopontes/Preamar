@@ -135,16 +135,43 @@ export default function Step9ResumoAnexos({ prevStep }) {
       : []
 
     // Preparar capturas (da etapa 1 - dados gerais por espécie)
+    // Obs: no backend `peso_kg` não pode ser nulo; se não houver peso total informado,
+    // tenta calcular a partir dos indivíduos (g -> kg).
+    const pesoKgPorEspecieId = new Map()
+    if (formData.especiesIndividuos) {
+      formData.especiesIndividuos.forEach((especie) => {
+        const totalG = (especie.individuos || [])
+          .filter(i => i.peso)
+          .reduce((sum, i) => sum + parseFloat(i.peso), 0)
+        if (totalG > 0) {
+          pesoKgPorEspecieId.set(String(especie.id), totalG / 1000)
+        }
+      })
+    }
+
     const capturas = formData.especiesCaptura
       ? formData.especiesCaptura
-          .filter(e => e.id && e.peso)
-          .map(especie => ({
-            ID_especie: parseInt(especie.id),
-            peso_kg: parseFloat(especie.peso),
-            preco_kg: especie.preco ? parseFloat(especie.preco) : null,
-            preco_total: especie.peso && especie.preco ? parseFloat(especie.peso) * parseFloat(especie.preco) : null,
-            com_tripa: especie.comTripa
-          }))
+          .filter(e => e.id)
+          .map(especie => {
+            const pesoKg = especie.peso
+              ? parseFloat(especie.peso)
+              : (pesoKgPorEspecieId.get(String(especie.id)) || null)
+
+            if (!pesoKg || Number.isNaN(pesoKg) || pesoKg <= 0) {
+              return null
+            }
+
+            const precoKg = especie.preco ? parseFloat(especie.preco) : null
+
+            return {
+              ID_especie: parseInt(especie.id),
+              peso_kg: pesoKg,
+              preco_kg: precoKg,
+              preco_total: precoKg != null ? pesoKg * precoKg : null,
+              com_tripa: especie.comTripa
+            }
+          })
+          .filter(Boolean)
       : []
 
     // Preparar indivíduos (da etapa 2 - dados individuais)
