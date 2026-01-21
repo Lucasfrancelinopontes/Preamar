@@ -112,7 +112,9 @@ export default function Step9ResumoAnexos({ prevStep }) {
       proprietario: formData.nomeProprietario || formData.nomePescador,
       apelido_proprietario: formData.apelidoProprietario || null,
       atuou_pesca: formData.atuouNaPesca ? 'S' : 'N',
-      destino_pescado: formData.destinoPescado ? formData.destinoPescado.toLowerCase() : null,
+      destino_pescado: Array.isArray(formData.destinoPescado)
+        ? (formData.destinoPescado.length ? formData.destinoPescado.map(v => String(v).toLowerCase()).join(',') : null)
+        : (formData.destinoPescado ? String(formData.destinoPescado).toLowerCase() : null),
       destino_apelido: formData.apelidoDestino || null,
       destino_outros_qual: null
     }
@@ -456,7 +458,12 @@ export default function Step9ResumoAnexos({ prevStep }) {
           <div>
             <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Destino do Pescado</h3>
             <div className="text-sm">
-              <div><span className="text-gray-500">Destino:</span> {formData.destinoPescado}</div>
+              <div>
+                <span className="text-gray-500">Destino:</span>{' '}
+                {Array.isArray(formData.destinoPescado)
+                  ? (formData.destinoPescado.length ? formData.destinoPescado.join(', ') : '')
+                  : formData.destinoPescado}
+              </div>
               {formData.apelidoDestino && (
                 <div><span className="text-gray-500">Apelido:</span> {formData.apelidoDestino}</div>
               )}

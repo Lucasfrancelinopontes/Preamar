@@ -1,6 +1,4 @@
 'use client'
-
-import { useState } from 'react'
 import { useFormContext } from '@/app/contexts/FormContext'
 
 export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
@@ -26,10 +24,18 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
     }
   }
 
-  const handleDestinoChange = (value) => {
-    updateFormData({ destinoPescado: value })
-    // Clear apelido if changing from 'Outros' to another option
-    if (value !== 'Outros' && formData.apelidoDestino) {
+  const destinosSelecionados = Array.isArray(formData.destinoPescado)
+    ? formData.destinoPescado
+    : (formData.destinoPescado ? [formData.destinoPescado] : [])
+
+  const isOutrosSelecionado = destinosSelecionados.includes('Outros')
+
+  const handleDestinoChange = (e) => {
+    const values = Array.from(e.target.selectedOptions, (opt) => opt.value)
+    updateFormData({ destinoPescado: values })
+
+    // Clear apelido if 'Outros' is no longer selected
+    if (!values.includes('Outros') && formData.apelidoDestino) {
       updateFormData({ apelidoDestino: '' })
     }
   }
@@ -62,7 +68,7 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
     }
 
     // Validate apelido if 'Outros' is selected
-    if (formData.destinoPescado === 'Outros' && !formData.apelidoDestino) {
+    if (isOutrosSelecionado && !formData.apelidoDestino) {
       alert('Por favor, informe o apelido quando o destino for "Outros".')
       return
     }
@@ -216,31 +222,27 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Destino
             </label>
-            <div className="space-y-3">
-              {opcoesDestino.map(opcao => (
-                <div key={opcao.value} className="flex items-center">
-                  <input
-                    type="radio"
-                    id={opcao.value}
-                    name="destinoPescado"
-                    value={opcao.value}
-                    checked={formData.destinoPescado === opcao.value}
-                    onChange={() => handleDestinoChange(opcao.value)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                  />
-                  <label
-                    htmlFor={opcao.value}
-                    className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    {opcao.label}
-                  </label>
-                </div>
+            <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+              Selecione um ou mais destinos (segure Ctrl/Cmd para múltiplos).
+            </p>
+            <select
+              name="destinoPescado"
+              multiple
+              size={opcoesDestino.length}
+              value={destinosSelecionados}
+              onChange={handleDestinoChange}
+              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              {opcoesDestino.map((opcao) => (
+                <option key={opcao.value} value={opcao.value}>
+                  {opcao.label}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
           {/* Campo Apelido (condicional) */}
-          {formData.destinoPescado === 'Outros' && (
+          {isOutrosSelecionado && (
             <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Apelido *
@@ -252,7 +254,7 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
                 onChange={handleChange}
                 placeholder="Informe o apelido"
                 className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                required={formData.destinoPescado === 'Outros'}
+                required={isOutrosSelecionado}
               />
             </div>
           )}

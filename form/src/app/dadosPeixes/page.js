@@ -123,7 +123,9 @@ export default function DadosPeixes() {
             litros: formData.litros ? parseFloat(formData.litros) : null,
             gelo_kg: formData.geloKg ? parseFloat(formData.geloKg) : null,
             rancho: formData.ranchoValor ? parseFloat(formData.ranchoValor) : null,
-            destino_pescado: formData.destinoPescado || null,
+                        destino_pescado: Array.isArray(formData.destinoPescado)
+                            ? (formData.destinoPescado.length ? formData.destinoPescado.join(',') : null)
+                            : (formData.destinoPescado || null),
             destino_apelido: formData.destinoApelido || null,
             destino_outros_qual: formData.destinoOutrosQual || null
         };
