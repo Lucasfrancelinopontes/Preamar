@@ -63,14 +63,6 @@ export default function Step7Especies({ nextStep, prevStep }) {
         setErro('Selecione a espécie')
         return false
       }
-      if (!especie.peso || parseFloat(especie.peso) <= 0) {
-        setErro('Peso deve ser maior que zero')
-        return false
-      }
-      if (!especie.preco || parseFloat(especie.preco) < 0) {
-        setErro('Preço deve ser maior ou igual a zero')
-        return false
-      }
     }
 
     setErro(null)
@@ -132,8 +124,8 @@ export default function Step7Especies({ nextStep, prevStep }) {
             {/* Table Header - Hidden on mobile, visible on desktop */}
             <div className="hidden md:grid md:grid-cols-12 gap-4 font-medium text-sm text-gray-700 dark:text-gray-300 pb-2 border-b dark:border-gray-700">
               <div className="col-span-4">Espécie *</div>
-              <div className="col-span-2">Peso (kg) *</div>
-              <div className="col-span-2">Preço/kg (R$) *</div>
+              <div className="col-span-2">Peso (kg) </div>
+              <div className="col-span-2">Preço/kg (R$) </div>
               <div className="col-span-3">Comprimento (cm)</div>
               <div className="col-span-1"></div>
             </div>
@@ -167,7 +159,7 @@ export default function Step7Especies({ nextStep, prevStep }) {
                 {/* Peso Input */}
                 <div className="md:col-span-2">
                   <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Peso (kg) *
+                    Peso (kg) 
                   </label>
                   <input
                     type="number"
@@ -177,14 +169,13 @@ export default function Step7Especies({ nextStep, prevStep }) {
                     step="0.01"
                     placeholder="0.00"
                     className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    required
                   />
                 </div>
 
                 {/* Preço Input */}
                 <div className="md:col-span-2">
                   <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Preço/kg (R$) *
+                    Preço/kg (R$) 
                   </label>
                   <input
                     type="number"
@@ -194,7 +185,6 @@ export default function Step7Especies({ nextStep, prevStep }) {
                     step="0.01"
                     placeholder="0.00"
                     className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    required
                   />
                 </div>
 
