@@ -1,4 +1,3 @@
-// form/src/components/Step1Local.js
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -9,8 +8,8 @@ import { useFormContext } from '@/app/contexts/FormContext';
 import api from '@/services/api';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { da } from 'zod/v4/locales';
 
-// Schema de Validação (Zod)
 const step1Schema = z.object({
     municipio: z.string().min(1, 'Selecione um município'),
     localidade: z.string().min(1, 'Selecione uma localidade'),
@@ -34,7 +33,6 @@ export default function Step1Local({ nextStep }) {
     const [municipios, setMunicipios] = useState([]);
     const [selectedMunicipioObj, setSelectedMunicipioObj] = useState(null);
 
-    // Configuração do React Hook Form
     const {
         register,
         handleSubmit,
@@ -43,7 +41,7 @@ export default function Step1Local({ nextStep }) {
         formState: { errors }
     } = useForm({
         resolver: zodResolver(step1Schema),
-        defaultValues: formData // Carrega dados salvos no contexto
+        defaultValues: formData 
     });
 
     // Estado local para código de coleta
@@ -70,8 +68,9 @@ export default function Step1Local({ nextStep }) {
         if (selectedMunicipioObj && selectedLocalidade && dataColeta && consecutivo) {
             const locObj = selectedMunicipioObj.localidades.find(l => l.localidade === selectedLocalidade);
             if (locObj) {
-                const date = new Date(dataColeta);
-                const day = String(date.getDate() + 1).padStart(2, '0');
+                const [yyyy, mm, dd] = String(dataColeta).split('-');
+                const date = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+                const day = String(date.getDate()).padStart(2, '0');
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const year = String(date.getFullYear()).slice(-2);
                 const consec = String(consecutivo).padStart(2, '0');
