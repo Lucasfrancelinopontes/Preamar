@@ -205,8 +205,8 @@ export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
 
                 {/* Table Header for Individuals */}
                 <div className="hidden md:grid md:grid-cols-12 gap-4 font-medium text-sm text-gray-700 dark:text-gray-300 pb-2 border-b dark:border-gray-600 mb-4">
-                  <div className="col-span-5">Peso Individual (g)</div>
                   <div className="col-span-5">Comprimento (cm)</div>
+                  <div className="col-span-5">Peso Individual (g)</div>
                   <div className="col-span-2"></div>
                 </div>
 
@@ -216,27 +216,6 @@ export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
                     key={individuoIndex}
                     className="grid grid-cols-1 md:grid-cols-12 gap-4 p-3 md:p-0 border md:border-0 rounded-md md:rounded-none dark:border-gray-600 mb-4 md:mb-2"
                   >
-                    {/* Peso Individual */}
-                    <div className="md:col-span-5">
-                      <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Peso Individual (g)
-                      </label>
-                      <input
-                        type="number"
-                        value={individuo.peso || ''}
-                        onChange={(e) => atualizarIndividuo(especieIndex, individuoIndex, 'peso', e.target.value)}
-                        min="0"
-                        max="1000000"
-                        step="1"
-                        placeholder="Ex: 250 (máx: 1.000.000g)"
-                        className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        title="Peso em gramas. Máximo: 1.000.000g (1 tonelada)"
-                      />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Máx: 1.000.000g (1 ton)
-                      </p>
-                    </div>
-
                     {/* Comprimento */}
                     <div className="md:col-span-5">
                       <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -255,6 +234,27 @@ export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Máx: 500cm (5m)
+                      </p>
+                    </div>
+
+                    {/* Peso Individual */}
+                    <div className="md:col-span-5">
+                      <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Peso Individual (g)
+                      </label>
+                      <input
+                        type="number"
+                        value={individuo.peso || ''}
+                        onChange={(e) => atualizarIndividuo(especieIndex, individuoIndex, 'peso', e.target.value)}
+                        min="0"
+                        max="1000000"
+                        step="1"
+                        placeholder="Ex: 250 (máx: 1.000.000g)"
+                        className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        title="Peso em gramas. Máximo: 1.000.000g (1 tonelada)"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Máx: 1.000.000g (1 ton)
                       </p>
                     </div>
 
