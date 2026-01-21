@@ -62,6 +62,7 @@ export function FormProvider({ children }) {
         // Etapa 6 - Destino
         destinoPescado: '',
         apelidoDestino: '',
+        outroDestino: '',
 
         // Etapa 7/8 - Espécies
         especiesCaptura: [],
@@ -132,6 +133,7 @@ export function FormProvider({ children }) {
             tipoCombustivel: '',
             destinoPescado: '',
             apelidoDestino: '',
+            outroDestino: '',
             especiesCaptura: [],
             especiesIndividuos: []
         });

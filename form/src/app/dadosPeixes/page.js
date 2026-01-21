@@ -127,7 +127,7 @@ export default function DadosPeixes() {
                             ? (formData.destinoPescado.length ? formData.destinoPescado.join(',') : null)
                             : (formData.destinoPescado || null),
             destino_apelido: formData.destinoApelido || null,
-            destino_outros_qual: formData.destinoOutrosQual || null
+                        destino_outros_qual: formData.destinoOutrosQual || formData.outroDestino || null
         };
 
         // Preparar artes de pesca

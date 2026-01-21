@@ -116,7 +116,7 @@ export default function Step9ResumoAnexos({ prevStep }) {
         ? (formData.destinoPescado.length ? formData.destinoPescado.map(v => String(v).toLowerCase()).join(',') : null)
         : (formData.destinoPescado ? String(formData.destinoPescado).toLowerCase() : null),
       destino_apelido: formData.apelidoDestino || null,
-      destino_outros_qual: null
+      destino_outros_qual: formData.outroDestino || null
     }
 
     // Preparar artes de pesca

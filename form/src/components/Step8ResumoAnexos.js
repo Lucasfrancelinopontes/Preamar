@@ -108,7 +108,7 @@ export default function Step8ResumoAnexos({ prevStep }) {
       rancho_valor: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
       destino_pescado: destinoPescadoLower,
       destino_apelido: formData.apelidoDestino || null,
-      destino_outros_qual: null
+      destino_outros_qual: formData.outroDestino || null
     }
 
     // Preparar artes de pesca

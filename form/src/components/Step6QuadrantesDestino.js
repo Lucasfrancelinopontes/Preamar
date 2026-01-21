@@ -28,15 +28,26 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
     ? formData.destinoPescado
     : (formData.destinoPescado ? [formData.destinoPescado] : [])
 
+  const precisaApelido = destinosSelecionados.some(v => ['Atravessador', 'Armador', 'Consumidor'].includes(v))
   const isOutrosSelecionado = destinosSelecionados.includes('Outros')
 
-  const handleDestinoChange = (e) => {
-    const values = Array.from(e.target.selectedOptions, (opt) => opt.value)
-    updateFormData({ destinoPescado: values })
+  const handleDestinoToggle = (value) => {
+    const isSelected = destinosSelecionados.includes(value)
+    const nextValues = isSelected
+      ? destinosSelecionados.filter(v => v !== value)
+      : [...destinosSelecionados, value]
 
-    // Clear apelido if 'Outros' is no longer selected
-    if (!values.includes('Outros') && formData.apelidoDestino) {
+    updateFormData({ destinoPescado: nextValues })
+
+    const nextPrecisaApelido = nextValues.some(v => ['Atravessador', 'Armador', 'Consumidor'].includes(v))
+    const nextIsOutros = nextValues.includes('Outros')
+
+    if (!nextPrecisaApelido && formData.apelidoDestino) {
       updateFormData({ apelidoDestino: '' })
+    }
+
+    if (!nextIsOutros && formData.outroDestino) {
+      updateFormData({ outroDestino: '' })
     }
   }
 
@@ -67,9 +78,13 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
       return
     }
 
-    // Validate apelido if 'Outros' is selected
-    if (isOutrosSelecionado && !formData.apelidoDestino) {
-      alert('Por favor, informe o apelido quando o destino for "Outros".')
+    // Validate apelido/outro when destination requires it
+    if (precisaApelido && !formData.apelidoDestino) {
+      alert('Por favor, informe o apelido do destino.')
+      return
+    }
+    if (isOutrosSelecionado && !formData.outroDestino) {
+      alert('Por favor, informe o outro destino.')
       return
     }
 
@@ -222,27 +237,31 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Destino
             </label>
-            <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-              Selecione um ou mais destinos (segure Ctrl/Cmd para múltiplos).
-            </p>
-            <select
-              name="destinoPescado"
-              multiple
-              size={opcoesDestino.length}
-              value={destinosSelecionados}
-              onChange={handleDestinoChange}
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              {opcoesDestino.map((opcao) => (
-                <option key={opcao.value} value={opcao.value}>
-                  {opcao.label}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 gap-3">
+              {opcoesDestino.map((opcao) => {
+                const isSelected = destinosSelecionados.includes(opcao.value)
+                return (
+                  <button
+                    key={opcao.value}
+                    type="button"
+                    onClick={() => handleDestinoToggle(opcao.value)}
+                    className={
+                      `px-4 py-2 rounded-md border text-sm font-medium transition-colors ` +
+                      (isSelected
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600')
+                    }
+                    aria-pressed={isSelected}
+                  >
+                    {opcao.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           {/* Campo Apelido (condicional) */}
-          {isOutrosSelecionado && (
+          {precisaApelido && (
             <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Apelido *
@@ -253,6 +272,24 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
                 value={formData.apelidoDestino || ''}
                 onChange={handleChange}
                 placeholder="Informe o apelido"
+                className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                required={precisaApelido}
+              />
+            </div>
+          )}
+
+          {/* Campo Outro (condicional) */}
+          {isOutrosSelecionado && (
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Outro *
+              </label>
+              <input
+                type="text"
+                name="outroDestino"
+                value={formData.outroDestino || ''}
+                onChange={handleChange}
+                placeholder="Informe o outro destino"
                 className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 required={isOutrosSelecionado}
               />
