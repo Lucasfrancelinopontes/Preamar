@@ -132,10 +132,15 @@ export const Desembarque = sequelize.define('Desembarque', {
   },
   // Destino do pescado
   destino_pescado: {
-    type: DataTypes.ENUM('atravessador', 'armador', 'consumidor', 'diretoConsumidor', 'outros')
+    // Antes era ENUM (valor único). Agora armazenamos múltiplos valores
+    // como string (ex: "atravessador,consumidor,outros").
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   destino_apelido: {
-    type: DataTypes.STRING(100)
+    // Pode crescer com múltiplos apelidos (ex: "atravessador:joao,consumidor:maria")
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   destino_outros_qual: {
     type: DataTypes.STRING(255)

@@ -95,7 +95,7 @@ export default function Step9ResumoAnexos({ prevStep }) {
       hora_desembarque: formData.horaChegada || null,
       numero_tripulantes: formData.numTripulantes ? parseInt(formData.numTripulantes) : null,
       pesqueiros: formData.numPesqueiros ? String(formData.numPesqueiros) : null,
-      arte_obs: null,
+      arte_obs: formData.arte_obs || null,
       quadrante1: formData.quadrante1 || null,
       quadrante2: formData.quadrante2 || null,
       quadrante3: formData.quadrante3 || null,
@@ -135,8 +135,8 @@ export default function Step9ResumoAnexos({ prevStep }) {
       : []
 
     // Preparar capturas (da etapa 1 - dados gerais por espécie)
-    // Obs: no backend `peso_kg` não pode ser nulo; se não houver peso total informado,
-    // tenta calcular a partir dos indivíduos (g -> kg).
+    // Se não houver peso total informado, tenta calcular a partir dos indivíduos (g -> kg).
+    // Caso não exista nenhum peso disponível, envia `peso_kg: null`.
     const pesoKgPorEspecieId = new Map()
     if (formData.especiesIndividuos) {
       formData.especiesIndividuos.forEach((especie) => {
@@ -157,21 +157,18 @@ export default function Step9ResumoAnexos({ prevStep }) {
               ? parseFloat(especie.peso)
               : (pesoKgPorEspecieId.get(String(especie.id)) || null)
 
-            if (!pesoKg || Number.isNaN(pesoKg) || pesoKg <= 0) {
-              return null
-            }
-
+            const pesoVal = (pesoKg && !Number.isNaN(pesoKg) && pesoKg > 0) ? pesoKg : null
             const precoKg = especie.preco ? parseFloat(especie.preco) : null
+            const precoVal = (precoKg && !Number.isNaN(precoKg) && precoKg >= 0) ? precoKg : null
 
             return {
               ID_especie: parseInt(especie.id),
-              peso_kg: pesoKg,
-              preco_kg: precoKg,
-              preco_total: precoKg != null ? pesoKg * precoKg : null,
+              peso_kg: pesoVal,
+              preco_kg: precoVal,
+              preco_total: (pesoVal != null && precoVal != null) ? (pesoVal * precoVal) : null,
               com_tripa: especie.comTripa
             }
           })
-          .filter(Boolean)
       : []
 
     // Preparar indivíduos (da etapa 2 - dados individuais)

@@ -6,10 +6,14 @@ import api from '@/services/api'
 
 export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
   const { formData, updateFormData } = useFormContext()
+
+  const makeTempId = (prefix = 'tmp') => `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`
   
   // Initialize especies list from formData or with one empty entry
   const [especies, setEspecies] = useState(
-    formData.especiesCaptura || [{ id: '', peso: '', preco: '', comTripa: true }]
+    (formData.especiesCaptura && formData.especiesCaptura.length > 0)
+      ? formData.especiesCaptura
+      : [{ id_temporario: makeTempId('captura'), id: '', peso: '', preco: '', comTripa: true }]
   )
   const [especiesDisponiveis, setEspeciesDisponiveis] = useState([])
   const [loading, setLoading] = useState(false)
@@ -34,7 +38,7 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
   }, [])
 
   const adicionarEspecie = () => {
-    setEspecies([...especies, { id: '', peso: '', preco: '', comTripa: true }])
+    setEspecies([...especies, { id_temporario: makeTempId('captura'), id: '', peso: '', preco: '', comTripa: true }])
   }
 
   const removerEspecie = (index) => {
@@ -139,7 +143,7 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
             {/* Species List */}
             {especies.map((especie, index) => (
               <div
-                key={index}
+                key={especie.id_temporario || index}
                 className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 md:p-0 border md:border-0 rounded-md md:rounded-none dark:border-gray-700"
               >
                 {/* Espécie Select */}

@@ -6,6 +6,8 @@ import api from '@/services/api'
 
 export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
   const { formData, updateFormData } = useFormContext()
+
+  const makeTempId = (prefix = 'tmp') => `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`
   
   const [especiesIndividuos, setEspeciesIndividuos] = useState(
     formData.especiesIndividuos || []
@@ -37,7 +39,7 @@ export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
     if (!novaLista[especieIndex].individuos) {
       novaLista[especieIndex].individuos = []
     }
-    novaLista[especieIndex].individuos.push({ peso: '', comprimento: '' })
+    novaLista[especieIndex].individuos.push({ id_temporario: makeTempId('individuo'), peso: '', comprimento: '' })
     setEspeciesIndividuos(novaLista)
   }
 
@@ -53,7 +55,11 @@ export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
       novaLista[especieIndex].individuos = []
     }
     if (!novaLista[especieIndex].individuos[individuoIndex]) {
-      novaLista[especieIndex].individuos[individuoIndex] = {}
+      novaLista[especieIndex].individuos[individuoIndex] = { id_temporario: makeTempId('individuo') }
+    }
+
+    if (!novaLista[especieIndex].individuos[individuoIndex].id_temporario) {
+      novaLista[especieIndex].individuos[individuoIndex].id_temporario = makeTempId('individuo')
     }
     
     // Validação em tempo real para peso
@@ -193,7 +199,7 @@ export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
         ) : (
           <div className="space-y-8">
             {especiesIndividuos.map((especie, especieIndex) => (
-              <div key={especieIndex} className="border dark:border-gray-600 rounded-lg p-4">
+              <div key={especie.id_temporario || especieIndex} className="border dark:border-gray-600 rounded-lg p-4">
                 <h3 className="text-lg font-medium mb-4 text-gray-800 dark:text-white">
                   {obterNomeEspecie(especie.id)}
                 </h3>
@@ -213,7 +219,7 @@ export default function Step8EspeciesIndividuos({ nextStep, prevStep }) {
                 {/* Individuals List */}
                 {especie.individuos && especie.individuos.map((individuo, individuoIndex) => (
                   <div
-                    key={individuoIndex}
+                    key={individuo.id_temporario || individuoIndex}
                     className="grid grid-cols-1 md:grid-cols-12 gap-4 p-3 md:p-0 border md:border-0 rounded-md md:rounded-none dark:border-gray-600 mb-4 md:mb-2"
                   >
                     {/* Comprimento */}

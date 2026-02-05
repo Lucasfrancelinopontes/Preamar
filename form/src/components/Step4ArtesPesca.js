@@ -5,10 +5,14 @@ import { useFormContext } from '@/app/contexts/FormContext'
 
 export default function Step4ArtesPesca({ nextStep, prevStep }) {
   const { formData, updateFormData } = useFormContext()
+
+  const makeTempId = (prefix = 'tmp') => `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`
   
   // Initialize artes list from formData or empty array
   const [artesList, setArtesList] = useState(
-    formData.arteSelecionadas || [{ arte: '', tamanho: '' }]
+    (formData.arteSelecionadas && formData.arteSelecionadas.length > 0)
+      ? formData.arteSelecionadas
+      : [{ id_temporario: makeTempId('arte'), arte: '', tamanho: '' }]
   )
 
   const tiposArte = [
@@ -22,7 +26,7 @@ export default function Step4ArtesPesca({ nextStep, prevStep }) {
   ]
 
   const handleAddArte = () => {
-    setArtesList([...artesList, { arte: '', tamanho: '' }])
+    setArtesList([...artesList, { id_temporario: makeTempId('arte'), arte: '', tamanho: '' }])
   }
 
   const handleRemoveArte = (index) => {
@@ -63,7 +67,7 @@ export default function Step4ArtesPesca({ nextStep, prevStep }) {
 
         <div className="space-y-4">
           {artesList.map((arte, index) => (
-            <div key={index} className="flex flex-col md:flex-row gap-4 items-start md:items-center border-b pb-4 border-gray-200">
+            <div key={arte.id_temporario || index} className="flex flex-col md:flex-row gap-4 items-start md:items-center border-b pb-4 border-gray-200">
               <div className="flex-1">
                 <label className="label-standard">
                   Arte *

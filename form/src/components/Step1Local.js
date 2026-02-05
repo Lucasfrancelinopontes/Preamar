@@ -85,12 +85,22 @@ export default function Step1Local({ nextStep }) {
 
     const onSubmit = (data) => {
         const locObj = selectedMunicipioObj?.localidades.find(l => l.localidade === data.localidade);
+
+        const extrairHora = (datetimeLocal) => {
+            if (!datetimeLocal) return '';
+            const s = String(datetimeLocal);
+            if (!s.includes('T')) return '';
+            const time = s.split('T')[1] || '';
+            return time.slice(0, 5);
+        };
         
         updateFormData({
             ...data,
             municipioCode: selectedMunicipioObj?.municipioCode,
             localidadeCode: locObj?.localidadeCode,
-            codigoColeta: codigoColeta
+            codigoColeta: codigoColeta,
+            horaSaida: extrairHora(data.dataSaida),
+            horaChegada: extrairHora(data.dataChegada)
         });
         nextStep();
     };

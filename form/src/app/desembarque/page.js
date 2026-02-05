@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFormContext } from '@/app/contexts/FormContext';
 import api from '@/services/api';
@@ -17,65 +17,152 @@ import Step9ResumoAnexos from '@/components/Step9ResumoAnexos';
 function DesembarqueContent() {
     const [step, setStep] = useState(1);
     const [temaEscuro, setTemaEscuro] = useState(false);
+    const [carregandoEdicao, setCarregandoEdicao] = useState(false);
+    const [edicaoCarregada, setEdicaoCarregada] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
     const editId = searchParams.get('edit');
     const { formData, updateFormData } = useFormContext();
 
-    useEffect(() => {
-        if (editId) {
-            carregarDadosEdicao(editId);
-        }
-    }, [editId]);
-
-    const carregarDadosEdicao = async (id) => {
+    const carregarDadosEdicao = useCallback(async (id) => {
         try {
             const response = await api.getDesembarque(id);
             if (response.success) {
                 const data = response.data;
-                
-                // Helper for coordinates
-                const toDMS = (val) => {
-                    if (!val) return { deg: '', min: '', sec: '' };
-                    const d = Math.abs(Number(val));
-                    const deg = Math.floor(d);
-                    const minFloat = (d - deg) * 60;
-                    const min = Math.floor(minFloat);
-                    const sec = Math.round((minFloat - min) * 60);
-                    return { deg: String(deg), min: String(min), sec: String(sec) };
+
+                const makeTempId = (prefix, stable) => {
+                    const seed = stable != null && stable !== '' ? String(stable) : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                    return `${prefix}_${seed}`;
                 };
 
-                const latIda = toDMS(data.lat_ida);
-                const longIda = toDMS(data.long_ida);
-                const latVolta = toDMS(data.lat_volta);
-                const longVolta = toDMS(data.long_volta);
+                const toStr = (v) => (v === undefined || v === null ? '' : String(v));
 
-                // Map Captures (preserve IDs for incremental update)
-                const especiesCaptura = data.capturas?.map(c => ({
-                    ID_captura: c.ID_captura,
-                    id: c.ID_especie,
-                    peso: c.peso_kg,
-                    preco: c.preco_kg,
-                    comTripa: c.com_tripa
-                })) || [];
+                const isoToDate = (value) => {
+                    if (!value) return '';
+                    const s = String(value);
+                    if (s.includes('T')) return s.split('T')[0];
+                    // DATEONLY já vem como YYYY-MM-DD
+                    return s;
+                };
 
-                // Map Individuals
-                const individuosByEspecie = {};
-                data.individuos?.forEach(ind => {
-                    if (!individuosByEspecie[ind.ID_especie]) {
-                        individuosByEspecie[ind.ID_especie] = [];
+                const timeToHHmm = (value) => {
+                    if (!value) return '';
+                    const s = String(value);
+                    if (s.includes('T')) {
+                        const timePart = s.split('T')[1] || '';
+                        return timePart.replace('Z', '').slice(0, 5);
                     }
-                    individuosByEspecie[ind.ID_especie].push({
-                        ID_individuo: ind.ID_individuo,
-                        peso: ind.peso_g,
-                        comprimento: ind.comprimento_total_cm || ind.comprimento_padrao_cm
-                    });
-                });
+                    // TIME pode vir como HH:mm:ss
+                    if (/^\d{2}:\d{2}/.test(s)) return s.slice(0, 5);
+                    return '';
+                };
 
-                const especiesIndividuos = especiesCaptura.map(esp => ({
-                    especieId: esp.id,
-                    individuos: individuosByEspecie[esp.id] || []
-                }));
+                const toDatetimeLocal = (dateOrIso, timeOrNull) => {
+                    const datePart = isoToDate(dateOrIso);
+                    if (!datePart) return '';
+                    const timePart = timeToHHmm(timeOrNull || dateOrIso);
+                    return timePart ? `${datePart}T${timePart}` : datePart;
+                };
+
+                const parseDestinoPescado = (value) => {
+                    const arr = typeof value === 'string'
+                        ? value
+                            .split(',')
+                            .map(s => s.trim())
+                            .filter(Boolean)
+                        : (Array.isArray(value) ? value : []);
+
+                    return arr.map(s => {
+                        const v = String(s).trim().toLowerCase();
+                        if (v === 'atravessador') return 'Atravessador';
+                        if (v === 'armador') return 'Armador';
+                        if (v === 'consumidor') return 'Consumidor';
+                        if (v === 'outros' || v === 'outro') return 'Outros';
+                        return s;
+                    });
+                };
+
+                const parseDestinoApelidos = (value) => {
+                    const base = { Atravessador: '', Armador: '', Consumidor: '' };
+                    if (!value) return base;
+
+                    if (typeof value === 'object' && !Array.isArray(value)) {
+                        return { ...base, ...value };
+                    }
+
+                    const parts = String(value)
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(Boolean);
+
+                    for (const item of parts) {
+                        const [kRaw, ...rest] = item.split(':');
+                        const k = String(kRaw || '').trim().toLowerCase();
+                        const v = rest.join(':').trim();
+                        if (!v) continue;
+                        if (k === 'atravessador') base.Atravessador = v;
+                        if (k === 'armador') base.Armador = v;
+                        if (k === 'consumidor') base.Consumidor = v;
+                    }
+
+                    return base;
+                };
+
+                // Capturas -> Step7 (id, peso, preco, comTripa) + ids auxiliares
+                const especiesCapturaRaw = Array.isArray(data.capturas)
+                    ? data.capturas.map((c) => ({
+                        id_temporario: makeTempId('captura', c.ID_captura ?? c.ID_especie),
+                        ID_captura: c.ID_captura,
+                        id: c.ID_especie != null ? String(c.ID_especie) : '',
+                        peso: c.peso_kg != null ? toStr(c.peso_kg) : '',
+                        preco: c.preco_kg != null ? toStr(c.preco_kg) : '',
+                        comTripa: c.com_tripa !== undefined && c.com_tripa !== null ? Boolean(c.com_tripa) : true
+                    }))
+                    : [];
+
+                // Indivíduos -> Step8 (peso, comprimento) agrupados por espécie
+                const individuosByEspecie = new Map();
+                if (Array.isArray(data.individuos)) {
+                    for (const ind of data.individuos) {
+                        const especieId = ind.ID_especie != null ? String(ind.ID_especie) : '';
+                        if (!especieId) continue;
+                        const list = individuosByEspecie.get(especieId) || [];
+
+                        const comprimento = ind.comprimento_total_cm ?? ind.comprimento_padrao_cm ?? ind.comprimento_forquilha_cm ?? '';
+                        list.push({
+                            id_temporario: makeTempId('individuo', ind.ID_individuo ?? `${especieId}-${ind.numero_individuo ?? list.length + 1}`),
+                            ID_individuo: ind.ID_individuo,
+                            peso: ind.peso_g != null ? toStr(ind.peso_g) : '',
+                            comprimento: comprimento != null ? toStr(comprimento) : ''
+                        });
+                        individuosByEspecie.set(especieId, list);
+                    }
+                }
+
+                // Garantir que espécies presentes em indivíduos também apareçam na lista principal
+                const especieIdsSet = new Set(especiesCapturaRaw.map(e => String(e.id)).filter(Boolean));
+                for (const especieId of individuosByEspecie.keys()) {
+                    if (!especieIdsSet.has(especieId)) {
+                        especiesCapturaRaw.push({
+                            id_temporario: makeTempId('captura', `from-individuos-${especieId}`),
+                            ID_captura: null,
+                            id: especieId,
+                            peso: '',
+                            preco: '',
+                            comTripa: true
+                        });
+                        especieIdsSet.add(especieId);
+                    }
+                }
+
+                const especiesIndividuos = especiesCapturaRaw
+                    .filter(e => e.id)
+                    .map(e => ({
+                        ...e,
+                        individuos: individuosByEspecie.get(String(e.id)) || []
+                    }));
+
+                const destinoPescado = parseDestinoPescado(data.destino_pescado);
 
                 const mappedData = {
                     // Identificador do desembarque (para edição)
@@ -84,99 +171,112 @@ function DesembarqueContent() {
                     // Step 1
                     municipio: data.municipio,
                     localidade: data.localidade,
-                    dataColeta: data.data_coleta ? data.data_coleta.split('T')[0] : '',
+                    municipioCode: data.municipio_code || data.municipioCode || null,
+                    localidadeCode: data.localidade_code || data.localidadeCode || null,
+                    dataColeta: isoToDate(data.data_coleta),
                     consecutivo: data.consecutivo,
                     codigoFoto: data.cod_foto,
-                    dataSaida: data.data_saida ? data.data_saida.split('T')[0] : '',
-                    dataChegada: data.data_chegada ? data.data_chegada.split('T')[0] : '',
+                    // No front, Step1 usa datetime-local. Também preenchemos horaSaida/horaChegada para compatibilidade.
+                    dataSaida: toDatetimeLocal(data.data_saida, data.hora_saida),
+                    horaSaida: timeToHHmm(data.hora_saida || data.data_saida),
+                    dataChegada: toDatetimeLocal(data.data_chegada, data.hora_desembarque),
+                    horaChegada: timeToHHmm(data.hora_desembarque || data.data_chegada),
                     
                     // Step 2
-                    nomePescador: data.pescador?.nome,
-                    apelidoPescador: data.pescador?.apelido,
-                    cpfPescador: data.pescador?.cpf,
-                    nascimento: data.pescador?.nascimento ? data.pescador.nascimento.split('T')[0] : '',
+                    nomePescador: data.pescador?.nome || '',
+                    apelidoPescador: data.pescador?.apelido || '',
+                    cpfPescador: data.pescador?.cpf || '',
+                    nascimentoPescador: isoToDate(data.pescador?.nascimento),
 
                     // Step 3
-                    nomeEmbarcacao: data.embarcacao?.nome_embarcacao,
-                    codigoEmbarcacao: data.embarcacao?.codigo_embarcacao,
-                    tipoEmbarcacao: data.embarcacao?.tipo,
-                    comprimento: data.embarcacao?.comprimento,
-                    forcaMotor: data.embarcacao?.hp,
-                    armazenamento: data.embarcacao?.possui,
-                    capacidadeEstocagem: data.embarcacao?.capacidade,
-                    numTripulantes: data.numero_tripulantes,
-                    numPesqueiros: data.pesqueiros,
+                    nomeEmbarcacao: data.embarcacao?.nome_embarcacao || '',
+                    codigoEmbarcacao: data.embarcacao?.codigo_embarcacao || '',
+                    tipoEmbarcacao: data.embarcacao?.tipo || data.embarcacao?.tipo_outro || '',
+                    comprimento: data.embarcacao?.comprimento != null ? toStr(data.embarcacao.comprimento) : '',
+                    forcaMotor: data.embarcacao?.hp != null ? toStr(data.embarcacao.hp) : '',
+                    armazenamento: data.embarcacao?.possui || '',
+                    capacidadeEstocagem: data.embarcacao?.capacidade != null ? toStr(data.embarcacao.capacidade) : '',
+                    numTripulantes: data.numero_tripulantes != null ? toStr(data.numero_tripulantes) : '',
+                    numPesqueiros: data.pesqueiros != null ? toStr(data.pesqueiros) : '',
 
                     // Step 4 (preserve IDs for incremental update)
-                    arteSelecionadas: data.artes?.map(a => ({
-                        ID: a.ID,
-                        arte: a.arte,
-                        tamanho: a.tamanho
-                    })) || [],
+                    arteSelecionadas: Array.isArray(data.artes)
+                        ? data.artes.map(a => ({
+                            id_temporario: makeTempId('arte', a.ID ?? `${a.arte}-${a.tamanho}`),
+                            ID: a.ID,
+                            arte: a.arte,
+                            tamanho: a.tamanho != null ? toStr(a.tamanho) : '',
+                            unidade: a.unidade
+                        }))
+                        : [],
+                    arte_obs: data.arte_obs || '',
 
                     // Step 5
-                    nomeProprietario: data.proprietario || data.embarcacao?.proprietario,
-                    apelidoProprietario: data.apelido_proprietario,
+                    nomeProprietario: data.proprietario || data.embarcacao?.proprietario || '',
+                    apelidoProprietario: data.apelido_proprietario || '',
+                    cpfProprietario: data.embarcacao?.cpf_proprietario || '',
                     atuouNaPesca: data.atuou_pesca === 'S' ? true : (data.atuou_pesca === 'N' ? false : null),
-                    quantidadeGelo: data.gelo_kg,
-                    valorRancho: data.rancho_valor,
-                    litrosCombustivel: data.litros,
+                    quantidadeGelo: data.gelo_kg != null ? toStr(data.gelo_kg) : '',
+                    valorRancho: data.rancho_valor != null ? toStr(data.rancho_valor) : '',
+                    litrosCombustivel: data.litros != null ? toStr(data.litros) : '',
                     tipoCombustivel: data.desp_diesel ? 'Diesel' : (data.desp_gasolina ? 'Gasolina' : 'Outro'),
 
                     // Step 6
                     quadrante1: data.quadrante1,
                     quadrante2: data.quadrante2,
                     quadrante3: data.quadrante3,
-                                        destinoPescado: typeof data.destino_pescado === 'string'
-                                            ? data.destino_pescado
-                                                    .split(',')
-                                                    .map(s => s.trim())
-                                                    .filter(Boolean)
-                                                    .map(s => {
-                                                        const v = s.toLowerCase()
-                                                        if (v === 'atravessador') return 'Atravessador'
-                                                        if (v === 'armador') return 'Armador'
-                                                        if (v === 'consumidor') return 'Consumidor'
-                                                        if (v === 'outros' || v === 'outro') return 'Outros'
-                                                        return s
-                                                    })
-                                            : (Array.isArray(data.destino_pescado) ? data.destino_pescado : []),
-                                        apelidoDestino: data.destino_apelido,
-                                        apelidosDestino: typeof data.destino_apelido === 'string'
-                                            ? data.destino_apelido
-                                                    .split(',')
-                                                    .map(s => s.trim())
-                                                    .filter(Boolean)
-                                                    .reduce((acc, item) => {
-                                                        const [k, ...rest] = item.split(':')
-                                                        const key = (k || '').toLowerCase()
-                                                        const val = rest.join(':').trim()
-                                                        if (!val) return acc
-                                                        if (key === 'atravessador') acc.Atravessador = val
-                                                        if (key === 'armador') acc.Armador = val
-                                                        if (key === 'consumidor') acc.Consumidor = val
-                                                        return acc
-                                                    }, { Atravessador: '', Armador: '', Consumidor: '' })
-                                            : { Atravessador: '', Armador: '', Consumidor: '' },
-                                        outroDestino: data.destino_outros_qual,
-                    
-                    // Coordinates
-                    lat_deg1: latIda.deg, lat_min1: latIda.min, lat_sec1: latIda.sec,
-                    long_deg1: longIda.deg, long_min1: longIda.min, long_sec1: longIda.sec,
-                    lat_deg2: latVolta.deg, lat_min2: latVolta.min, lat_sec2: latVolta.sec,
-                    long_deg2: longVolta.deg, long_min2: longVolta.min, long_sec2: longVolta.sec,
+                    destinoPescado,
+                    apelidoDestino: data.destino_apelido || '',
+                    apelidosDestino: parseDestinoApelidos(data.destino_apelido),
+                    outroDestino: data.destino_outros_qual || '',
+
+                    // Coordinates (decimal)
+                    latIda: data.lat_ida != null ? toStr(data.lat_ida) : '',
+                    longIda: data.long_ida != null ? toStr(data.long_ida) : '',
+                    latVolta: data.lat_volta != null ? toStr(data.lat_volta) : '',
+                    longVolta: data.long_volta != null ? toStr(data.long_volta) : '',
 
                     // Step 7 & 8
-                    especiesCaptura,
+                    especiesCaptura: especiesCapturaRaw.filter(e => e.id),
                     especiesIndividuos,
                 };
 
-                updateFormData(mappedData);
+                return mappedData;
             }
         } catch (error) {
             console.error("Erro ao carregar dados para edição", error);
         }
-    };
+
+        return null;
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const run = async () => {
+            if (!editId) {
+                setEdicaoCarregada(false);
+                return;
+            }
+
+            setCarregandoEdicao(true);
+            try {
+                const mapped = await carregarDadosEdicao(editId);
+                if (!cancelled && mapped) {
+                    updateFormData(mapped);
+                    setEdicaoCarregada(true);
+                }
+            } finally {
+                if (!cancelled) setCarregandoEdicao(false);
+            }
+        };
+
+        run();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [editId, carregarDadosEdicao, updateFormData]);
 
     // Array de etapas para o indicador de progresso
     const steps = [
@@ -205,6 +305,16 @@ function DesembarqueContent() {
 
     // Renderiza o componente da etapa atual
     const renderStep = () => {
+        if (editId && (carregandoEdicao || !edicaoCarregada)) {
+            return (
+                <div className="max-w-3xl mx-auto p-6">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                        <p className="text-gray-700 dark:text-gray-200">Carregando dados do desembarque para edição...</p>
+                    </div>
+                </div>
+            );
+        }
+
         switch (step) {
             case 1:
                 return <Step1Local nextStep={nextStep} prevStep={prevStep} />;

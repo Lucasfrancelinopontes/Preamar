@@ -23,7 +23,7 @@ export const Captura = sequelize.define('Captura', {
   },
   peso_kg: {
     type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
+    allowNull: true
   },
   preco_kg: {
     type: DataTypes.DECIMAL(10, 2)

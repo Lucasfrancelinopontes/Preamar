@@ -11,6 +11,43 @@ import {
 import { Op } from 'sequelize';
 import { validarCPF } from '../utils/validators.js';
 
+const normalizeDestinoPescado = (value) => {
+  if (value == null) return null;
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map(v => String(v).trim())
+      .filter(Boolean)
+      .map(v => v.toLowerCase());
+    return normalized.length ? normalized.join(',') : null;
+  }
+  const str = String(value).trim();
+  return str ? str.toLowerCase() : null;
+};
+
+const normalizeDestinoApelido = (value) => {
+  if (value == null) return null;
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    const parts = Object.entries(value)
+      .map(([dest, apelido]) => [String(dest).trim(), String(apelido ?? '').trim()])
+      .filter(([dest, apelido]) => dest && apelido)
+      .map(([dest, apelido]) => `${dest.toLowerCase()}:${apelido}`);
+    return parts.length ? parts.join(',') : null;
+  }
+  const str = String(value).trim();
+  return str || null;
+};
+
+const toNullableDecimal = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  return value;
+};
+
+const toFloatOrNull = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = typeof value === 'number' ? value : parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 // Helper para gerar cod_desembarque a partir de município/localidade/data/consecutivo
 const gerarCodigoDesembarque = (municipio, localidade, data_coleta, consecutivo) => {
   if (!municipio || !localidade || !data_coleta || !consecutivo) return null;
@@ -91,6 +128,12 @@ export const criarDesembarque = async (req, res) => {
       if (generated) desembarque.cod_desembarque = generated;
     }
 
+    // Normalizar campos que agora suportam múltiplos valores
+    if (desembarque) {
+      desembarque.destino_pescado = normalizeDestinoPescado(desembarque.destino_pescado);
+      desembarque.destino_apelido = normalizeDestinoApelido(desembarque.destino_apelido);
+    }
+
     // 4. Criar desembarque (com ID do pescador e embarcação)
     const desembarqueDb = await Desembarque.create({
       ...desembarque,
@@ -118,19 +161,25 @@ export const criarDesembarque = async (req, res) => {
     // 5.1 Criar capturas
     if (capturas && capturas.length > 0) {
       for (const captura of capturas) {
-        if (captura.peso_kg) {
-          const capturaDb = await Captura.create({
-            ID_desembarque: desembarqueDb.ID_desembarque,
-            ID_especie: captura.ID_especie,
-            peso_kg: captura.peso_kg,
-            preco_kg: captura.preco_kg || 0,
-            preco_total: (captura.peso_kg || 0) * (captura.preco_kg || 0),
-            com_tripa: captura.com_tripa
-          }, { transaction: t });
+        if (!captura?.ID_especie) continue;
 
-          totalDesembarque += capturaDb.preco_total;
-          totalCapturas++;
-        }
+        const pesoVal = toNullableDecimal(captura.peso_kg);
+        const precoVal = toNullableDecimal(captura.preco_kg);
+        const pesoF = toFloatOrNull(pesoVal);
+        const precoF = toFloatOrNull(precoVal);
+        const precoTotal = (pesoF != null && precoF != null) ? (pesoF * precoF) : null;
+
+        const capturaDb = await Captura.create({
+          ID_desembarque: desembarqueDb.ID_desembarque,
+          ID_especie: captura.ID_especie,
+          peso_kg: pesoVal,
+          preco_kg: precoVal,
+          preco_total: precoTotal,
+          com_tripa: captura.com_tripa
+        }, { transaction: t });
+
+        totalDesembarque += (parseFloat(capturaDb.preco_total) || 0);
+        totalCapturas++;
       }
       console.log(`✅ ${totalCapturas} captura(s) salva(s)`);
     }
@@ -245,7 +294,7 @@ export const listarDesembarques = async (req, res) => {
         {
           model: Captura,
           as: 'capturas',
-          attributes: ['ID_captura', 'ID_especie', 'peso_kg', 'preco_kg', 'preco_total'],
+          attributes: ['ID_captura', 'ID_especie', 'peso_kg', 'preco_kg', 'preco_total', 'com_tripa'],
           include: [{
             model: Especie,
             as: 'especie',
@@ -352,7 +401,8 @@ export const buscarDesembarque = async (req, res) => {
             'ID_especie',
             'peso_kg',
             'preco_kg',
-            'preco_total'
+            'preco_total',
+            'com_tripa'
           ],
           include: [{
             model: Especie,
@@ -511,6 +561,14 @@ export const atualizarDesembarque = async (req, res) => {
       ID_embarcacao: embarcacaoDb?.ID_embarcacao ?? desembarqueDb.ID_embarcacao
     };
 
+    // Normalizar campos que agora suportam múltiplos valores
+    if ('destino_pescado' in updatePayload) {
+      updatePayload.destino_pescado = normalizeDestinoPescado(updatePayload.destino_pescado);
+    }
+    if ('destino_apelido' in updatePayload) {
+      updatePayload.destino_apelido = normalizeDestinoApelido(updatePayload.destino_apelido);
+    }
+
     // Gerar cod_desembarque se não fornecido, usando valores novos ou existentes
     if (!updatePayload.cod_desembarque) {
       const municipio = updatePayload.municipio || desembarqueDb.municipio;
@@ -567,17 +625,46 @@ export const atualizarDesembarque = async (req, res) => {
         if (capId) {
           const capDb = existingCapturas.find(c => c.ID_captura === capId);
           if (capDb) {
-            const precoKg = captura.preco_kg != null ? captura.preco_kg : capDb.preco_kg || 0;
-            const pesoKg = captura.peso_kg != null ? captura.peso_kg : capDb.peso_kg || 0;
-            const precoTotal = (pesoKg || 0) * (precoKg || 0);
-            await capDb.update({ ID_especie: captura.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa }, { transaction: t });
+            const precoKg = Object.prototype.hasOwnProperty.call(captura, 'preco_kg')
+              ? toNullableDecimal(captura.preco_kg)
+              : capDb.preco_kg;
+            const pesoKg = Object.prototype.hasOwnProperty.call(captura, 'peso_kg')
+              ? toNullableDecimal(captura.peso_kg)
+              : capDb.peso_kg;
+
+            const pesoF = toFloatOrNull(pesoKg);
+            const precoF = toFloatOrNull(precoKg);
+            const precoTotal = (pesoF != null && precoF != null) ? (pesoF * precoF) : null;
+
+            await capDb.update(
+              { ID_especie: captura.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
+              { transaction: t }
+            );
             incomingCapturaIds.push(capDb.ID_captura);
           } else {
-            const created = await Captura.create({ ID_desembarque: id, ID_especie: captura.ID_especie, peso_kg: captura.peso_kg, preco_kg: captura.preco_kg || 0, preco_total: (captura.peso_kg || 0) * (captura.preco_kg || 0), com_tripa: captura.com_tripa }, { transaction: t });
+            const pesoKg = toNullableDecimal(captura.peso_kg);
+            const precoKg = toNullableDecimal(captura.preco_kg);
+            const pesoF = toFloatOrNull(pesoKg);
+            const precoF = toFloatOrNull(precoKg);
+            const precoTotal = (pesoF != null && precoF != null) ? (pesoF * precoF) : null;
+
+            const created = await Captura.create(
+              { ID_desembarque: id, ID_especie: captura.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
+              { transaction: t }
+            );
             incomingCapturaIds.push(created.ID_captura);
           }
         } else {
-          const created = await Captura.create({ ID_desembarque: id, ID_especie: captura.ID_especie, peso_kg: captura.peso_kg, preco_kg: captura.preco_kg || 0, preco_total: (captura.peso_kg || 0) * (captura.preco_kg || 0), com_tripa: captura.com_tripa }, { transaction: t });
+          const pesoKg = toNullableDecimal(captura.peso_kg);
+          const precoKg = toNullableDecimal(captura.preco_kg);
+          const pesoF = toFloatOrNull(pesoKg);
+          const precoF = toFloatOrNull(precoKg);
+          const precoTotal = (pesoF != null && precoF != null) ? (pesoF * precoF) : null;
+
+          const created = await Captura.create(
+            { ID_desembarque: id, ID_especie: captura.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
+            { transaction: t }
+          );
           incomingCapturaIds.push(created.ID_captura);
         }
       }
