@@ -137,6 +137,8 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
                 <input
                   type="number"
                   step="any"
+                  min="-90"
+                  max="90"
                   name="latIda"
                   value={formData.latIda || ''}
                   onChange={handleChange}
@@ -149,6 +151,8 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
                 <input
                   type="number"
                   step="any"
+                  min="-180"
+                  max="180"
                   name="longIda"
                   value={formData.longIda || ''}
                   onChange={handleChange}
@@ -167,6 +171,8 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
                 <input
                   type="number"
                   step="any"
+                  min="-90"
+                  max="90"
                   name="latVolta"
                   value={formData.latVolta || ''}
                   onChange={handleChange}
@@ -179,6 +185,8 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
                 <input
                   type="number"
                   step="any"
+                  min="-180"
+                  max="180"
                   name="longVolta"
                   value={formData.longVolta || ''}
                   onChange={handleChange}

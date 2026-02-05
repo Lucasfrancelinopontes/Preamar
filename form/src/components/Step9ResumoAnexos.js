@@ -45,6 +45,43 @@ export default function Step9ResumoAnexos({ prevStep }) {
   }
   // console.log((formData));
   const prepararDadosEnvio = () => {
+    const parseCoord = (raw, kind) => {
+      if (raw === undefined || raw === null || raw === '') return null
+
+      const max = kind === 'lat' ? 90 : 180
+      const str = String(raw).trim()
+      if (!str) return null
+
+      // Normaliza decimal pt-BR: "-7,123" -> "-7.123"
+      const normalized = str.replace(',', '.')
+      const numeric = parseFloat(normalized)
+
+      // Tenta decimal padrão primeiro
+      if (Number.isFinite(numeric) && Math.abs(numeric) <= max) {
+        return numeric
+      }
+
+      // Tenta interpretar como DMS "ddmmss" / "dddmmss" (ex: 053020 -> 5°30'20")
+      // Útil quando usuário cola coordenada sem separadores.
+      const packed = parseFloat(normalized)
+      if (!Number.isFinite(packed)) return null
+
+      const sign = packed < 0 ? -1 : 1
+      const absVal = Math.abs(packed)
+
+      const deg = Math.floor(absVal / 10000)
+      const rem = absVal % 10000
+      const min = Math.floor(rem / 100)
+      const sec = Math.round(rem % 100)
+
+      if (deg <= max && min >= 0 && min < 60 && sec >= 0 && sec < 60) {
+        const dec = deg + (min / 60) + (sec / 3600)
+        if (dec <= max) return sign * dec
+      }
+
+      return null
+    }
+
     // Gerar código de desembarque usando a data de saída
     const dataSaida = formData.dataSaida || new Date().toISOString(); //data de coleta
     const dataColeta = dataSaida.split('T')[0]; // Extrai YYYY-MM-DD
@@ -99,10 +136,10 @@ export default function Step9ResumoAnexos({ prevStep }) {
       quadrante1: formData.quadrante1 || null,
       quadrante2: formData.quadrante2 || null,
       quadrante3: formData.quadrante3 || null,
-      lat_ida: formData.latIda ? parseFloat(formData.latIda) : null,
-      long_ida: formData.longIda ? parseFloat(formData.longIda) : null,
-      lat_volta: formData.latVolta ? parseFloat(formData.latVolta) : null,
-      long_volta: formData.longVolta ? parseFloat(formData.longVolta) : null,
+      lat_ida: parseCoord(formData.latIda, 'lat'),
+      long_ida: parseCoord(formData.longIda, 'long'),
+      lat_volta: parseCoord(formData.latVolta, 'lat'),
+      long_volta: parseCoord(formData.longVolta, 'long'),
       origem: null,
       desp_diesel: formData.tipoCombustivel === 'Diesel',
       desp_gasolina: formData.tipoCombustivel === 'Gasolina',
@@ -122,6 +159,13 @@ export default function Step9ResumoAnexos({ prevStep }) {
             .join(',') || null)
         : (formData.apelidoDestino || null),
       destino_outros_qual: formData.outroDestino || null
+    }
+
+    // Validação preventiva para evitar erro de banco (Out of range)
+    const hasInvalidLat = (formData.latIda && desembarque.lat_ida === null) || (formData.latVolta && desembarque.lat_volta === null)
+    const hasInvalidLong = (formData.longIda && desembarque.long_ida === null) || (formData.longVolta && desembarque.long_volta === null)
+    if (hasInvalidLat || hasInvalidLong) {
+      throw new Error('Coordenadas inválidas. Use graus decimais (ex: -7.123456) ou formato ddmmss (ex: 053020).')
     }
 
     // Preparar artes de pesca
