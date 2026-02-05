@@ -88,6 +88,9 @@ export default function Step1Local({ nextStep }) {
         api.getMunicipios().then(setMunicipios).catch(console.error);
     }, []);
 
+    const municipioField = register('municipio');
+    const localidadeField = register('localidade');
+
     // Ao editar: garante que o valor vindo do backend seja compatível com as opções do dropdown.
     // (Ex: diferenças de acentuação/caixa, ou usar municipioCode/localidadeCode quando disponível)
     useEffect(() => {
@@ -202,7 +205,13 @@ export default function Step1Local({ nextStep }) {
                 <div className='space-y-1.5'>
                     <label className='block text-sm font-medium text-gray-700 dark:text-gray-300'>Município *</label>
                     <select
-                        {...register('municipio')}
+                        {...municipioField}
+                        value={selectedMunicipio || ''}
+                        onChange={(e) => {
+                            municipioField.onChange(e);
+                            // Se município mudar, limpa localidade para evitar valor inválido.
+                            setValue('localidade', '', { shouldValidate: true, shouldDirty: false });
+                        }}
                         className='w-full px-4 py-3 rounded-xl shadow-sm transition-all duration-200 bg-white dark:bg-dark-bg text-gray-900 dark:text-white border border-gray-300 dark:border-slate-600 focus:border-brand focus:ring-4 focus:ring-brand/20 focus:outline-none disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed'
                     >
                         <option value=''>Selecione...</option>
@@ -223,7 +232,9 @@ export default function Step1Local({ nextStep }) {
                 <div className='space-y-1.5'>
                     <label className='block text-sm font-medium text-gray-700 dark:text-gray-300'>Localidade *</label>
                     <select
-                        {...register('localidade')}
+                        {...localidadeField}
+                        value={selectedLocalidade || ''}
+                        onChange={(e) => localidadeField.onChange(e)}
                         disabled={!selectedMunicipio}
                         className='w-full px-4 py-3 rounded-xl shadow-sm transition-all duration-200 bg-white dark:bg-dark-bg text-gray-900 dark:text-white border border-gray-300 dark:border-slate-600 focus:border-brand focus:ring-4 focus:ring-brand/20 focus:outline-none disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed'
                     >
