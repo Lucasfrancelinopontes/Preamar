@@ -300,7 +300,7 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
                         onChange={() => atualizarEspecie(index, 'comTripa', true)}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Com tripa</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Com vísceras</span>
                     </label>
                     <label className="flex items-center">
                       <input
@@ -310,7 +310,7 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
                         onChange={() => atualizarEspecie(index, 'comTripa', false)}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Sem tripa</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Sem vísceras</span>
                     </label>
                   </div>
                 </div>
