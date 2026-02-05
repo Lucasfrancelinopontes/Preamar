@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFormContext } from '@/app/contexts/FormContext';
 import api from '@/services/api';
@@ -20,21 +20,13 @@ function DesembarqueContent() {
     const [carregandoEdicao, setCarregandoEdicao] = useState(false);
     const [edicaoCarregada, setEdicaoCarregada] = useState(false);
     const [formSessionKey, setFormSessionKey] = useState(() => `new-${Date.now()}`);
-    const [novoResetDone, setNovoResetDone] = useState(false);
+    const [inicializando, setInicializando] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
     const editId = searchParams.get('edit');
     const { formData, updateFormData, resetForm } = useFormContext();
 
-    const temDadosPersistidos = Boolean(
-        formData?.ID_desembarque ||
-        formData?.codigoColeta ||
-        formData?.municipio ||
-        formData?.localidade ||
-        formData?.dataSaida ||
-        (Array.isArray(formData?.especiesCaptura) && formData.especiesCaptura.length > 0) ||
-        (Array.isArray(formData?.arteSelecionadas) && formData.arteSelecionadas.length > 0)
-    );
+    const initKeyRef = useRef(null);
 
     const carregarDadosEdicao = useCallback(async (id) => {
         try {
@@ -266,15 +258,24 @@ function DesembarqueContent() {
         let cancelled = false;
 
         const run = async () => {
+            setInicializando(true);
+
             if (!editId) {
                 setEdicaoCarregada(false);
-                // Novo desembarque: evitar reaproveitar dados do contexto de uma edição anterior
-                if (temDadosPersistidos) {
+                // Inicializa modo "novo" apenas uma vez, para não apagar dados ao avançar etapas.
+                if (initKeyRef.current !== 'new') {
                     resetForm();
                     setStep(1);
                     setFormSessionKey(`new-${Date.now()}`);
+                    initKeyRef.current = 'new';
                 }
-                setNovoResetDone(true);
+                if (!cancelled) setInicializando(false);
+                return;
+            }
+
+            const targetKey = `edit:${editId}`;
+            if (initKeyRef.current === targetKey && edicaoCarregada) {
+                if (!cancelled) setInicializando(false);
                 return;
             }
 
@@ -285,10 +286,11 @@ function DesembarqueContent() {
                     updateFormData(mapped);
                     setEdicaoCarregada(true);
                     setFormSessionKey(`edit-${editId}`);
-                    setNovoResetDone(true);
+                    initKeyRef.current = targetKey;
                 }
             } finally {
                 if (!cancelled) setCarregandoEdicao(false);
+                if (!cancelled) setInicializando(false);
             }
         };
 
@@ -297,7 +299,7 @@ function DesembarqueContent() {
         return () => {
             cancelled = true;
         };
-    }, [editId, carregarDadosEdicao, updateFormData, resetForm, temDadosPersistidos]);
+    }, [editId, carregarDadosEdicao, updateFormData, resetForm, edicaoCarregada]);
 
     // Array de etapas para o indicador de progresso
     const steps = [
@@ -326,7 +328,7 @@ function DesembarqueContent() {
 
     // Renderiza o componente da etapa atual
     const renderStep = () => {
-        if (!editId && temDadosPersistidos && !novoResetDone) {
+        if (inicializando) {
             return (
                 <div className="max-w-3xl mx-auto p-6">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
