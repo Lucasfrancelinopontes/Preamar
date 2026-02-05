@@ -53,15 +53,73 @@ export default function Step1Local({ nextStep }) {
     const dataColeta = watch('dataColeta');
     const consecutivo = watch('consecutivo');
 
+    const normalizeStr = (v) => String(v ?? '').trim().toLowerCase();
+
     useEffect(() => {
         api.getMunicipios().then(setMunicipios).catch(console.error);
     }, []);
+
+    // Ao editar: garante que o valor vindo do backend seja compatível com as opções do dropdown.
+    // (Ex: diferenças de acentuação/caixa, ou usar municipioCode/localidadeCode quando disponível)
+    useEffect(() => {
+        if (!municipios || municipios.length === 0) return;
+
+        const currentMunicipio = normalizeStr(selectedMunicipio);
+        const currentMatches = municipios.some(m => normalizeStr(m.municipio) === currentMunicipio);
+
+        if (!selectedMunicipio || !currentMatches) {
+            let nextMunicipio = '';
+
+            if (formData?.municipio) {
+                const byName = municipios.find(m => normalizeStr(m.municipio) === normalizeStr(formData.municipio));
+                if (byName) nextMunicipio = byName.municipio;
+            }
+
+            if (!nextMunicipio && formData?.municipioCode) {
+                const byCode = municipios.find(m => normalizeStr(m.municipioCode) === normalizeStr(formData.municipioCode));
+                if (byCode) nextMunicipio = byCode.municipio;
+            }
+
+            if (nextMunicipio) {
+                setValue('municipio', nextMunicipio, { shouldValidate: true, shouldDirty: false });
+            }
+        }
+    }, [municipios, formData?.municipio, formData?.municipioCode, selectedMunicipio, setValue]);
 
     // Atualizar objeto de município quando a seleção muda
     useEffect(() => {
         const mun = municipios.find(m => m.municipio === selectedMunicipio);
         setSelectedMunicipioObj(mun || null);
     }, [selectedMunicipio, municipios]);
+
+    // Ao editar: garante que a localidade seja selecionável após o município ser resolvido.
+    useEffect(() => {
+        if (!selectedMunicipioObj) return;
+
+        const localidades = Array.isArray(selectedMunicipioObj.localidades) ? selectedMunicipioObj.localidades : [];
+        if (localidades.length === 0) return;
+
+        const currentLocalidade = normalizeStr(selectedLocalidade);
+        const currentMatches = localidades.some(l => normalizeStr(l.localidade) === currentLocalidade);
+
+        if (!selectedLocalidade || !currentMatches) {
+            let nextLocalidade = '';
+
+            if (formData?.localidade) {
+                const byName = localidades.find(l => normalizeStr(l.localidade) === normalizeStr(formData.localidade));
+                if (byName) nextLocalidade = byName.localidade;
+            }
+
+            if (!nextLocalidade && formData?.localidadeCode) {
+                const byCode = localidades.find(l => normalizeStr(l.localidadeCode) === normalizeStr(formData.localidadeCode));
+                if (byCode) nextLocalidade = byCode.localidade;
+            }
+
+            if (nextLocalidade) {
+                setValue('localidade', nextLocalidade, { shouldValidate: true, shouldDirty: false });
+            }
+        }
+    }, [selectedMunicipioObj, formData?.localidade, formData?.localidadeCode, selectedLocalidade, setValue]);
 
     // Gerar Código de Coleta Automaticamente
     useEffect(() => {
