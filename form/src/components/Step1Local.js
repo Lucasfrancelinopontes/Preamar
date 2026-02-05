@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,11 +33,15 @@ export default function Step1Local({ nextStep }) {
     const [municipios, setMunicipios] = useState([]);
     const [selectedMunicipioObj, setSelectedMunicipioObj] = useState(null);
 
+    const hasHydratedFromContextRef = useRef(false);
+
     const {
         register,
         handleSubmit,
         watch,
         setValue,
+        reset,
+        getValues,
         formState: { errors }
     } = useForm({
         resolver: zodResolver(step1Schema),
@@ -54,6 +58,31 @@ export default function Step1Local({ nextStep }) {
     const consecutivo = watch('consecutivo');
 
     const normalizeStr = (v) => String(v ?? '').trim().toLowerCase();
+
+    // No modo edição, formData pode chegar depois que o componente montou.
+    // Como o RHF só aplica defaultValues no mount, precisamos resetar quando os dados forem carregados.
+    useEffect(() => {
+        if (!formData) return;
+        const isEdit = Boolean(formData.ID_desembarque);
+        if (!isEdit) {
+            hasHydratedFromContextRef.current = false;
+            return;
+        }
+
+        const current = getValues();
+        const needsHydration =
+            (!current?.municipio && !!formData.municipio) ||
+            (!current?.localidade && !!formData.localidade) ||
+            (!current?.dataColeta && !!formData.dataColeta) ||
+            (!current?.dataSaida && !!formData.dataSaida) ||
+            (!current?.dataChegada && !!formData.dataChegada);
+
+        if (!hasHydratedFromContextRef.current || needsHydration) {
+            reset(formData);
+            setCodigoColeta(formData.codigoColeta || '');
+            hasHydratedFromContextRef.current = true;
+        }
+    }, [formData, getValues, reset]);
 
     useEffect(() => {
         api.getMunicipios().then(setMunicipios).catch(console.error);
