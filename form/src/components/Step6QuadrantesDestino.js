@@ -48,24 +48,13 @@ export default function Step6QuadrantesDestino({ nextStep, prevStep }) {
 
   const handleDestinoToggle = (value) => {
     const isSelected = destinosSelecionados.includes(value)
-    const nextValues = isSelected
-      ? destinosSelecionados.filter(v => v !== value)
-      : [...destinosSelecionados, value]
 
+    // Seleção única: escolher outro destino substitui o anterior.
+    // Clicar no selecionado desmarca (fica sem destino selecionado).
+    const nextValues = isSelected ? [] : [value]
     updateFormData({ destinoPescado: nextValues })
 
-    const nextPrecisaApelido = nextValues.some(v => ['Atravessador', 'Armador', 'Consumidor'].includes(v))
     const nextIsOutros = nextValues.includes('Outros')
-
-    if (isSelected && ['Atravessador', 'Armador', 'Consumidor'].includes(value)) {
-      updateFormData({
-        apelidosDestino: {
-          ...apelidosDestino,
-          [value]: ''
-        }
-      })
-    }
-
     if (!nextIsOutros && formData.outroDestino) {
       updateFormData({ outroDestino: '' })
     }
