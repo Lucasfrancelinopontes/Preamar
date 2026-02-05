@@ -19,10 +19,22 @@ function DesembarqueContent() {
     const [temaEscuro, setTemaEscuro] = useState(false);
     const [carregandoEdicao, setCarregandoEdicao] = useState(false);
     const [edicaoCarregada, setEdicaoCarregada] = useState(false);
+    const [formSessionKey, setFormSessionKey] = useState(() => `new-${Date.now()}`);
+    const [novoResetDone, setNovoResetDone] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
     const editId = searchParams.get('edit');
-    const { formData, updateFormData } = useFormContext();
+    const { formData, updateFormData, resetForm } = useFormContext();
+
+    const temDadosPersistidos = Boolean(
+        formData?.ID_desembarque ||
+        formData?.codigoColeta ||
+        formData?.municipio ||
+        formData?.localidade ||
+        formData?.dataSaida ||
+        (Array.isArray(formData?.especiesCaptura) && formData.especiesCaptura.length > 0) ||
+        (Array.isArray(formData?.arteSelecionadas) && formData.arteSelecionadas.length > 0)
+    );
 
     const carregarDadosEdicao = useCallback(async (id) => {
         try {
@@ -256,6 +268,13 @@ function DesembarqueContent() {
         const run = async () => {
             if (!editId) {
                 setEdicaoCarregada(false);
+                // Novo desembarque: evitar reaproveitar dados do contexto de uma edição anterior
+                if (temDadosPersistidos) {
+                    resetForm();
+                    setStep(1);
+                    setFormSessionKey(`new-${Date.now()}`);
+                }
+                setNovoResetDone(true);
                 return;
             }
 
@@ -265,6 +284,8 @@ function DesembarqueContent() {
                 if (!cancelled && mapped) {
                     updateFormData(mapped);
                     setEdicaoCarregada(true);
+                    setFormSessionKey(`edit-${editId}`);
+                    setNovoResetDone(true);
                 }
             } finally {
                 if (!cancelled) setCarregandoEdicao(false);
@@ -276,7 +297,7 @@ function DesembarqueContent() {
         return () => {
             cancelled = true;
         };
-    }, [editId, carregarDadosEdicao, updateFormData]);
+    }, [editId, carregarDadosEdicao, updateFormData, resetForm, temDadosPersistidos]);
 
     // Array de etapas para o indicador de progresso
     const steps = [
@@ -305,6 +326,16 @@ function DesembarqueContent() {
 
     // Renderiza o componente da etapa atual
     const renderStep = () => {
+        if (!editId && temDadosPersistidos && !novoResetDone) {
+            return (
+                <div className="max-w-3xl mx-auto p-6">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                        <p className="text-gray-700 dark:text-gray-200">Preparando formulário...</p>
+                    </div>
+                </div>
+            );
+        }
+
         if (editId && (carregandoEdicao || !edicaoCarregada)) {
             return (
                 <div className="max-w-3xl mx-auto p-6">
@@ -317,23 +348,23 @@ function DesembarqueContent() {
 
         switch (step) {
             case 1:
-                return <Step1Local nextStep={nextStep} prevStep={prevStep} />;
+                return <Step1Local key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
             case 2:
-                return <Step2Pescador nextStep={nextStep} prevStep={prevStep} />;
+                return <Step2Pescador key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
             case 3:
-                return <Step3Embarcacao nextStep={nextStep} prevStep={prevStep} />;
+                return <Step3Embarcacao key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
             case 4:
-                return <Step4ArtesPesca nextStep={nextStep} prevStep={prevStep} />;
+                return <Step4ArtesPesca key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
             case 5:
-                return <Step5ProprietarioDespesas nextStep={nextStep} prevStep={prevStep} />;
+                return <Step5ProprietarioDespesas key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
             case 6:
-                return <Step6QuadrantesDestino nextStep={nextStep} prevStep={prevStep} />;
+                return <Step6QuadrantesDestino key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
             case 7:
-                return <Step7EspeciesCaptura nextStep={nextStep} prevStep={prevStep} />;
+                return <Step7EspeciesCaptura key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
             case 8:
-                return <Step8EspeciesIndividuos nextStep={nextStep} prevStep={prevStep} />;
+                return <Step8EspeciesIndividuos key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
             case 9:
-                return <Step9ResumoAnexos prevStep={prevStep} />;
+                return <Step9ResumoAnexos key={formSessionKey} prevStep={prevStep} />;
             default:
                 return null;
         }
