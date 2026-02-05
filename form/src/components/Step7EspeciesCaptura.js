@@ -10,11 +10,21 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
   const makeTempId = (prefix = 'tmp') => `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`
   
   // Initialize especies list from formData or with one empty entry
-  const [especies, setEspecies] = useState(
-    (formData.especiesCaptura && formData.especiesCaptura.length > 0)
+  const [especies, setEspecies] = useState(() => {
+    const existentes = (formData.especiesCaptura && formData.especiesCaptura.length > 0)
       ? formData.especiesCaptura
-      : [{ id_temporario: makeTempId('captura'), id: '', peso: '', preco: '', comTripa: true }]
-  )
+      : null
+
+    if (existentes) {
+      return existentes.map((e) => ({
+        ...e,
+        id_temporario: e.id_temporario || makeTempId('captura'),
+        idBusca: (e.idBusca ?? (e.id ? String(e.id) : ''))
+      }))
+    }
+
+    return [{ id_temporario: makeTempId('captura'), id: '', idBusca: '', peso: '', preco: '', comTripa: true }]
+  })
   const [especiesDisponiveis, setEspeciesDisponiveis] = useState([])
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState(null)
@@ -37,8 +47,29 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
     carregarEspecies()
   }, [])
 
+  // Se o usuário digitar o ID antes de carregar as opções, sincroniza depois do carregamento.
+  useEffect(() => {
+    if (!especiesDisponiveis || especiesDisponiveis.length === 0) return
+
+    setEspecies((prev) => prev.map((e) => {
+      if (e.id) return e
+
+      const idBusca = (e.idBusca ?? '').toString().trim()
+      if (!idBusca) return e
+
+      const idNum = Number(idBusca)
+      if (!Number.isFinite(idNum)) return e
+
+      const especieEncontrada = especiesDisponiveis.find((esp) => Number(esp.ID) === idNum)
+      if (!especieEncontrada) return e
+
+      const idStr = String(especieEncontrada.ID)
+      return { ...e, id: idStr, idBusca: idStr }
+    }))
+  }, [especiesDisponiveis])
+
   const adicionarEspecie = () => {
-    setEspecies([...especies, { id_temporario: makeTempId('captura'), id: '', peso: '', preco: '', comTripa: true }])
+    setEspecies([...especies, { id_temporario: makeTempId('captura'), id: '', idBusca: '', peso: '', preco: '', comTripa: true }])
   }
 
   const removerEspecie = (index) => {
@@ -51,6 +82,38 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
     const novaLista = [...especies]
     novaLista[index] = { ...novaLista[index], [field]: value }
     setEspecies(novaLista)
+  }
+
+  const atualizarEspecieParcial = (index, patch) => {
+    const novaLista = [...especies]
+    novaLista[index] = { ...novaLista[index], ...patch }
+    setEspecies(novaLista)
+  }
+
+  const atualizarEspeciePorIdBusca = (index, rawValue) => {
+    const value = (rawValue ?? '').toString()
+    const trimmed = value.trim()
+
+    if (!trimmed) {
+      atualizarEspecieParcial(index, { idBusca: '', id: '' })
+      return
+    }
+
+    // Mantém o ID digitado mesmo se não encontrar a espécie.
+    const idNum = Number(trimmed)
+    if (!Number.isFinite(idNum)) {
+      atualizarEspecieParcial(index, { idBusca: trimmed })
+      return
+    }
+
+    const especieEncontrada = especiesDisponiveis.find((e) => Number(e.ID) === idNum)
+    if (especieEncontrada) {
+      const idStr = String(especieEncontrada.ID)
+      atualizarEspecieParcial(index, { idBusca: idStr, id: idStr })
+      return
+    }
+
+    atualizarEspecieParcial(index, { idBusca: trimmed })
   }
 
   const validarEspecies = () => {
@@ -133,7 +196,7 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
           <div className="space-y-4">
             {/* Table Header - Hidden on mobile, visible on desktop */}
             <div className="hidden md:grid md:grid-cols-12 gap-4 font-medium text-sm text-gray-700 dark:text-gray-300 pb-2 border-b dark:border-gray-700">
-              <div className="col-span-4">Espécie *</div>
+              <div className="col-span-4">ID (opcional) / Espécie *</div>
               <div className="col-span-2">Peso Total (kg)</div>
               <div className="col-span-2">Preço/kg (R$)</div>
               <div className="col-span-3">Condição do Peixe</div>
@@ -148,22 +211,47 @@ export default function Step7EspeciesCaptura({ nextStep, prevStep }) {
               >
                 {/* Espécie Select */}
                 <div className="md:col-span-4">
-                  <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Espécie *
-                  </label>
-                  <select
-                    value={especie.id}
-                    onChange={(e) => atualizarEspecie(index, 'id', e.target.value)}
-                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    required
-                  >
-                    <option value="">Selecione uma espécie</option>
-                    {especiesDisponiveis.map((esp) => (
-                      <option key={`${index}-${esp.ID}`} value={esp.ID}>
-                        {esp.Nome_popular} ({esp.Nome_cientifico})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    {/* ID opcional */}
+                    <div className="sm:w-28">
+                      <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        ID (opcional)
+                      </label>
+                      <input
+                        type="number"
+                        value={especie.idBusca ?? ''}
+                        onChange={(e) => atualizarEspeciePorIdBusca(index, e.target.value)}
+                        min="1"
+                        step="1"
+                        inputMode="numeric"
+                        placeholder="ID"
+                        className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+
+                    {/* Select de espécie */}
+                    <div className="flex-1">
+                      <label className="block md:hidden text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Espécie *
+                      </label>
+                      <select
+                        value={especie.id}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          atualizarEspecieParcial(index, { id: v, idBusca: v })
+                        }}
+                        className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        required
+                      >
+                        <option value="">Selecione uma espécie</option>
+                        {especiesDisponiveis.map((esp) => (
+                          <option key={`${index}-${esp.ID}`} value={esp.ID}>
+                            {esp.Nome_popular} ({esp.Nome_cientifico})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Peso Total Input */}
