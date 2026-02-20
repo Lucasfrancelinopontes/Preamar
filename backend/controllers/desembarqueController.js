@@ -11,6 +11,46 @@ import {
 import { Op } from 'sequelize';
 import { validarCPF } from '../utils/validators.js';
 
+const normalizeCpf = (value) => {
+  if (value === undefined || value === null) return null;
+  const digits = String(value).replace(/\D/g, '');
+  return digits || null;
+};
+
+const buildPescadorPayload = (pescador) => {
+  if (!pescador) return null;
+  return {
+    nome: pescador.nome,
+    apelido: pescador.apelido ?? null,
+    cpf: normalizeCpf(pescador.cpf),
+    nascimento: pescador.nascimento ?? null,
+    municipio: pescador.municipio ?? null
+  };
+};
+
+const upsertPescador = async (pescador, transaction) => {
+  if (!pescador) return null;
+
+  const payload = buildPescadorPayload(pescador);
+  if (!payload?.nome) return null;
+
+  if (payload.cpf) {
+    const [pescadorDb] = await Pescador.findOrCreate({
+      where: { cpf: payload.cpf },
+      defaults: payload,
+      transaction
+    });
+
+    // Atualiza com os dados mais recentes (sem criar duplicado)
+    await pescadorDb.update(payload, { transaction });
+    return pescadorDb;
+  }
+
+  // Sem CPF: permite nomes repetidos; cria novo registro
+  const pescadorDb = await Pescador.create(payload, { transaction });
+  return pescadorDb;
+};
+
 const normalizeDestinoPescado = (value) => {
   if (value == null) return null;
   if (Array.isArray(value)) {
@@ -91,8 +131,18 @@ export const criarDesembarque = async (req, res) => {
       });
     }
 
+    // Pescador é obrigatório e deve ser persistido
+    if (!pescador?.nome) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Dados do pescador (nome) são obrigatórios'
+      });
+    }
+
     // Validar CPF do pescador se fornecido
-    if (pescador?.cpf && !validarCPF(pescador.cpf)) {
+    const cpfNorm = normalizeCpf(pescador?.cpf);
+    if (cpfNorm && !validarCPF(cpfNorm)) {
       await t.rollback();
       return res.status(400).json({
         success: false,
@@ -100,16 +150,9 @@ export const criarDesembarque = async (req, res) => {
       });
     }
 
-    // 1. Criar ou encontrar pescador
-    let pescadorDb = null;
-    if (pescador && pescador.cpf) {
-      [pescadorDb] = await Pescador.findOrCreate({
-        where: { cpf: pescador.cpf },
-        defaults: pescador,
-        transaction: t
-      });
-      console.log('✅ Pescador:', pescadorDb.nome, `(ID: ${pescadorDb.ID_pescador})`);
-    }
+    // 1. Criar ou encontrar pescador (sempre)
+    let pescadorDb = await upsertPescador({ ...pescador, cpf: cpfNorm }, t);
+    console.log('✅ Pescador:', pescadorDb?.nome, `(ID: ${pescadorDb?.ID_pescador})`);
 
     // 2. Criar ou encontrar embarcação
     let embarcacaoDb = null;
@@ -516,26 +559,19 @@ export const atualizarDesembarque = async (req, res) => {
     }
 
     // Validar CPF do pescador se fornecido
-    if (pescador?.cpf && !validarCPF(pescador.cpf)) {
+    const cpfNorm = normalizeCpf(pescador?.cpf);
+    if (cpfNorm && !validarCPF(cpfNorm)) {
       await t.rollback();
       return res.status(400).json({ success: false, message: 'CPF inválido' });
     }
 
     // Atualizar ou criar pescador
     let pescadorDb = null;
-    if (pescador) {
-      if (pescador.cpf) {
-        [pescadorDb] = await Pescador.findOrCreate({
-          where: { cpf: pescador.cpf },
-          defaults: pescador,
-          transaction: t
-        });
-        // Atualizar com dados recentes
-        await pescadorDb.update(pescador, { transaction: t });
-      } else if (pescador.ID_pescador) {
-        pescadorDb = await Pescador.findByPk(pescador.ID_pescador, { transaction: t });
-        if (pescadorDb) await pescadorDb.update(pescador, { transaction: t });
-      }
+    if (pescador?.nome) {
+      pescadorDb = await upsertPescador({ ...pescador, cpf: cpfNorm }, t);
+    } else if (pescador?.ID_pescador) {
+      pescadorDb = await Pescador.findByPk(pescador.ID_pescador, { transaction: t });
+      if (pescadorDb) await pescadorDb.update(buildPescadorPayload(pescador), { transaction: t });
     }
 
     // Atualizar ou criar embarcação

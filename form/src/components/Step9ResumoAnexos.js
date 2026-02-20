@@ -108,7 +108,7 @@ export default function Step9ResumoAnexos({ prevStep }) {
     const embarcacao = {
       nome_embarcacao: formData.nomeEmbarcacao,
       codigo_embarcacao: formData.codigoEmbarcacao,
-      proprietario: formData.nomeProprietario || formData.nomePescador,
+      proprietario: formData.nomeProprietario || null,
       cpf_proprietario: formData.cpfProprietario?.replace(/\D/g, '') || null,
       tipo: formData.tipoEmbarcacao,
       tipo_outro: formData.tipoEmbarcacao === 'outro' ? (formData.tipoEmbarcacaoOutro || null) : null,
@@ -147,7 +147,7 @@ export default function Step9ResumoAnexos({ prevStep }) {
       litros: formData.litrosCombustivel ? parseFloat(formData.litrosCombustivel) : null,
       gelo_kg: formData.quantidadeGelo ? parseFloat(formData.quantidadeGelo) : null,
       rancho_valor: formData.valorRancho ? parseFloat(formData.valorRancho) : null,
-      proprietario: formData.nomeProprietario || formData.nomePescador,
+      proprietario: formData.nomeProprietario || null,
       apelido_proprietario: formData.apelidoProprietario || null,
       atuou_pesca: formData.atuouNaPesca === true ? 'S' : (formData.atuouNaPesca === false ? 'N' : null),
       destino_pescado: Array.isArray(formData.destinoPescado)

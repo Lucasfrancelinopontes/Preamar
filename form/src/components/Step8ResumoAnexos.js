@@ -69,7 +69,8 @@ export default function Step8ResumoAnexos({ prevStep }) {
     const embarcacao = {
       nome_embarcacao: formData.nomeEmbarcacao,
       codigo_embarcacao: formData.codigoEmbarcacao,
-      proprietario: formData.proprietarioNome || formData.nomePescador,
+      proprietario: formData.nomeProprietario || null,
+      cpf_proprietario: formData.cpfProprietario?.replace(/\D/g, '') || null,
       tipo: formData.tipoEmbarcacao,
       tipo_outro: formData.tipoEmbarcacao === 'outro' ? (formData.tipoEmbarcacaoOutro || null) : null,
       comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
