@@ -110,6 +110,7 @@ export default function Step9ResumoAnexos({ prevStep }) {
       codigo_embarcacao: formData.codigoEmbarcacao,
       proprietario: formData.nomeProprietario || null,
       cpf_proprietario: formData.cpfProprietario?.replace(/\D/g, '') || null,
+      localidade: formData.naturalidadeProprietario || null,
       tipo: formData.tipoEmbarcacao,
       tipo_outro: formData.tipoEmbarcacao === 'outro' ? (formData.tipoEmbarcacaoOutro || null) : null,
       comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
@@ -452,6 +453,7 @@ export default function Step9ResumoAnexos({ prevStep }) {
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div><span className="text-gray-500">Nome:</span> {formData.nomeProprietario || 'Não informado'}</div>
               <div><span className="text-gray-500">CPF:</span> {formData.cpfProprietario || 'Não informado'}</div>
+              <div><span className="text-gray-500">Naturalidade:</span> {formData.naturalidadeProprietario || 'Não informado'}</div>
               <div>
                 <span className="text-gray-500">Atuou na pesca:</span>{' '}
                 {formData.atuouNaPesca === true ? 'Sim' : (formData.atuouNaPesca === false ? 'Não' : 'Não informado')}

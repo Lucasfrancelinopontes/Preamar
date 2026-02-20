@@ -251,6 +251,7 @@ function DesembarqueContent() {
                     nomeProprietario: data.proprietario || data.embarcacao?.proprietario || '',
                     apelidoProprietario: data.apelido_proprietario || '',
                     cpfProprietario: data.embarcacao?.cpf_proprietario || '',
+                    naturalidadeProprietario: data.embarcacao?.localidade || '',
                     atuouNaPesca: data.atuou_pesca === 'S' ? true : (data.atuou_pesca === 'N' ? false : null),
                     quantidadeGelo: data.gelo_kg != null ? toStr(data.gelo_kg) : '',
                     valorRancho: data.rancho_valor != null ? toStr(data.rancho_valor) : '',
