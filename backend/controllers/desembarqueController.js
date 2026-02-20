@@ -210,8 +210,10 @@ export const criarDesembarque = async (req, res) => {
           };
         });
 
-      await DesembarqueArte.bulkCreate(artesData, { transaction: t });
-      console.log(`✅ ${artes.length} arte(s) de pesca salva(s)`);
+      if (artesData.length > 0) {
+        await DesembarqueArte.bulkCreate(artesData, { transaction: t });
+        console.log(`✅ ${artesData.length} arte(s) de pesca salva(s)`);
+      }
     }
 
     // 5. Processar capturas e indivíduos
