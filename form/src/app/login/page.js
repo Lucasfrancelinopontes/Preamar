@@ -145,18 +145,6 @@ export default function LoginPage() {
                         )}
                     </button>
 
-                    <div className="text-center">
-                        <p className="text-gray-600">
-                            Não tem uma conta?{' '}
-                            <button
-                                type="button"
-                                onClick={() => router.push('/register')}
-                                className="link"
-                            >
-                                Criar conta
-                            </button>
-                        </p>
-                    </div>
                 </form>
             </div>
         </main>

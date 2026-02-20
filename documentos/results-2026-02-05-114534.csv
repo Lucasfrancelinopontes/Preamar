@@ -1,0 +1,10 @@
+ID_embarcacao,nome_embarcacao,codigo_embarcacao,proprietario,rgp,comprimento,capacidade,hp,tipo,tipo_outro,possui,localidade,cpf_proprietario
+"1","barba negwgwg","JP-001","Lucas Francelino","","23.00","43.00","412","barco","","urna","",""
+"60001","nn","1","Marcelo Barbosa","","8.00","350.00","3","barco","","caixaTermica","",""
+"120001","Dois Amigos","1610031610","nn","","9.50","500.00","4","barco","","caixaTermica","",""
+"150001","Vai com Deus","2010073550","Oliveira","","7.00","350.00","3","barco","","caixaTermica","",""
+"180001","Pai e Filho","201-007476-9","Ubirajara Maia","","7.50","350.00","2","barco","","caixaTermica","",""
+"210001","São Marcos","201-0054105","Marcos Padilha","","0.00","400.00","2","barco","","caixaTermica","",""
+"240001","São Francisco","201-005437-7","Francisco Padilha","","7.00","400.00","2","barco","","caixaTermica","",""
+"270001","Rodrigues Duarte","201-007529-3","João Rodrigues Duarte","","7.00","300.00","3","barco","","caixaTermica","",""
+"270007","arca","nn","maria","","7.00","450.00","15","jangada","","caixaTermica","",""

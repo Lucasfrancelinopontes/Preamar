@@ -132,8 +132,6 @@ export const Desembarque = sequelize.define('Desembarque', {
   },
   // Destino do pescado
   destino_pescado: {
-    // Antes era ENUM (valor único). Agora armazenamos múltiplos valores
-    // como string (ex: "atravessador,consumidor,outros").
     type: DataTypes.TEXT,
     allowNull: true
   },
