@@ -339,7 +339,7 @@ export default function Step8ResumoAnexos({ prevStep }) {
               <div className="space-y-1 text-sm">
                 {formData.arteSelecionadas.filter(a => a.arte).map((arte, index) => (
                   <div key={index}>
-                    • {arte.arte} - {arte.tamanho}m
+                    • {(arte.arte === 'outras' && (arte.arte_outro || '').trim()) ? `Outro: ${String(arte.arte_outro).trim()}` : arte.arte} - {arte.tamanho}m
                   </div>
                 ))}
               </div>

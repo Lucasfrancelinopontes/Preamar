@@ -133,7 +133,20 @@ export default function Step9ResumoAnexos({ prevStep }) {
       hora_desembarque: formData.horaChegada || null,
       numero_tripulantes: formData.numTripulantes ? parseInt(formData.numTripulantes) : null,
       pesqueiros: formData.numPesqueiros ? String(formData.numPesqueiros) : null,
-      arte_obs: formData.arte_obs || null,
+      arte_obs: (() => {
+        const base = (formData.arte_obs || '').trim();
+        const outros = Array.isArray(formData.arteSelecionadas)
+          ? formData.arteSelecionadas
+              .filter(a => a && a.arte === 'outras' && (a.arte_outro || '').trim())
+              .map(a => String(a.arte_outro).trim())
+          : [];
+
+        const uniqueOutros = [...new Set(outros)];
+        const extra = uniqueOutros.length ? `Outras artes: ${uniqueOutros.join('; ')}` : '';
+        if (!base && !extra) return null;
+        if (base && extra && base.toLowerCase().includes(extra.toLowerCase())) return base;
+        return [base, extra].filter(Boolean).join(' | ');
+      })(),
       quadrante1: formData.quadrante1 || null,
       quadrante2: formData.quadrante2 || null,
       quadrante3: formData.quadrante3 || null,
@@ -451,7 +464,7 @@ export default function Step9ResumoAnexos({ prevStep }) {
               <div className="space-y-1 text-sm">
                 {formData.arteSelecionadas.filter(a => a.arte).map((arte, index) => (
                   <div key={index}>
-                    • {arte.arte} - {arte.tamanho}m
+                    • {(arte.arte === 'outras' && (arte.arte_outro || '').trim()) ? `Outro: ${String(arte.arte_outro).trim()}` : arte.arte} - {arte.tamanho}m
                   </div>
                 ))}
               </div>

@@ -226,7 +226,18 @@ function DesembarqueContent() {
                         ? data.artes.map(a => ({
                             id_temporario: makeTempId('arte', a.ID ?? `${a.arte}-${a.tamanho}`),
                             ID: a.ID,
-                            arte: a.arte,
+                            arte: (() => {
+                                const known = new Set(['rede_boirea', 'espinhel_mergulho', 'rede_fundeio', 'linha_mao', 'rede_cacoaria', 'covo', 'outras']);
+                                const v = a.arte;
+                                if (!v) return '';
+                                return known.has(String(v)) ? String(v) : 'outras';
+                            })(),
+                            arte_outro: (() => {
+                                const known = new Set(['rede_boirea', 'espinhel_mergulho', 'rede_fundeio', 'linha_mao', 'rede_cacoaria', 'covo', 'outras']);
+                                const v = a.arte;
+                                if (!v) return '';
+                                return known.has(String(v)) ? '' : String(v);
+                            })(),
                             tamanho: a.tamanho != null ? toStr(a.tamanho) : '',
                             unidade: a.unidade
                         }))

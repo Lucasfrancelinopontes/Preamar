@@ -22,7 +22,7 @@ export default function Step4ArtesPesca({ nextStep, prevStep }) {
     { value: 'linha_mao', label: 'Linha de Mão' },
     { value: 'rede_cacoaria', label: 'Rede Cacoaria' },
     { value: 'covo', label: 'Covo' },
-    { value: 'outras', label: 'Outras' }
+    { value: 'outras', label: 'Outro' }
   ]
 
   const handleAddArte = () => {
@@ -36,6 +36,17 @@ export default function Step4ArtesPesca({ nextStep, prevStep }) {
 
   const handleArteChange = (index, field, value) => {
     const newList = [...artesList]
+
+    if (field === 'arte') {
+      newList[index] = {
+        ...newList[index],
+        arte: value,
+        arte_outro: value === 'outras' ? (newList[index].arte_outro || '') : ''
+      }
+      setArtesList(newList)
+      return
+    }
+
     newList[index] = { ...newList[index], [field]: value }
     setArtesList(newList)
   }
@@ -85,6 +96,22 @@ export default function Step4ArtesPesca({ nextStep, prevStep }) {
                     </option>
                   ))}
                 </select>
+
+                {arte.arte === 'outras' && (
+                  <div className="mt-3">
+                    <label className="label-standard">
+                      Qual arte?
+                    </label>
+                    <input
+                      type="text"
+                      value={arte.arte_outro || ''}
+                      onChange={(e) => handleArteChange(index, 'arte_outro', e.target.value)}
+                      className="input-standard"
+                      placeholder="Digite a arte de pesca"
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex-1">
