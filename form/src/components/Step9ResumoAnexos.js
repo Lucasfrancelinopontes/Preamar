@@ -185,13 +185,19 @@ export default function Step9ResumoAnexos({ prevStep }) {
     // Preparar artes de pesca
     const artes = formData.arteSelecionadas 
       ? formData.arteSelecionadas
-          .filter(arte => arte.arte && arte.tamanho)
-          .map(arte => ({
-            arte: arte.arte,
-            nome: (arte.arte === 'outras' && (arte.arte_outro || '').trim()) ? String(arte.arte_outro).trim() : null,
-            tamanho: parseFloat(arte.tamanho),
-            unidade: arte.unidade || null
-          }))
+          .filter(arte => arte && arte.arte)
+          .map(arte => {
+            const tamanhoNum = (arte.tamanho !== undefined && arte.tamanho !== null && String(arte.tamanho).trim() !== '')
+              ? parseFloat(arte.tamanho)
+              : null;
+
+            return {
+              arte: arte.arte,
+              nome: (arte.arte === 'outras' && (arte.arte_outro || '').trim()) ? String(arte.arte_outro).trim() : null,
+              tamanho: (tamanhoNum != null && Number.isFinite(tamanhoNum)) ? tamanhoNum : null,
+              unidade: arte.unidade || null
+            };
+          })
       : []
 
     // Preparar capturas (da etapa 1 - dados gerais por espécie)
