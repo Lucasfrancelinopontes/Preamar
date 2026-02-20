@@ -154,12 +154,16 @@ export const criarDesembarque = async (req, res) => {
     let pescadorDb = await upsertPescador({ ...pescador, cpf: cpfNorm }, t);
     console.log('✅ Pescador:', pescadorDb?.nome, `(ID: ${pescadorDb?.ID_pescador})`);
 
-    // 2. Criar ou encontrar embarcação
+    // 2. Criar ou encontrar embarcação (somente se dados mínimos existirem)
     let embarcacaoDb = null;
-    if (embarcacao && embarcacao.codigo_embarcacao) {
+    const codigoEmbarcacao = embarcacao?.codigo_embarcacao ? String(embarcacao.codigo_embarcacao).trim() : null;
+    const nomeEmbarcacao = embarcacao?.nome_embarcacao ? String(embarcacao.nome_embarcacao).trim() : null;
+    const tipoEmbarcacao = embarcacao?.tipo ? String(embarcacao.tipo).trim() : null;
+
+    if (codigoEmbarcacao && nomeEmbarcacao && tipoEmbarcacao) {
       [embarcacaoDb] = await Embarcacao.findOrCreate({
-        where: { codigo_embarcacao: embarcacao.codigo_embarcacao },
-        defaults: embarcacao,
+        where: { codigo_embarcacao: codigoEmbarcacao },
+        defaults: { ...embarcacao, codigo_embarcacao: codigoEmbarcacao, nome_embarcacao: nomeEmbarcacao, tipo: tipoEmbarcacao },
         transaction: t
       });
       console.log('✅ Embarcação:', embarcacaoDb.nome_embarcacao, `(ID: ${embarcacaoDb.ID_embarcacao})`);
@@ -574,19 +578,29 @@ export const atualizarDesembarque = async (req, res) => {
       if (pescadorDb) await pescadorDb.update(buildPescadorPayload(pescador), { transaction: t });
     }
 
-    // Atualizar ou criar embarcação
+    // Atualizar ou criar embarcação (somente se dados mínimos existirem)
     let embarcacaoDb = null;
     if (embarcacao) {
       if (embarcacao.codigo_embarcacao) {
-        [embarcacaoDb] = await Embarcacao.findOrCreate({
-          where: { codigo_embarcacao: embarcacao.codigo_embarcacao },
-          defaults: embarcacao,
-          transaction: t
-        });
-        await embarcacaoDb.update(embarcacao, { transaction: t });
+        const codigoEmbarcacao = String(embarcacao.codigo_embarcacao).trim();
+        const nomeEmbarcacao = embarcacao.nome_embarcacao ? String(embarcacao.nome_embarcacao).trim() : null;
+        const tipoEmbarcacao = embarcacao.tipo ? String(embarcacao.tipo).trim() : null;
+        if (codigoEmbarcacao && nomeEmbarcacao && tipoEmbarcacao) {
+          [embarcacaoDb] = await Embarcacao.findOrCreate({
+            where: { codigo_embarcacao: codigoEmbarcacao },
+            defaults: { ...embarcacao, codigo_embarcacao: codigoEmbarcacao, nome_embarcacao: nomeEmbarcacao, tipo: tipoEmbarcacao },
+            transaction: t
+          });
+          await embarcacaoDb.update({ ...embarcacao, codigo_embarcacao: codigoEmbarcacao, nome_embarcacao: nomeEmbarcacao, tipo: tipoEmbarcacao }, { transaction: t });
+        }
       } else if (embarcacao.ID_embarcacao) {
-        embarcacaoDb = await Embarcacao.findByPk(embarcacao.ID_embarcacao, { transaction: t });
-        if (embarcacaoDb) await embarcacaoDb.update(embarcacao, { transaction: t });
+        // Se for atualizar por ID, só atualiza quando tipo e nome existirem (colunas NOT NULL)
+        const nomeEmbarcacao = embarcacao.nome_embarcacao ? String(embarcacao.nome_embarcacao).trim() : null;
+        const tipoEmbarcacao = embarcacao.tipo ? String(embarcacao.tipo).trim() : null;
+        if (nomeEmbarcacao && tipoEmbarcacao) {
+          embarcacaoDb = await Embarcacao.findByPk(embarcacao.ID_embarcacao, { transaction: t });
+          if (embarcacaoDb) await embarcacaoDb.update({ ...embarcacao, nome_embarcacao: nomeEmbarcacao, tipo: tipoEmbarcacao }, { transaction: t });
+        }
       }
     }
 

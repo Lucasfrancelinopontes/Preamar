@@ -132,14 +132,13 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <label className="label-standard">
-              Tipo de embarcação *
+              Tipo de embarcação
             </label>
             <select
               name="tipoEmbarcacao"
               value={formData.tipoEmbarcacao || ''}
               onChange={handleChange}
               className="select-standard"
-              required
             >
               <option value="">Selecione um tipo</option>
               {tiposEmbarcacao.map(tipo => (
@@ -162,14 +161,13 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
                 onChange={handleChange}
                 className="input-standard"
                 placeholder="Digite o tipo"
-                required
               />
             </div>
           )}
 
           <div>
             <label className="label-standard">
-              Comprimento (m) *
+              Comprimento (m)
             </label>
             <input
               type="number"
@@ -179,13 +177,12 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               step="0.01"
               min="0"
               className="input-standard"
-              required
             />
           </div>
 
           <div>
             <label className="label-standard">
-              Capacidade de estocagem (kg) *
+              Capacidade de estocagem (kg)
             </label>
             <input
               type="number"
@@ -194,13 +191,12 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               onChange={handleChange}
               min="0"
               className="input-standard"
-              required
             />
           </div>
 
           <div>
             <label className="label-standard">
-              Força do motor (HP) *
+              Força do motor (HP)
             </label>
             <input
               type="number"
@@ -209,7 +205,6 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               onChange={handleChange}
               min="0"
               className="input-standard"
-              required
             />
           </div>
         </div>
@@ -218,7 +213,7 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
       {/* Seção Possui */}
       <div className="card">
         <h2 className="heading-secondary">
-          Possui *
+          Possui
         </h2>
         <div className="space-y-4">
           {opcoesArmazenamento.map(opcao => (
@@ -231,7 +226,6 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
                 checked={formData.armazenamento === opcao.value}
                 onChange={handleChange}
                 className="h-4 w-4 text-brand focus:ring-brand border-gray-300"
-                required
               />
               <label
                 htmlFor={opcao.value}
