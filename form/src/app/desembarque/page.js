@@ -195,7 +195,25 @@ function DesembarqueContent() {
                     // Step 3
                     nomeEmbarcacao: data.embarcacao?.nome_embarcacao || '',
                     codigoEmbarcacao: data.embarcacao?.codigo_embarcacao || '',
-                    tipoEmbarcacao: data.embarcacao?.tipo || data.embarcacao?.tipo_outro || '',
+                    tipoEmbarcacao: (() => {
+                        const known = new Set(['catraia', 'caico', 'jangada', 'boteLancha', 'canoa', 'barco', 'outro']);
+                        const tipo = data.embarcacao?.tipo;
+                        const tipoOutro = data.embarcacao?.tipo_outro;
+
+                        if (tipoOutro) return 'outro';
+                        if (tipo && known.has(String(tipo))) return String(tipo);
+                        if (tipo) return 'outro';
+                        return '';
+                    })(),
+                    tipoEmbarcacaoOutro: (() => {
+                        const tipoOutro = data.embarcacao?.tipo_outro;
+                        if (tipoOutro) return String(tipoOutro);
+
+                        const tipo = data.embarcacao?.tipo;
+                        const known = new Set(['catraia', 'caico', 'jangada', 'boteLancha', 'canoa', 'barco', 'outro']);
+                        if (tipo && !known.has(String(tipo))) return String(tipo);
+                        return '';
+                    })(),
                     comprimento: data.embarcacao?.comprimento != null ? toStr(data.embarcacao.comprimento) : '',
                     forcaMotor: data.embarcacao?.hp != null ? toStr(data.embarcacao.hp) : '',
                     armazenamento: data.embarcacao?.possui || '',

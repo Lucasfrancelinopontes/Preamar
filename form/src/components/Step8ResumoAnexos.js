@@ -71,6 +71,7 @@ export default function Step8ResumoAnexos({ prevStep }) {
       codigo_embarcacao: formData.codigoEmbarcacao,
       proprietario: formData.proprietarioNome || formData.nomePescador,
       tipo: formData.tipoEmbarcacao,
+      tipo_outro: formData.tipoEmbarcacao === 'outro' ? (formData.tipoEmbarcacaoOutro || null) : null,
       comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
       capacidade: formData.capacidadeEstocagem ? parseFloat(formData.capacidadeEstocagem) : null,
       hp: formData.forcaMotor ? parseInt(formData.forcaMotor) : null,
@@ -308,7 +309,7 @@ export default function Step8ResumoAnexos({ prevStep }) {
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div><span className="text-gray-500">Nome:</span> {formData.nomeEmbarcacao}</div>
               <div><span className="text-gray-500">Código:</span> {formData.codigoEmbarcacao}</div>
-              <div><span className="text-gray-500">Tipo:</span> {formData.tipoEmbarcacao}</div>
+              <div><span className="text-gray-500">Tipo:</span> {formData.tipoEmbarcacao === 'outro' ? (formData.tipoEmbarcacaoOutro || 'Outro') : formData.tipoEmbarcacao}</div>
               <div><span className="text-gray-500">Comprimento:</span> {formData.comprimento ? `${formData.comprimento}m` : 'Não informado'}</div>
               <div><span className="text-gray-500">Tripulantes:</span> {formData.numTripulantes || 'Não informado'}</div>
               <div><span className="text-gray-500">Pesqueiros:</span> {formData.numPesqueiros || 'Não informado'}</div>

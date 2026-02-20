@@ -32,6 +32,15 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target
+
+    if (name === 'tipoEmbarcacao') {
+      updateFormData({
+        tipoEmbarcacao: value,
+        tipoEmbarcacaoOutro: value === 'outro' ? (formData.tipoEmbarcacaoOutro || '') : ''
+      })
+      return
+    }
+
     updateFormData({ [name]: value })
   }
 
@@ -140,6 +149,23 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               ))}
             </select>
           </div>
+
+          {formData.tipoEmbarcacao === 'outro' && (
+            <div className="md:col-span-2">
+              <label className="label-standard">
+                Qual tipo de embarcação?
+              </label>
+              <input
+                type="text"
+                name="tipoEmbarcacaoOutro"
+                value={formData.tipoEmbarcacaoOutro || ''}
+                onChange={handleChange}
+                className="input-standard"
+                placeholder="Digite o tipo"
+                required
+              />
+            </div>
+          )}
 
           <div>
             <label className="label-standard">
