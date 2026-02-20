@@ -82,9 +82,8 @@ export default function Step9ResumoAnexos({ prevStep }) {
       return null
     }
 
-    // Gerar código de desembarque usando a data de saída
-    const dataSaida = formData.dataSaida || new Date().toISOString(); //data de coleta
-    const dataColeta = dataSaida.split('T')[0]; // Extrai YYYY-MM-DD
+    // Usar a data de coleta (coletor). Na edição, é ela que deve persistir em `data_coleta`.
+    const dataColeta = (formData.dataColeta || new Date().toISOString()).split('T')[0]; // YYYY-MM-DD
     const consecutivo = formData.consecutivo || 1;
     const municipio = formData.municipio || 'LOCAL';
     const localidade = formData.localidade || 'PRAIA';
