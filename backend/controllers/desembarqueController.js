@@ -614,11 +614,31 @@ export const atualizarDesembarque = async (req, res) => {
 
     // Atualizar ou criar pescador
     let pescadorDb = null;
-    if (pescador?.nome) {
-      pescadorDb = await upsertPescador({ ...pescador, cpf: cpfNorm }, t);
-    } else if (pescador?.ID_pescador) {
-      pescadorDb = await Pescador.findByPk(pescador.ID_pescador, { transaction: t });
-      if (pescadorDb) await pescadorDb.update(buildPescadorPayload(pescador), { transaction: t });
+    const pescadorIdToUpdate = pescador?.ID_pescador || pescador?.ID || desembarqueDados?.ID_pescador || desembarqueDb.ID_pescador || null;
+    const pescadorPayload = pescador ? buildPescadorPayload({ ...pescador, cpf: cpfNorm }) : null;
+    if (pescadorPayload && !cpfNorm) {
+      // Evita apagar CPF existente quando o campo não foi preenchido
+      delete pescadorPayload.cpf;
+    }
+
+    if (cpfNorm && pescadorPayload?.nome) {
+      // Com CPF: deduplica por CPF (não cria duplicado)
+      const [pDb] = await Pescador.findOrCreate({
+        where: { cpf: cpfNorm },
+        defaults: pescadorPayload,
+        transaction: t
+      });
+      await pDb.update(pescadorPayload, { transaction: t });
+      pescadorDb = pDb;
+    } else if (pescadorIdToUpdate && pescadorPayload) {
+      // Sem CPF: se já existe pescador associado ao desembarque, apenas atualiza ele
+      pescadorDb = await Pescador.findByPk(pescadorIdToUpdate, { transaction: t });
+      if (pescadorDb) {
+        await pescadorDb.update(pescadorPayload, { transaction: t });
+      }
+    } else if (pescadorPayload?.nome) {
+      // Sem CPF e sem pescador associado: cria novo registro (permite nomes repetidos)
+      pescadorDb = await Pescador.create(pescadorPayload, { transaction: t });
     }
 
     // Atualizar ou criar embarcação (somente se dados mínimos existirem)
