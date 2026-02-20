@@ -9,7 +9,7 @@ export const Pescador = sequelize.define('Pescador', {
   },
   nome: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   apelido: {
     type: DataTypes.STRING(100)

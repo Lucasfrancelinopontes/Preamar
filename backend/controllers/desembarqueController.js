@@ -17,14 +17,20 @@ const normalizeCpf = (value) => {
   return digits || null;
 };
 
+const normalizeTextOrNull = (value) => {
+  if (value === undefined || value === null) return null;
+  const str = String(value).trim();
+  return str ? str : null;
+};
+
 const buildPescadorPayload = (pescador) => {
   if (!pescador) return null;
   return {
-    nome: pescador.nome,
-    apelido: pescador.apelido ?? null,
+    nome: normalizeTextOrNull(pescador.nome),
+    apelido: normalizeTextOrNull(pescador.apelido),
     cpf: normalizeCpf(pescador.cpf),
     nascimento: pescador.nascimento ?? null,
-    municipio: pescador.municipio ?? null
+    municipio: normalizeTextOrNull(pescador.municipio)
   };
 };
 
@@ -32,7 +38,7 @@ const upsertPescador = async (pescador, transaction) => {
   if (!pescador) return null;
 
   const payload = buildPescadorPayload(pescador);
-  if (!payload?.nome) return null;
+  if (!payload || (!payload.nome && !payload.apelido)) return null;
 
   if (payload.cpf) {
     const [pescadorDb] = await Pescador.findOrCreate({
@@ -621,7 +627,7 @@ export const atualizarDesembarque = async (req, res) => {
       delete pescadorPayload.cpf;
     }
 
-    if (cpfNorm && pescadorPayload?.nome) {
+    if (cpfNorm && (pescadorPayload?.nome || pescadorPayload?.apelido)) {
       // Com CPF: deduplica por CPF (não cria duplicado)
       const [pDb] = await Pescador.findOrCreate({
         where: { cpf: cpfNorm },
@@ -636,7 +642,7 @@ export const atualizarDesembarque = async (req, res) => {
       if (pescadorDb) {
         await pescadorDb.update(pescadorPayload, { transaction: t });
       }
-    } else if (pescadorPayload?.nome) {
+    } else if (pescadorPayload?.nome || pescadorPayload?.apelido) {
       // Sem CPF e sem pescador associado: cria novo registro (permite nomes repetidos)
       pescadorDb = await Pescador.create(pescadorPayload, { transaction: t });
     }

@@ -41,9 +41,11 @@ export default function Step2Pescador({ nextStep, prevStep }) {
 
     const validateForm = () => {
         const errors = {};
-        
-        if (!formFields.nomePescador) {
-            errors.nomePescador = 'Digite o nome do pescador';
+
+        const hasNome = !!String(formFields.nomePescador || '').trim();
+        const hasApelido = !!String(formFields.apelidoPescador || '').trim();
+        if (!hasNome && !hasApelido) {
+            errors.nomePescador = 'Digite o nome ou apelido do pescador';
         }
         
         // CPF agora é opcional
@@ -69,7 +71,7 @@ export default function Step2Pescador({ nextStep, prevStep }) {
             {/* Nome do Pescador */}
             <div>
                 <label className="label-standard">
-                    Nome do pescador*
+                    Nome do pescador
                 </label>
                 <div className="relative">
                     <input

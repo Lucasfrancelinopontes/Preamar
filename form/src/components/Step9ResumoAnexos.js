@@ -96,9 +96,9 @@ export default function Step9ResumoAnexos({ prevStep }) {
     }
 
     const pescador = {
-      nome: formData.nomePescador || '',
-      apelido: formData.apelidoPescador || null,
-      cpf: formData.cpfPescador?.replace(/\D/g, '') || null,
+      nome: (formData.nomePescador || '').trim() || null,
+      apelido: (formData.apelidoPescador || '').trim() || null,
+      cpf: (formData.cpfPescador || '').replace(/\D/g, '') || null,
       nascimento: formData.nascimentoPescador || null,
       municipio: formData.municipio
     }

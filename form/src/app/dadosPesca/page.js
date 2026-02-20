@@ -40,9 +40,11 @@ export default function DadosPesca() {
         clearErrors();
         let isValid = true;
 
-        // Validar nome do pescador
-        if (!formData.nomePescador || formData.nomePescador.trim() === '') {
-            addError('nomePescador', 'Nome do pescador é obrigatório');
+        // Validar identificação do pescador (nome OU apelido)
+        const hasNomePescador = !!String(formData.nomePescador || '').trim();
+        const hasApelidoPescador = !!String(formData.apelidoPescador || '').trim();
+        if (!hasNomePescador && !hasApelidoPescador) {
+            addError('nomePescador', 'Nome ou apelido do pescador é obrigatório');
             isValid = false;
         }
 

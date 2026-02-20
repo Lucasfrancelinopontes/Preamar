@@ -28,12 +28,33 @@ const ensureArteNomeColumn = async () => {
   }
 };
 
+const ensurePescadorNomeNullable = async () => {
+  const enabled = (process.env.AUTO_MIGRATE_PESCADOR_NOME_NULLABLE || 'false').toLowerCase() === 'true';
+  if (!enabled) return;
+
+  try {
+    const qi = sequelize.getQueryInterface();
+    const table = await qi.describeTable('pescadores');
+    if (table?.nome?.allowNull) return;
+
+    console.log('AUTO_MIGRATE_PESCADOR_NOME_NULLABLE=true — alterando pescadores.nome para aceitar NULL ...');
+    await qi.changeColumn('pescadores', 'nome', {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    });
+    console.log('✅ Coluna pescadores.nome agora aceita NULL.');
+  } catch (err) {
+    console.warn('⚠️ Falha ao auto-migrar pescadores.nome para nullable:', err?.message || err);
+  }
+};
+
 const initDB = async () => {
   if (!dbConnected) {
     console.log('Iniciando conexão com banco de dados (Serverless)...');
     await connectDB();
     defineAssociations();
     await ensureArteNomeColumn();
+    await ensurePescadorNomeNullable();
     dbConnected = true;
   }
 };

@@ -58,9 +58,9 @@ export default function Step8ResumoAnexos({ prevStep }) {
 
     // Preparar dados do pescador
     const pescador = {
-      nome: formData.nomePescador || '',
-      apelido: formData.apelidoPescador || null,
-      cpf: formData.cpfPescador?.replace(/\D/g, '') || '',
+      nome: (formData.nomePescador || '').trim() || null,
+      apelido: (formData.apelidoPescador || '').trim() || null,
+      cpf: (formData.cpfPescador || '').replace(/\D/g, '') || null,
       nascimento: formData.nascimentoPescador || null,
       municipio: formData.municipio
     }
