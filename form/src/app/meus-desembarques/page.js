@@ -10,10 +10,19 @@ function MeusDesembarquesContent() {
     const router = useRouter();
     const { user } = useAuth();
     const [desembarques, setDesembarques] = useState([]);
+    const [pesquisaCodigoColeta, setPesquisaCodigoColeta] = useState('');
     const [desembarqueSelecionado, setDesembarqueSelecionado] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [temaEscuro, setTemaEscuro] = useState(false);
+
+    const desembarquesFiltrados = desembarques.filter((desembarque) => {
+        const termo = (pesquisaCodigoColeta || '').trim().toLowerCase();
+        if (!termo) return true;
+
+        const codigo = (desembarque?.cod_desembarque || '').toString().toLowerCase();
+        return codigo.includes(termo);
+    });
 
     useEffect(() => {
         carregarDesembarques();
@@ -153,7 +162,46 @@ function MeusDesembarquesContent() {
 
                 {!loading && !error && desembarques.length > 0 && (
                     <div className="space-y-4">
-                        {desembarques.map((desembarque) => (
+                        {/* Barra de pesquisa */}
+                        <div className={`p-4 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
+                            <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-200' : 'text-gray-700'}`}>
+                                Pesquisar por código de coleta
+                            </label>
+                            <div className="relative">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <svg
+                                        className={`h-5 w-5 ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M9 3a6 6 0 104.472 10.03l2.249 2.249a1 1 0 001.414-1.414l-2.249-2.249A6 6 0 009 3zm-4 6a4 4 0 118 0 4 4 0 01-8 0z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={pesquisaCodigoColeta}
+                                    onChange={(e) => setPesquisaCodigoColeta(e.target.value)}
+                                    placeholder="Ex.: CÓDIGO-123"
+                                    className={`w-full pl-10 pr-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-brand/30 ${
+                                        temaEscuro
+                                            ? 'bg-gray-900 border-gray-700 text-gray-100 placeholder:text-gray-500 focus:border-brand'
+                                            : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-brand'
+                                    }`}
+                                />
+                            </div>
+                        </div>
+
+                        {desembarquesFiltrados.length === 0 ? (
+                            <div className={`text-center py-10 ${temaEscuro ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-600'} rounded-lg shadow`}>
+                                Nenhum desembarque encontrado para este código de coleta.
+                            </div>
+                        ) : (
+                            desembarquesFiltrados.map((desembarque) => (
                             <div 
                                 key={desembarque.cod_desembarque}
                                 className={`p-6 rounded-lg shadow hover:shadow-lg transition-all ${
@@ -248,7 +296,8 @@ function MeusDesembarquesContent() {
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 )}
             </div>
