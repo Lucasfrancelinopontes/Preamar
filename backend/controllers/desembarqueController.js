@@ -77,6 +77,27 @@ const normalizeDestinoApelido = (value) => {
   return str || null;
 };
 
+let hasArteNomeColumnPromise = null;
+const hasArteNomeColumn = async () => {
+  if (hasArteNomeColumnPromise) return hasArteNomeColumnPromise;
+
+  hasArteNomeColumnPromise = (async () => {
+    try {
+      const qi = sequelize.getQueryInterface();
+      const table = await qi.describeTable('desembarque_artes');
+      return Boolean(table?.nome);
+    } catch (err) {
+      console.warn(
+        '⚠️ Não foi possível verificar coluna desembarque_artes.nome. Assumindo que não existe.',
+        err?.message || err
+      );
+      return false;
+    }
+  })();
+
+  return hasArteNomeColumnPromise;
+};
+
 const toNullableDecimal = (value) => {
   if (value === undefined || value === null || value === '') return null;
   return value;
@@ -192,6 +213,7 @@ export const criarDesembarque = async (req, res) => {
 
     // 4. Criar artes de pesca
     if (artes && artes.length > 0) {
+      const includeArteNome = await hasArteNomeColumn();
       const artesData = artes
         .filter(a => a && a.arte)
         .map(a => {
@@ -204,7 +226,7 @@ export const criarDesembarque = async (req, res) => {
           return {
             ID_desembarque: desembarqueDb.ID_desembarque,
             arte: arteValue,
-            nome: nomeValue,
+            ...(includeArteNome ? { nome: nomeValue } : {}),
             tamanho: a.tamanho != null && String(a.tamanho).trim() ? String(a.tamanho).trim() : null,
             unidade: a.unidade != null && String(a.unidade).trim() ? String(a.unidade).trim() : null
           };
@@ -341,6 +363,11 @@ export const listarDesembarques = async (req, res) => {
 
     const offset = (page - 1) * limit;
 
+    const includeArteNome = await hasArteNomeColumn();
+    const artesAttributes = includeArteNome
+      ? ['arte', 'nome', 'tamanho', 'unidade']
+      : ['arte', 'tamanho', 'unidade'];
+
     const { count, rows } = await Desembarque.findAndCountAll({
       where,
       include: [
@@ -367,7 +394,7 @@ export const listarDesembarques = async (req, res) => {
         { 
           model: DesembarqueArte, 
           as: 'artes',
-          attributes: ['arte', 'nome', 'tamanho', 'unidade']
+          attributes: artesAttributes
         },
         {
           model: Individuo,
@@ -407,6 +434,11 @@ export const buscarDesembarque = async (req, res) => {
     const { id } = req.params;
 
     console.log(`🔍 Buscando desembarque ID: ${id}`);
+
+    const includeArteNome = await hasArteNomeColumn();
+    const artesAttributes = includeArteNome
+      ? ['ID', 'arte', 'nome', 'tamanho', 'unidade']
+      : ['ID', 'arte', 'tamanho', 'unidade'];
 
     const desembarque = await Desembarque.findOne({
       where: { ID_desembarque: id },
@@ -448,13 +480,7 @@ export const buscarDesembarque = async (req, res) => {
         { 
           model: DesembarqueArte, 
           as: 'artes',
-          attributes: [
-            'ID',
-            'arte',
-            'nome',
-            'tamanho',
-            'unidade'
-          ]
+          attributes: artesAttributes
         },
         // Capturas com Espécie
         {
@@ -660,6 +686,7 @@ export const atualizarDesembarque = async (req, res) => {
     await desembarqueDb.update(updatePayload, { transaction: t });
 
     // Sincronizar artes (incremental): atualizar existentes, criar novos, apagar removidos
+    const includeArteNome = await hasArteNomeColumn();
     const existingArtes = await DesembarqueArte.findAll({ where: { ID_desembarque: id }, transaction: t });
     const incomingArteIds = [];
     if (Array.isArray(artes)) {
@@ -676,7 +703,7 @@ export const atualizarDesembarque = async (req, res) => {
 
         const artePayload = {
           arte: arteValue,
-          nome: nomeValue,
+          ...(includeArteNome ? { nome: nomeValue } : {}),
           tamanho: arte.tamanho != null && String(arte.tamanho).trim() ? String(arte.tamanho).trim() : null,
           unidade: arte.unidade != null && String(arte.unidade).trim() ? String(arte.unidade).trim() : null
         };

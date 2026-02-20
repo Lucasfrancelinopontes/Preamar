@@ -1,5 +1,6 @@
 import { connectDB } from '../db.js';
 import { sequelize } from '../models/index.js';
+import { DataTypes } from 'sequelize';
 
 // Script para garantir a coluna `nome` em `desembarque_artes`
 // Uso: node backend/scripts/atualizarSchemaArtes.js
@@ -17,7 +18,7 @@ const main = async () => {
   if (!table[columnName]) {
     console.log(`Adicionando coluna ${tableName}.${columnName}...`);
     await qi.addColumn(tableName, columnName, {
-      type: sequelize.Sequelize.STRING(255),
+      type: DataTypes.STRING(255),
       allowNull: true,
       comment: 'Nome da arte quando arte=outras'
     });
