@@ -192,10 +192,24 @@ export const criarDesembarque = async (req, res) => {
 
     // 4. Criar artes de pesca
     if (artes && artes.length > 0) {
-      const artesData = artes.map(arte => ({
-        ...arte,
-        ID_desembarque: desembarqueDb.ID_desembarque
-      }));
+      const artesData = artes
+        .filter(a => a && a.arte)
+        .map(a => {
+          const arteValue = String(a.arte).trim();
+          const rawNome = (Object.prototype.hasOwnProperty.call(a, 'nome') ? a.nome : a.arte_outro);
+          const nomeValue = (arteValue === 'outras' && rawNome != null && String(rawNome).trim())
+            ? String(rawNome).trim()
+            : null;
+
+          return {
+            ID_desembarque: desembarqueDb.ID_desembarque,
+            arte: arteValue,
+            nome: nomeValue,
+            tamanho: a.tamanho != null && String(a.tamanho).trim() ? String(a.tamanho).trim() : null,
+            unidade: a.unidade != null && String(a.unidade).trim() ? String(a.unidade).trim() : null
+          };
+        });
+
       await DesembarqueArte.bulkCreate(artesData, { transaction: t });
       console.log(`✅ ${artes.length} arte(s) de pesca salva(s)`);
     }
@@ -351,7 +365,7 @@ export const listarDesembarques = async (req, res) => {
         { 
           model: DesembarqueArte, 
           as: 'artes',
-          attributes: ['arte', 'tamanho', 'unidade']
+          attributes: ['arte', 'nome', 'tamanho', 'unidade']
         },
         {
           model: Individuo,
@@ -435,6 +449,7 @@ export const buscarDesembarque = async (req, res) => {
           attributes: [
             'ID',
             'arte',
+            'nome',
             'tamanho',
             'unidade'
           ]
@@ -648,17 +663,33 @@ export const atualizarDesembarque = async (req, res) => {
     if (Array.isArray(artes)) {
       for (const arte of artes) {
         const arteId = arte.ID || arte.id || null;
+
+        const arteValue = arte?.arte != null ? String(arte.arte).trim() : null;
+        if (!arteValue) continue;
+
+        const rawNome = (Object.prototype.hasOwnProperty.call(arte, 'nome') ? arte.nome : arte.arte_outro);
+        const nomeValue = (arteValue === 'outras' && rawNome != null && String(rawNome).trim())
+          ? String(rawNome).trim()
+          : null;
+
+        const artePayload = {
+          arte: arteValue,
+          nome: nomeValue,
+          tamanho: arte.tamanho != null && String(arte.tamanho).trim() ? String(arte.tamanho).trim() : null,
+          unidade: arte.unidade != null && String(arte.unidade).trim() ? String(arte.unidade).trim() : null
+        };
+
         if (arteId) {
           const arteDb = existingArtes.find(a => a.ID === arteId);
           if (arteDb) {
-            await arteDb.update({ arte: arte.arte, tamanho: arte.tamanho, unidade: arte.unidade }, { transaction: t });
+            await arteDb.update(artePayload, { transaction: t });
             incomingArteIds.push(arteDb.ID);
           } else {
-            const newA = await DesembarqueArte.create({ ...arte, ID_desembarque: id }, { transaction: t });
+            const newA = await DesembarqueArte.create({ ...artePayload, ID_desembarque: id }, { transaction: t });
             incomingArteIds.push(newA.ID);
           }
         } else {
-          const newA = await DesembarqueArte.create({ ...arte, ID_desembarque: id }, { transaction: t });
+          const newA = await DesembarqueArte.create({ ...artePayload, ID_desembarque: id }, { transaction: t });
           incomingArteIds.push(newA.ID);
         }
       }

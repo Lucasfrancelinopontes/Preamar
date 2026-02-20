@@ -236,7 +236,10 @@ function DesembarqueContent() {
                                 const known = new Set(['rede_boirea', 'espinhel_mergulho', 'rede_fundeio', 'linha_mao', 'rede_cacoaria', 'covo', 'outras']);
                                 const v = a.arte;
                                 if (!v) return '';
-                                return known.has(String(v)) ? '' : String(v);
+                                const normalizedArte = known.has(String(v)) ? String(v) : 'outras';
+                                const nome = a.nome != null ? String(a.nome) : '';
+                                const legacyNome = known.has(String(v)) ? '' : String(v);
+                                return normalizedArte === 'outras' ? (nome || legacyNome) : '';
                             })(),
                             tamanho: a.tamanho != null ? toStr(a.tamanho) : '',
                             unidade: a.unidade

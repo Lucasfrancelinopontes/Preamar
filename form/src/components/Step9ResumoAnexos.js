@@ -188,7 +188,9 @@ export default function Step9ResumoAnexos({ prevStep }) {
           .filter(arte => arte.arte && arte.tamanho)
           .map(arte => ({
             arte: arte.arte,
-            tamanho: parseFloat(arte.tamanho)
+            nome: (arte.arte === 'outras' && (arte.arte_outro || '').trim()) ? String(arte.arte_outro).trim() : null,
+            tamanho: parseFloat(arte.tamanho),
+            unidade: arte.unidade || null
           }))
       : []
 

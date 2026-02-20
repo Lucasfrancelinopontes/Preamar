@@ -26,6 +26,11 @@ export const DesembarqueArte = sequelize.define('DesembarqueArte', {
     ),
     allowNull: false
   },
+  nome: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    comment: 'Nome da arte quando arte=outras'
+  },
   tamanho: {
     type: DataTypes.STRING(50)
   },
