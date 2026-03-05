@@ -1,4 +1,4 @@
-﻿"use client";
+use client
 
 export default function FeatureCard({ title, subtitle, onClick, icon }) {
   return (

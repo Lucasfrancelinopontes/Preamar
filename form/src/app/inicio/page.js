@@ -1,4 +1,4 @@
-﻿"use client";
+'use client'
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
@@ -10,100 +10,102 @@ export default function Inicio() {
   const router = useRouter();
   const { usuario, estaAutenticado, ehAdmin } = useAuth();
 
+  const goAnalyticsViaRoot = async () => {
+    await router.push("/");
+    await router.push("/analytics");
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
-      <Header />
+    <div className="min-h-screen flex bg-slate-50">
+      {/* Sidebar */}
+      <aside className="w-60 bg-teal-900 text-white px-4 py-6">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 bg-teal-700 rounded-full flex items-center justify-center">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8c2 2 4 2 6 0s4-2 6 0 4 2 6 0"></path>
+            </svg>
+          </div>
+          <div>
+            <h2 className="font-semibold">Preamar</h2>
+            <p className="text-xs opacity-80">Gestão Pesqueira</p>
+          </div>
+        </div>
 
-      <div className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
-        <div className="max-w-4xl w-full">
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-8 text-white">
-              <h2 className="text-3xl font-bold mb-2">Bem-vindo</h2>
-              <p className="text-lg opacity-90">
-                {estaAutenticado() 
-                  ? `Olá, ${usuario?.nome}! Escolha uma das funcionalidades abaixo.`
-                  : 'Faça login para acessar o sistema completo.'}
-              </p>
-            </div>
+        <nav className="flex flex-col gap-4">
+          <button onClick={() => router.push("/inicio")} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-teal-600">
+            <span>Dashboard</span>
+          </button>
+          <button onClick={() => router.push("/meus-desembarques")} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-800/50">
+            Meus Desembarques
+          </button>
+          <button onClick={() => router.push("/embarcacoes")} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-800/50">
+            Embarcações
+          </button>
+          {ehAdmin() && (
+            <>
+              <button onClick={() => router.push("/especies")} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-800/50">
+                Espécies
+              </button>
+              <button onClick={() => router.push("/usuarios")} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-800/50">
+                Usuários
+              </button>
+            </>
+          )}
+        </nav>
 
-            <div className="p-8">
-              {estaAutenticado() ? (
-                <>
-                  <div className="mb-8">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-4">Funcionalidades</h3>
-                  </div>
+        <div className="mt-auto pt-6">
+          <button onClick={() => router.push("/")} className="text-sm opacity-80">Sair</button>
+        </div>
+      </aside>
 
-                  <div className="flex flex-col gap-4 max-w-md mx-auto">
-                    <FeatureCard
-                      title="Novo Desembarque"
-                      subtitle="Registrar novo desembarque"
-                      onClick={() => router.push('/desembarque')}
-                    />
-
-                    {ehAdmin() && (
-                      <FeatureCard
-                        title="Visualizar Desembarques"
-                        subtitle="Ver desembarques registrados"
-                        onClick={() => router.push('/meus-desembarques')}
-                      />
-                    )}
-
-                    {ehAdmin() && (
-                      <FeatureCard
-                        title="Dashboard & Análises"
-                        subtitle=""
-                        onClick={() => router.push('/analytics')}
-                      />
-                    )}
-
-                    {ehAdmin() && (
-                      <FeatureCard
-                        title="Gerenciar Usuários"
-                        subtitle=""
-                        onClick={() => router.push('/usuarios')}
-                      />
-                    )}
-
-                    {ehAdmin() && (
-                      <FeatureCard
-                        title="Gerenciar Espécies"
-                        subtitle=""
-                        onClick={() => router.push('/especies')}
-                      />
-                    )}
-
-                    {ehAdmin() && (
-                      <FeatureCard
-                        title="Gerenciar Embarcações"
-                        subtitle=""
-                        onClick={() => router.push('/embarcacoes')}
-                      />
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="mb-6">
-                    <svg className="w-20 h-20 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                    </svg>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
-                    <p className="text-gray-600 mb-6">Faça login para acessar o sistema de registro de desembarques.</p>
-                  </div>
-                  <button
-                    onClick={() => router.push('/login')}
-                    className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
-                  >
-                    Fazer Login
-                  </button>
-                </div>
-              )}
-            </div>
+      {/* Main */}
+      <main className="flex-1 p-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
+            <p className="text-sm text-slate-500">Visão geral das atividades pesqueiras</p>
           </div>
 
-          <Footer />
+          <div>
+            <button onClick={() => router.push("/desembarque")} className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600">
+              + Novo Desembarque
+            </button>
+          </div>
         </div>
-      </div>
+
+        {/* Cards */}
+        <div className="grid grid-cols-4 gap-6 mb-6">
+          <div className="bg-white p-6 rounded-xl shadow">Desembarques (Mês)<div className="mt-3 text-2xl font-bold text-slate-800">127</div></div>
+          <div className="bg-white p-6 rounded-xl shadow">Total Capturado<div className="mt-3 text-2xl font-bold text-slate-800">2.450 kg</div></div>
+          <div className="bg-white p-6 rounded-xl shadow">Embarcações Ativas<div className="mt-3 text-2xl font-bold text-slate-800">34</div></div>
+          <div className="bg-white p-6 rounded-xl shadow">Crescimento<div className="mt-3 text-2xl font-bold text-slate-800">+12.5%</div></div>
+        </div>
+
+        {/* Charts / Content */}
+        <div className="grid grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-xl shadow">
+            <h3 className="font-semibold mb-4">Desembarques por Mês</h3>
+            <div className="h-48 bg-slate-50 rounded" />
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+            <h3 className="font-semibold mb-4">Captura Total (kg)</h3>
+            <div className="h-48 bg-slate-50 rounded" />
+          </div>
+        </div>
+
+        {/* Function buttons */}
+        <div className="mt-8 max-w-md">
+          <FeatureCard title="Novo Desembarque" subtitle="Registrar novo desembarque" onClick={() => router.push("/desembarque")} />
+          {ehAdmin() && <FeatureCard title="Visualizar Desembarques" subtitle="Ver desembarques registrados" onClick={() => router.push("/meus-desembarques")} />}
+          {ehAdmin() && <FeatureCard title="Dashboard & Análises" subtitle="" onClick={goAnalyticsViaRoot} />}
+          {ehAdmin() && <FeatureCard title="Gerenciar Usuários" subtitle="" onClick={() => router.push("/usuarios")} />}
+          {ehAdmin() && <FeatureCard title="Gerenciar Espécies" subtitle="" onClick={() => router.push("/especies")} />}
+          {ehAdmin() && <FeatureCard title="Gerenciar Embarcações" subtitle="" onClick={() => router.push("/embarcacoes")} />}
+        </div>
+
+        <Footer />
+      </main>
     </div>
   );
 }
