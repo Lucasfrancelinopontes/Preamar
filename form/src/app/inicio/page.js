@@ -7,6 +7,8 @@ import Header from "../../components/Header";
 import FeatureCard from "../../components/FeatureCard";
 import Footer from "../../components/Footer";
 import api from '@/services/api';
+import BarChart from '@/components/charts/BarChart';
+import LineChart from '@/components/charts/LineChart';
 
 export default function Inicio() {
   const router = useRouter();
@@ -87,9 +89,47 @@ export default function Inicio() {
         const prevCount = desembarques.filter(d => isPrevMonth(d.dataColeta || d.data || d.createdAt)).length;
         const crescimentoPct = prevCount === 0 ? 0 : Math.round(((desembarquesMes - prevCount) / prevCount) * 1000) / 10;
 
+        // Montar séries para últimos 3 meses
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const labels = [];
+        const counts = [];
+        const capturasPorMes = [];
+
+        for (let i = 2; i >= 0; i--) {
+          const d = new Date(currentYear, currentMonth - i, 1);
+          const m = d.getMonth();
+          const y = d.getFullYear();
+          labels.push(monthNames[m]);
+
+          let monthCount = 0;
+          let monthGramas = 0;
+
+          for (const rec of desembarques) {
+            const dateStr = rec.dataColeta || rec.data || rec.createdAt;
+            if (!dateStr) continue;
+            const dd = new Date(dateStr);
+            if (dd.getMonth() === m && dd.getFullYear() === y) {
+              monthCount++;
+              const capturas = rec.capturas || rec.individuos || rec.Capturas || [];
+              if (Array.isArray(capturas)) {
+                for (const c of capturas) {
+                  if (c.peso_g) monthGramas += Number(c.peso_g) || 0;
+                  else if (c.peso) {
+                    const v = Number(c.peso) || 0;
+                    monthGramas += (v > 1000) ? v : v * 1000;
+                  } else if (c.peso_kg) monthGramas += (Number(c.peso_kg) || 0) * 1000;
+                }
+              }
+            }
+          }
+
+          counts.push(monthCount);
+          capturasPorMes.push(Math.round((monthGramas / 1000) * 100) / 100);
+        }
+
         if (!mounted) return;
 
-        setStats({ desembarquesMes, totalCapturadoKg, embarcacoesAtivas, crescimentoPct });
+        setStats({ desembarquesMes, totalCapturadoKg, embarcacoesAtivas, crescimentoPct, labels, counts, capturasPorMes });
       } catch (err) {
         console.error('Erro ao buscar estatísticas:', err);
       } finally {
@@ -189,12 +229,20 @@ export default function Inicio() {
         <div className="grid grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-xl shadow">
             <h3 className="font-semibold mb-4">Desembarques por Mês</h3>
-            <div className="h-48 bg-slate-50 rounded" />
+            {loadingStats ? (
+              <div className="h-48 flex items-center justify-center text-slate-500">Carregando...</div>
+            ) : (
+              <BarChart labels={stats.labels} values={stats.counts} />
+            )}
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow">
             <h3 className="font-semibold mb-4">Captura Total (kg)</h3>
-            <div className="h-48 bg-slate-50 rounded" />
+            {loadingStats ? (
+              <div className="h-48 flex items-center justify-center text-slate-500">Carregando...</div>
+            ) : (
+              <LineChart labels={stats.labels} values={stats.capturasPorMes} />
+            )}
           </div>
         </div>
 
