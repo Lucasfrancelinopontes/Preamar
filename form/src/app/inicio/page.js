@@ -1,19 +1,106 @@
-'use client'
+"use client"
 
+import { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import Header from "../../components/Header";
 import FeatureCard from "../../components/FeatureCard";
 import Footer from "../../components/Footer";
+import api from '@/services/api';
 
 export default function Inicio() {
   const router = useRouter();
   const { usuario, estaAutenticado, ehAdmin } = useAuth();
 
-  const goAnalyticsViaRoot = async () => {
-    await router.push("/");
-    await router.push("/analytics");
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [stats, setStats] = useState({
+    desembarquesMes: 0,
+    totalCapturadoKg: 0,
+    embarcacoesAtivas: 0,
+    crescimentoPct: 0
+  });
+
+  // Navegação direta para analytics (sem delays ou rotas intermediárias)
+  const goAnalytics = () => {
+    router.push('/analytics');
   };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchStats = async () => {
+      try {
+        setLoadingStats(true);
+
+        // Buscar desembarques e embarcações
+        const desembarquesRes = await api.listarDesembarques();
+        const embarcacoesRes = await api.getEmbarcacoes();
+
+        const desembarques = Array.isArray(desembarquesRes) ? desembarquesRes : (desembarquesRes?.data || []);
+        const embarcacoes = Array.isArray(embarcacoesRes) ? embarcacoesRes : (embarcacoesRes?.data || []);
+
+        // Calcular desembarques no mês atual
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const isSameMonth = (dateStr) => {
+          if (!dateStr) return false;
+          const d = new Date(dateStr);
+          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        };
+
+        const desembarquesMes = desembarques.filter(d => isSameMonth(d.dataColeta || d.data || d.createdAt)).length;
+
+        // Calcular total capturado (soma de capturas/individuos, tentando campos comuns)
+        let totalGramas = 0;
+        for (const d of desembarques) {
+          const capturas = d.capturas || d.individuos || d.Capturas || [];
+          if (Array.isArray(capturas) && capturas.length > 0) {
+            for (const c of capturas) {
+              if (c.peso_g) totalGramas += Number(c.peso_g) || 0;
+              else if (c.peso) {
+                // peso possivelmente em kg
+                const v = Number(c.peso) || 0;
+                totalGramas += (v > 1000) ? v : v * 1000; // heurística defensiva
+              } else if (c.peso_kg) totalGramas += (Number(c.peso_kg) || 0) * 1000;
+            }
+          }
+        }
+
+        const totalCapturadoKg = Math.round((totalGramas / 1000) * 100) / 100; // duas casas
+
+        // Embarcações ativas (usar length como fallback)
+        const embarcacoesAtivas = embarcacoes.length;
+
+        // Crescimento: comparar com mês anterior (por número de desembarques)
+        const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
+        const prevMonth = prevMonthDate.getMonth();
+        const prevYear = prevMonthDate.getFullYear();
+
+        const isPrevMonth = (dateStr) => {
+          if (!dateStr) return false;
+          const d = new Date(dateStr);
+          return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+        };
+
+        const prevCount = desembarques.filter(d => isPrevMonth(d.dataColeta || d.data || d.createdAt)).length;
+        const crescimentoPct = prevCount === 0 ? 0 : Math.round(((desembarquesMes - prevCount) / prevCount) * 1000) / 10;
+
+        if (!mounted) return;
+
+        setStats({ desembarquesMes, totalCapturadoKg, embarcacoesAtivas, crescimentoPct });
+      } catch (err) {
+        console.error('Erro ao buscar estatísticas:', err);
+      } finally {
+        if (mounted) setLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div className="min-h-screen flex bg-slate-50">
@@ -75,10 +162,27 @@ export default function Inicio() {
 
         {/* Cards */}
         <div className="grid grid-cols-4 gap-6 mb-6">
-          <div className="bg-white p-6 rounded-xl shadow">Desembarques (Mês)<div className="mt-3 text-2xl font-bold text-slate-800">127</div></div>
-          <div className="bg-white p-6 rounded-xl shadow">Total Capturado<div className="mt-3 text-2xl font-bold text-slate-800">2.450 kg</div></div>
-          <div className="bg-white p-6 rounded-xl shadow">Embarcações Ativas<div className="mt-3 text-2xl font-bold text-slate-800">34</div></div>
-          <div className="bg-white p-6 rounded-xl shadow">Crescimento<div className="mt-3 text-2xl font-bold text-slate-800">+12.5%</div></div>
+          <div className="bg-white p-6 rounded-xl shadow">
+            <div className="text-xs text-slate-500">Desembarques (Mês)</div>
+            <div className="mt-3 text-2xl font-bold text-slate-900">{loadingStats ? '—' : stats.desembarquesMes}</div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+            <div className="text-xs text-slate-500">Total Capturado</div>
+            <div className="mt-3 text-2xl font-bold text-slate-900">{loadingStats ? '—' : `${stats.totalCapturadoKg.toLocaleString()} kg`}</div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+            <div className="text-xs text-slate-500">Embarcações Ativas</div>
+            <div className="mt-3 text-2xl font-bold text-slate-900">{loadingStats ? '—' : stats.embarcacoesAtivas}</div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+            <div className="text-xs text-slate-500">Crescimento</div>
+            <div className={`mt-3 text-2xl font-bold ${stats.crescimentoPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {loadingStats ? '—' : `${stats.crescimentoPct >= 0 ? '+' : ''}${stats.crescimentoPct}%`}
+            </div>
+          </div>
         </div>
 
         {/* Charts / Content */}
@@ -98,7 +202,7 @@ export default function Inicio() {
         <div className="mt-8 max-w-md">
           <FeatureCard title="Novo Desembarque" subtitle="Registrar novo desembarque" onClick={() => router.push("/desembarque")} />
           {ehAdmin() && <FeatureCard title="Visualizar Desembarques" subtitle="Ver desembarques registrados" onClick={() => router.push("/meus-desembarques")} />}
-          {ehAdmin() && <FeatureCard title="Dashboard & Análises" subtitle="" onClick={goAnalyticsViaRoot} />}
+          {ehAdmin() && <FeatureCard title="Dashboard & Análises" subtitle="" onClick={goAnalytics} />}
           {ehAdmin() && <FeatureCard title="Gerenciar Usuários" subtitle="" onClick={() => router.push("/usuarios")} />}
           {ehAdmin() && <FeatureCard title="Gerenciar Espécies" subtitle="" onClick={() => router.push("/especies")} />}
           {ehAdmin() && <FeatureCard title="Gerenciar Embarcações" subtitle="" onClick={() => router.push("/embarcacoes")} />}
