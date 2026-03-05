@@ -24,7 +24,7 @@ export const Input = forwardRef(({
         ref={ref}
         id={id || props.name}
         className={twMerge(
-          'w-full px-4 py-3 rounded-xl shadow-sm transition-all duration-200',
+          'w-full px-4 py-3 rounded-md shadow-sm transition-all duration-200',
           'bg-white dark:bg-dark-surface',
           'text-gray-900 dark:text-white',
           'placeholder:text-gray-400 dark:placeholder:text-gray-500',

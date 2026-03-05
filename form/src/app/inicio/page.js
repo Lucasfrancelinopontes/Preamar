@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
-import Header from "../components/Header";
-import FeatureCard from "../components/FeatureCard";
-import Footer from "../components/Footer";
+import Header from "../../components/Header";
+import FeatureCard from "../../components/FeatureCard";
+import Footer from "../../components/Footer";
 
 export default function Inicio() {
   const router = useRouter();

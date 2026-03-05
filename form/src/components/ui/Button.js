@@ -18,7 +18,7 @@ export function Button({
   return (
     <button
       className={twMerge(
-        'px-6 py-3 rounded-full font-semibold transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-brand/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none',
+        'px-4 py-3 rounded-lg font-semibold transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-brand/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none',
         variants[variant],
         className
       )}
