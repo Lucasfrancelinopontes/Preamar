@@ -9,6 +9,7 @@ import Footer from "../../components/Footer";
 import api from '@/services/api';
 import BarChart from '@/components/charts/BarChart';
 import LineChart from '@/components/charts/LineChart';
+import StatsCards from '@/components/dashboard/StatsCards';
 
 export default function Inicio() {
   const router = useRouter();
@@ -201,29 +202,19 @@ export default function Inicio() {
         </div>
 
         {/* Cards */}
-        <div className="grid grid-cols-4 gap-6 mb-6">
-          <div className="bg-white p-6 rounded-xl shadow">
-            <div className="text-xs text-slate-500">Desembarques (Mês)</div>
-            <div className="mt-3 text-2xl font-bold text-slate-900">{loadingStats ? '—' : stats.desembarquesMes}</div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow">
-            <div className="text-xs text-slate-500">Total Capturado</div>
-            <div className="mt-3 text-2xl font-bold text-slate-900">{loadingStats ? '—' : `${stats.totalCapturadoKg.toLocaleString()} kg`}</div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow">
-            <div className="text-xs text-slate-500">Embarcações Ativas</div>
-            <div className="mt-3 text-2xl font-bold text-slate-900">{loadingStats ? '—' : stats.embarcacoesAtivas}</div>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow">
-            <div className="text-xs text-slate-500">Crescimento</div>
-            <div className={`mt-3 text-2xl font-bold ${stats.crescimentoPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {loadingStats ? '—' : `${stats.crescimentoPct >= 0 ? '+' : ''}${stats.crescimentoPct}%`}
-            </div>
-          </div>
-        </div>
+        <StatsCards
+          items={loadingStats ? [
+            { label: 'Desembarques (Mês)', value: '—' },
+            { label: 'Total Capturado', value: '—' },
+            { label: 'Embarcações Ativas', value: '—' },
+            { label: 'Crescimento', value: '—' }
+          ] : [
+            { label: 'Desembarques (Mês)', value: stats.desembarquesMes },
+            { label: 'Total Capturado', value: `${stats.totalCapturadoKg.toLocaleString()} kg` },
+            { label: 'Embarcações Ativas', value: stats.embarcacoesAtivas },
+            { label: 'Crescimento', value: `${stats.crescimentoPct >= 0 ? '+' : ''}${stats.crescimentoPct}%`, color: stats.crescimentoPct >= 0 ? 'text-green-600' : 'text-red-600' }
+          ]}
+        />
 
         {/* Charts / Content */}
         <div className="grid grid-cols-2 gap-6">
