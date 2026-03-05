@@ -20,58 +20,45 @@ export default function Inicio() {
     desembarquesMes: 0,
     totalCapturadoKg: 0,
     embarcacoesAtivas: 0,
-    crescimentoPct: 0
+    crescimentoPct: 0,
+    labels: [],
+    counts: [],
+    capturasPorMes: []
   });
-
-  // Navegação direta para analytics (sem delays ou rotas intermediárias)
-  const goAnalytics = () => {
-    router.push('/analytics');
-  };
 
   useEffect(() => {
     let mounted = true;
 
     const fetchStats = async () => {
       try {
-        setLoadingStats(true);
+        const desembarques = await api.get('/desembarques').then(res => res.data).catch(() => []);
+        const embarcacoes = await api.get('/embarcacoes').then(res => res.data).catch(() => []);
 
-        // Buscar desembarques e embarcações
-        const desembarquesRes = await api.listarDesembarques();
-        const embarcacoesRes = await api.getEmbarcacoes();
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
 
-        const desembarques = Array.isArray(desembarquesRes) ? desembarquesRes : (desembarquesRes?.data || []);
-        const embarcacoes = Array.isArray(embarcacoesRes) ? embarcacoesRes : (embarcacoesRes?.data || []);
+        const desembarquesMes = desembarques.filter(d => {
+          if (!d.dataColeta && !d.data && !d.createdAt) return false;
+          const dateStr = d.dataColeta || d.data || d.createdAt;
+          const d_obj = new Date(dateStr);
+          return d_obj.getMonth() === currentMonth && d_obj.getFullYear() === currentYear;
+        }).length;
 
-        // Calcular desembarques no mês atual
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-
-        const isSameMonth = (dateStr) => {
-          if (!dateStr) return false;
-          const d = new Date(dateStr);
-          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-        };
-
-        const desembarquesMes = desembarques.filter(d => isSameMonth(d.dataColeta || d.data || d.createdAt)).length;
-
-        // Calcular total capturado (soma de capturas/individuos, tentando campos comuns)
-        let totalGramas = 0;
+        let totalCapturadoKg = 0;
         for (const d of desembarques) {
           const capturas = d.capturas || d.individuos || d.Capturas || [];
-          if (Array.isArray(capturas) && capturas.length > 0) {
+          if (Array.isArray(capturas)) {
             for (const c of capturas) {
-              if (c.peso_g) totalGramas += Number(c.peso_g) || 0;
+              if (c.peso_g) totalCapturadoKg += (Number(c.peso_g) || 0) / 1000;
               else if (c.peso) {
-                // peso possivelmente em kg
                 const v = Number(c.peso) || 0;
-                totalGramas += (v > 1000) ? v : v * 1000; // heurística defensiva
-              } else if (c.peso_kg) totalGramas += (Number(c.peso_kg) || 0) * 1000;
+                totalCapturadoKg += (v > 1000) ? v / 1000 : v;
+              } else if (c.peso_kg) totalCapturadoKg += Number(c.peso_kg) || 0;
             }
           }
         }
-
-        const totalCapturadoKg = Math.round((totalGramas / 1000) * 100) / 100; // duas casas
+        totalCapturadoKg = Math.round(totalCapturadoKg * 100) / 100;
 
         // Embarcações ativas (usar length como fallback)
         const embarcacoesAtivas = embarcacoes.length;
@@ -241,7 +228,7 @@ export default function Inicio() {
         <div className="mt-8 max-w-md">
           <FeatureCard title="Novo Desembarque" subtitle="Registrar novo desembarque" onClick={() => router.push("/desembarque")} />
           {ehAdmin() && <FeatureCard title="Visualizar Desembarques" subtitle="Ver desembarques registrados" onClick={() => router.push("/meus-desembarques")} />}
-          {ehAdmin() && <FeatureCard title="Dashboard & Análises" subtitle="" onClick={goAnalytics} />}
+          {ehAdmin() && <FeatureCard title="Dashboard & Análises" subtitle="" onClick={() => router.push("/analytics")} />}
           {ehAdmin() && <FeatureCard title="Gerenciar Usuários" subtitle="" onClick={() => router.push("/usuarios")} />}
           {ehAdmin() && <FeatureCard title="Gerenciar Espécies" subtitle="" onClick={() => router.push("/especies")} />}
           {ehAdmin() && <FeatureCard title="Gerenciar Embarcações" subtitle="" onClick={() => router.push("/embarcacoes")} />}
