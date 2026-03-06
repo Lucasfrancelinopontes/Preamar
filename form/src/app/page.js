@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./contexts/AuthContext";
+import Button from '@/components/ui/Button';
+import LogoMark from '@/components/LogoMark';
 
 export default function Home() {
   const router = useRouter();
@@ -15,30 +17,26 @@ export default function Home() {
   }, [estaAutenticado, router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 text-slate-900 dark:bg-dark-bg dark:text-white">
+    <main className="min-h-screen bg-[#F7F9FA] flex items-center justify-center p-4">
       <div className="w-full max-w-md text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 mx-auto">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-9 w-9 text-brand-light">
-            <path d="M3 8c2 2 4 2 6 0s4-2 6 0 4 2 6 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <path d="M3 12c2 2 4 2 6 0s4-2 6 0 4 2 6 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <path d="M3 16c2 2 4 2 6 0s4-2 6 0 4 2 6 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+        <div className="flex justify-center mb-4">
+          <div className="bg-[#0B3B60] p-4 rounded-2xl">
+            <LogoMark className="w-12 h-12 text-[#00A896]" />
+          </div>
         </div>
 
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight">Preamar</h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400 sm:text-base">
-          Sistema de Gestão Pesqueira
-        </p>
+        <h1 className="text-[#0B3B60] text-3xl font-semibold mb-2">Preamar</h1>
+        <p className="text-[#5A7A92]">Sistema de Gestão Pesqueira</p>
 
-        <p className="mt-6 text-sm text-slate-700">Bem-vindo ao sistema. Faça login para continuar.</p>
+        <p className="mt-6 text-sm text-[#5A7A92]">Bem-vindo ao sistema. Faça login para continuar.</p>
 
         <div className="mt-6">
-          <button
-            onClick={() => router.push("/login")}
-            className="inline-flex w-full items-center justify-center rounded-md bg-orange-500 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-orange-600"
+          <Button
+            onClick={() => router.push('/login')}
+            className="w-full h-12 bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white"
           >
             Entrar
-          </button>
+          </Button>
         </div>
       </div>
     </main>

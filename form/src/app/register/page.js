@@ -10,6 +10,9 @@ import {
     validarTelefone,
     formatarTelefone
 } from '@/utils/validations';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
+import LogoMark from '@/components/LogoMark';
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -25,7 +28,6 @@ export default function RegisterPage() {
     const [temaEscuro, setTemaEscuro] = useState(false);
     const router = useRouter();
 
-    // Detectar preferência de tema do sistema
     useEffect(() => {
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             setTemaEscuro(true);
@@ -35,18 +37,13 @@ export default function RegisterPage() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         let newValue = value;
-
-        // Aplicar máscara de telefone
         if (name === 'telefone') {
             newValue = formatarTelefone(value);
         }
-
         setFormData(prev => ({
             ...prev,
             [name]: newValue
         }));
-
-        // Limpar erro do campo quando ele for alterado
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
@@ -57,40 +54,29 @@ export default function RegisterPage() {
 
     const validateForm = () => {
         const newErrors = {};
-
         if (!formData.nome || !validarNomeCompleto(formData.nome)) {
             newErrors.nome = 'Digite seu nome completo (nome e sobrenome)';
         }
-
         if (!formData.email || !validarEmail(formData.email)) {
             newErrors.email = 'Digite um email válido';
         }
-
         if (!formData.telefone || !validarTelefone(formData.telefone)) {
             newErrors.telefone = 'Digite um telefone válido';
         }
-
         if (!formData.senha || formData.senha.length < 6) {
             newErrors.senha = 'A senha deve ter no mínimo 6 caracteres';
         }
-
         if (!formData.confirmarSenha || formData.senha !== formData.confirmarSenha) {
             newErrors.confirmarSenha = 'As senhas não conferem';
         }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!validateForm()) {
-            return;
-        }
-
+        if (!validateForm()) return;
         setCarregando(true);
-
         try {
             await api.registrar({
                 nome: formData.nome,
@@ -99,7 +85,6 @@ export default function RegisterPage() {
                 funcao: 'Coletor',
                 telefone: formData.telefone
             });
-
             router.push('/login?message=Conta criada com sucesso!');
         } catch (error) {
             setErrors(prev => ({
@@ -112,202 +97,121 @@ export default function RegisterPage() {
     };
 
     return (
-        <main className={`min-h-screen flex items-center justify-center p-6 ${temaEscuro ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-            <div className="max-w-md w-full">
-                {/* Logo e Título */}
+        <main className="min-h-screen bg-[#F7F9FA] flex items-center justify-center p-4">
+            <div className="w-full max-w-md">
+                <button
+                  onClick={() => router.push('/login')}
+                  className="flex items-center gap-2 text-[#0B3B60] hover:text-[#00A896] mb-6 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Voltar ao login
+                </button>
+
                 <div className="text-center mb-8">
-                    <div className="w-24 h-24 mx-auto mb-4 bg-teal-600 rounded-full flex items-center justify-center">
-                        <svg className="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
+                    <div className="flex justify-center mb-4">
+                        <div className="bg-[#0B3B60] p-4 rounded-2xl">
+                            <LogoMark className="w-12 h-12 text-[#00A896]" />
+                        </div>
                     </div>
-                    <h1 className="text-2xl font-bold mb-2">Criar Conta</h1>
-                    <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Cadastre-se no Sistema Preamar
-                    </p>
+                    <h1 className="text-[#0B3B60] mb-2">Criar Conta</h1>
+                    <p className="text-[#5A7A92]">Cadastre-se no Preamar</p>
                 </div>
 
-                {/* Formulário */}
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Nome Completo */}
-                    <div>
-                        <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Nome completo
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                </svg>
-                            </span>
-                            <input
-                                type="text"
-                                name="nome"
-                                value={formData.nome}
-                                onChange={handleChange}
-                                className={`w-full pl-10 pr-4 py-3 rounded-lg ${
-                                    temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                                } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
-                                placeholder="Seu nome completo"
-                            />
-                        </div>
-                        {errors.nome && (
-                            <p className="mt-2 text-sm text-red-600">{errors.nome}</p>
-                        )}
-                    </div>
+                <div className="bg-white rounded-2xl shadow-lg ring-1 ring-slate-200 dark:bg-dark-surface dark:ring-dark-border p-6 sm:p-8">
+                  <h2 className="text-lg font-semibold text-[#0B3B60]">Registro</h2>
+                  <p className="mt-1 text-sm text-[#5A7A92]">
+                    Preencha os dados abaixo para criar sua conta
+                  </p>
 
+                  <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+                    {/* Nome */}
+                    <div className="space-y-2">
+                      <label htmlFor="nome" className="block text-sm font-medium text-[#0B3B60]">Nome Completo</label>
+                      <Input
+                        id="nome"
+                        name="nome"
+                        type="text"
+                        placeholder="Seu nome"
+                        value={formData.nome}
+                        onChange={handleChange}
+                        className="h-12 bg-white border-[#0B3B60]/20 focus:border-[#00A896] focus:ring-[#00A896]"
+                        required
+                      />
+                      {errors.nome && <p className="text-sm text-destructive">{errors.nome}</p>}
+                    </div>
                     {/* Email */}
-                    <div>
-                        <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Email
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                </svg>
-                            </span>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className={`w-full pl-10 pr-4 py-3 rounded-lg ${
-                                    temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                                } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
-                                placeholder="seu@email.com"
-                            />
-                        </div>
-                        {errors.email && (
-                            <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-                        )}
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="block text-sm font-medium text-[#0B3B60]">Email</label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="h-12 bg-white border-[#0B3B60]/20 focus:border-[#00A896] focus:ring-[#00A896]"
+                        required
+                      />
+                      {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                     </div>
-
                     {/* Telefone */}
-                    <div>
-                        <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Telefone
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                </svg>
-                            </span>
-                            <input
-                                type="tel"
-                                name="telefone"
-                                value={formData.telefone}
-                                onChange={handleChange}
-                                className={`w-full pl-10 pr-4 py-3 rounded-lg ${
-                                    temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                                } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
-                                placeholder="(00) 00000-0000"
-                            />
-                        </div>
-                        {errors.telefone && (
-                            <p className="mt-2 text-sm text-red-600">{errors.telefone}</p>
-                        )}
+                    <div className="space-y-2">
+                      <label htmlFor="telefone" className="block text-sm font-medium text-[#0B3B60]">Telefone</label>
+                      <Input
+                        id="telefone"
+                        name="telefone"
+                        type="text"
+                        placeholder="(00) 00000-0000"
+                        value={formData.telefone}
+                        onChange={handleChange}
+                        className="h-12 bg-white border-[#0B3B60]/20 focus:border-[#00A896] focus:ring-[#00A896]"
+                        required
+                      />
+                      {errors.telefone && <p className="text-sm text-destructive">{errors.telefone}</p>}
                     </div>
-
-                    {/* Senha */}
-                    <div>
-                        <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Senha
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                </svg>
-                            </span>
-                            <input
-                                type="password"
-                                name="senha"
-                                value={formData.senha}
-                                onChange={handleChange}
-                                className={`w-full pl-10 pr-4 py-3 rounded-lg ${
-                                    temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                                } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
-                                placeholder="••••••••"
-                            />
-                        </div>
-                        {errors.senha && (
-                            <p className="mt-2 text-sm text-red-600">{errors.senha}</p>
-                        )}
+                    {/* Senhas */}
+                    <div className="space-y-2">
+                      <label htmlFor="senha" className="block text-sm font-medium text-[#0B3B60]">Senha</label>
+                      <Input
+                        id="senha"
+                        name="senha"
+                        type="password"
+                        placeholder="••••••••"
+                        value={formData.senha}
+                        onChange={handleChange}
+                        className="h-12 bg-white border-[#0B3B60]/20 focus:border-[#00A896] focus:ring-[#00A896]"
+                        required
+                      />
+                      {errors.senha && <p className="text-sm text-destructive">{errors.senha}</p>}
                     </div>
-
-                    {/* Confirmar Senha */}
-                    <div>
-                        <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Confirme sua senha
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                </svg>
-                            </span>
-                            <input
-                                type="password"
-                                name="confirmarSenha"
-                                value={formData.confirmarSenha}
-                                onChange={handleChange}
-                                className={`w-full pl-10 pr-4 py-3 rounded-lg ${
-                                    temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
-                                } border focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 transition-colors`}
-                                placeholder="••••••••"
-                            />
-                        </div>
-                        {errors.confirmarSenha && (
-                            <p className="mt-2 text-sm text-red-600">{errors.confirmarSenha}</p>
-                        )}
+                    <div className="space-y-2">
+                      <label htmlFor="confirmarSenha" className="block text-sm font-medium text-[#0B3B60]">Confirmar Senha</label>
+                      <Input
+                        id="confirmarSenha"
+                        name="confirmarSenha"
+                        type="password"
+                        placeholder="••••••••"
+                        value={formData.confirmarSenha}
+                        onChange={handleChange}
+                        className="h-12 bg-white border-[#0B3B60]/20 focus:border-[#00A896] focus:ring-[#00A896]"
+                        required
+                      />
+                      {errors.confirmarSenha && <p className="text-sm text-destructive">{errors.confirmarSenha}</p>}
                     </div>
-
-                    {/* Erro geral */}
                     {errors.submit && (
-                        <div className={`p-4 rounded-lg ${
-                            temaEscuro ? 'bg-red-900/50 text-red-200' : 'bg-red-50 text-red-600'
-                        }`}>
-                            {errors.submit}
-                        </div>
+                      <div className="text-sm text-destructive">{errors.submit}</div>
                     )}
-
-                    {/* Botão de Cadastro */}
-                    <button
-                        type="submit"
-                        disabled={carregando}
-                        className={`w-full py-3 rounded-lg bg-teal-600 text-white font-semibold 
-                            ${carregando ? 'opacity-50 cursor-not-allowed' : 'hover:bg-teal-700'} 
-                            transition-colors flex items-center justify-center gap-2`}
+                    <Button
+                      type="submit"
+                      className="w-full h-12 bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white"
+                      disabled={carregando}
                     >
-                        {carregando ? (
-                            <>
-                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                                </svg>
-                                <span>Criando conta...</span>
-                            </>
-                        ) : (
-                            'Criar conta'
-                        )}
-                    </button>
-
-                    {/* Link para Login */}
-                    <div className="text-center">
-                        <p className={temaEscuro ? 'text-gray-400' : 'text-gray-600'}>
-                            Já possui uma conta?{' '}
-                            <button
-                                type="button"
-                                onClick={() => router.push('/login')}
-                                className="text-teal-600 hover:text-teal-700 font-medium"
-                            >
-                                Acesse
-                            </button>
-                        </p>
-                    </div>
-                </form>
+                      {carregando ? 'Criando...' : 'Criar Conta'}
+                    </Button>
+                  </form>
+                </div>
             </div>
         </main>
     );

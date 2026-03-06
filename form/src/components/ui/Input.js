@@ -61,3 +61,6 @@ export const Input = forwardRef(({
 });
 
 Input.displayName = 'Input';
+
+// maintain backwards compatibility with default imports
+export default Input;
