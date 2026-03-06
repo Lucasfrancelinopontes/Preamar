@@ -1,241 +1,229 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from "next/navigation";
-import { useAuth } from "../contexts/AuthContext";
-import Header from "../../components/Header";
-import FeatureCard from "../../components/FeatureCard";
-import Footer from "../../components/Footer";
-import api from '@/services/api';
-import BarChart from '@/components/charts/BarChart';
-import LineChart from '@/components/charts/LineChart';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/app/contexts/AuthContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import StatsCards from '@/components/dashboard/StatsCards';
+import api from '@/services/api';
 
-export default function Inicio() {
-  const router = useRouter();
-  const { usuario, estaAutenticado, ehAdmin } = useAuth();
+function InicioContent() {
+    const [desembarques, setDesembarques] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [temaEscuro, setTemaEscuro] = useState(false);
 
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [stats, setStats] = useState({
-    desembarquesMes: 0,
-    totalCapturadoKg: 0,
-    embarcacoesAtivas: 0,
-    crescimentoPct: 0,
-    labels: [],
-    counts: [],
-    capturasPorMes: []
-  });
+    useEffect(() => {
+        carregarDados();
+    }, []);
 
-  useEffect(() => {
-    let mounted = true;
-
-    const fetchStats = async () => {
-      try {
-        const desembarques = await api.get('/desembarques').then(res => res.data).catch(() => []);
-        const embarcacoes = await api.get('/embarcacoes').then(res => res.data).catch(() => []);
-
-        const currentDate = new Date();
-        const currentMonth = currentDate.getMonth();
-        const currentYear = currentDate.getFullYear();
-
-        const desembarquesMes = desembarques.filter(d => {
-          if (!d.dataColeta && !d.data && !d.createdAt) return false;
-          const dateStr = d.dataColeta || d.data || d.createdAt;
-          const d_obj = new Date(dateStr);
-          return d_obj.getMonth() === currentMonth && d_obj.getFullYear() === currentYear;
-        }).length;
-
-        let totalCapturadoKg = 0;
-        for (const d of desembarques) {
-          const capturas = d.capturas || d.individuos || d.Capturas || [];
-          if (Array.isArray(capturas)) {
-            for (const c of capturas) {
-              if (c.peso_g) totalCapturadoKg += (Number(c.peso_g) || 0) / 1000;
-              else if (c.peso) {
-                const v = Number(c.peso) || 0;
-                totalCapturadoKg += (v > 1000) ? v / 1000 : v;
-              } else if (c.peso_kg) totalCapturadoKg += Number(c.peso_kg) || 0;
+    const carregarDados = async () => {
+        try {
+            const data = await api.listarDesembarques();
+            if (data.data) {
+                setDesembarques(data.data);
             }
-          }
+            setLoading(false);
+        } catch (err) {
+            console.error('Erro ao carregar dados:', err);
+            setError(err.message || 'Erro ao carregar dados para análise');
+            setLoading(false);
         }
-        totalCapturadoKg = Math.round(totalCapturadoKg * 100) / 100;
-
-        // Embarcações ativas (usar length como fallback)
-        const embarcacoesAtivas = embarcacoes.length;
-
-        // Crescimento: comparar com mês anterior (por número de desembarques)
-        const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
-        const prevMonth = prevMonthDate.getMonth();
-        const prevYear = prevMonthDate.getFullYear();
-
-        const isPrevMonth = (dateStr) => {
-          if (!dateStr) return false;
-          const d = new Date(dateStr);
-          return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
-        };
-
-        const prevCount = desembarques.filter(d => isPrevMonth(d.dataColeta || d.data || d.createdAt)).length;
-        const crescimentoPct = prevCount === 0 ? 0 : Math.round(((desembarquesMes - prevCount) / prevCount) * 1000) / 10;
-
-        // Montar séries para últimos 3 meses
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const labels = [];
-        const counts = [];
-        const capturasPorMes = [];
-
-        for (let i = 2; i >= 0; i--) {
-          const d = new Date(currentYear, currentMonth - i, 1);
-          const m = d.getMonth();
-          const y = d.getFullYear();
-          labels.push(monthNames[m]);
-
-          let monthCount = 0;
-          let monthGramas = 0;
-
-          for (const rec of desembarques) {
-            const dateStr = rec.dataColeta || rec.data || rec.createdAt;
-            if (!dateStr) continue;
-            const dd = new Date(dateStr);
-            if (dd.getMonth() === m && dd.getFullYear() === y) {
-              monthCount++;
-              const capturas = rec.capturas || rec.individuos || rec.Capturas || [];
-              if (Array.isArray(capturas)) {
-                for (const c of capturas) {
-                  if (c.peso_g) monthGramas += Number(c.peso_g) || 0;
-                  else if (c.peso) {
-                    const v = Number(c.peso) || 0;
-                    monthGramas += (v > 1000) ? v : v * 1000;
-                  } else if (c.peso_kg) monthGramas += (Number(c.peso_kg) || 0) * 1000;
-                }
-              }
-            }
-          }
-
-          counts.push(monthCount);
-          capturasPorMes.push(Math.round((monthGramas / 1000) * 100) / 100);
-        }
-
-        if (!mounted) return;
-
-        setStats({ desembarquesMes, totalCapturadoKg, embarcacoesAtivas, crescimentoPct, labels, counts, capturasPorMes });
-      } catch (err) {
-        console.error('Erro ao buscar estatísticas:', err);
-      } finally {
-        if (mounted) setLoadingStats(false);
-      }
     };
 
-    fetchStats();
+    // 1. Total de desembarques por município
+    const desembarquesPorMunicipio = () => {
+        const contagem = {};
+        desembarques.forEach(d => {
+            const municipio = d.municipio || 'Não informado';
+            contagem[municipio] = (contagem[municipio] || 0) + 1;
+        });
+        return Object.entries(contagem).sort((a, b) => b[1] - a[1]);
+    };
 
-    return () => { mounted = false; };
-  }, []);
+    // 2. Espécies mais capturadas
+    const especiesMaisCapturadas = () => {
+        const especies = {};
+        desembarques.forEach(d => {
+            if (d.capturas && d.capturas.length > 0) {
+                d.capturas.forEach(c => {
+                    // Melhorar exibição do nome da espécie
+                    let nome = '';
+                    if (c.especie?.Nome_popular) {
+                        nome = c.especie.Nome_popular;
+                        if (c.especie.Nome_cientifico) {
+                            nome += ` (${c.especie.Nome_cientifico})`;
+                        }
+                    } else if (c.especie?.Nome_cientifico) {
+                        nome = c.especie.Nome_cientifico;
+                    } else {
+                        nome = `Espécie ID #${c.ID_especie}`;
+                    }
+                    
+                    if (!especies[nome]) {
+                        especies[nome] = {
+                            quantidade: 0,
+                            peso: 0,
+                            valor: 0
+                        };
+                    }
+                    especies[nome].quantidade += 1;
+                    especies[nome].peso += parseFloat(c.peso_kg) || 0;
+                    especies[nome].valor += parseFloat(c.preco_total) || 0;
+                });
+            }
+        });
+        return Object.entries(especies)
+            .map(([nome, dados]) => ({ nome, ...dados }))
+            .sort((a, b) => b.peso - a.peso)
+            .slice(0, 10);
+    };
 
-  return (
-    <div className="min-h-screen flex bg-slate-50">
-      {/* Sidebar */}
-      <aside className="w-60 bg-teal-900 text-white px-4 py-6">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-teal-700 rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8c2 2 4 2 6 0s4-2 6 0 4 2 6 0"></path>
-            </svg>
-          </div>
-          <div>
-            <h2 className="font-semibold">Preamar</h2>
-            <p className="text-xs opacity-80">Gestão Pesqueira</p>
-          </div>
+    // 5. Estatísticas gerais
+    const estatisticasGerais = () => {
+        const total = desembarques.length;
+        const receita = desembarques.reduce((sum, d) => sum + (parseFloat(d.total_desembarque) || 0), 0);
+        const pesoTotal = desembarques.reduce((sum, d) => {
+            if (d.capturas && d.capturas.length > 0) {
+                return sum + d.capturas.reduce((s, c) => s + (parseFloat(c.peso_kg) || 0), 0);
+            }
+            return sum;
+        }, 0);
+        const pescadoresUnicos = new Set(desembarques.map(d => d.ID_pescador).filter(id => id)).size;
+        const embarcacoesUnicas = new Set(desembarques.map(d => d.ID_embarcacao).filter(id => id)).size;
+
+        return {
+            total,
+            receita,
+            pesoTotal,
+            pescadoresUnicos,
+            embarcacoesUnicas,
+            ticketMedio: total > 0 ? receita / total : 0
+        };
+    };
+
+    const formatarValor = (valor) => {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(valor);
+    };
+
+    const stats = estatisticasGerais();
+
+    return (
+        <div className={`min-h-screen p-4 ${temaEscuro ? 'bg-gray-900' : 'bg-gray-50'}`}>
+            {/* Header */}
+            <div className="max-w-7xl mx-auto mb-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <h1 className={`text-2xl font-bold ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                            Início
+                        </h1>
+                    </div>
+                    <button 
+                        onClick={() => setTemaEscuro(!temaEscuro)}
+                        className={`p-2 rounded-full ${temaEscuro ? 'hover:bg-gray-800' : 'hover:bg-gray-200'}`}
+                    >
+                        {temaEscuro ? (
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            </svg>
+                        ) : (
+                            <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                            </svg>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto">
+                {loading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <div className={`text-lg ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>
+                            Carregando dados...
+                        </div>
+                    </div>
+                ) : error ? (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {/* Cards de Estatísticas Gerais */}
+                        <StatsCards items={[
+                            { label: 'Total Desembarques', value: stats.total },
+                            { label: 'Receita Total', value: formatarValor(stats.receita), color: 'text-green-600' },
+                            { label: 'Peso Total', value: `${stats.pesoTotal.toFixed(2)} kg` },
+                            { label: 'Pescadores', value: stats.pescadoresUnicos },
+                            { label: 'Embarcações', value: stats.embarcacoesUnicas },
+                            { label: 'Ticket Médio', value: formatarValor(stats.ticketMedio) }
+                        ]} />
+
+                        {/* 1. Desembarques por Município */}
+                        <div className="card">
+                            <h2 className="heading-secondary">
+                                📍 Desembarques por Município
+                            </h2>
+                            <div className="space-y-3">
+                                {desembarquesPorMunicipio().map(([municipio, count]) => (
+                                    <div key={municipio}>
+                                        <div className="flex justify-between mb-1">
+                                            <span className={temaEscuro ? 'text-gray-300' : 'text-gray-700'}>{municipio}</span>
+                                            <span className={`font-semibold ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{count}</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                            <div 
+                                                className="bg-blue-600 h-2.5 rounded-full" 
+                                                style={{ width: `${(count / desembarques.length) * 100}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 2. Espécies Mais Capturadas */}
+                        <div className="card">
+                            <h2 className="heading-secondary">
+                                🐟 Top 10 Espécies Mais Capturadas
+                            </h2>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className={`border-b ${temaEscuro ? 'border-gray-700' : 'border-gray-200'}`}>
+                                            <th className={`text-left py-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Espécie</th>
+                                            <th className={`text-right py-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Capturas</th>
+                                            <th className={`text-right py-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Peso Total (kg)</th>
+                                            <th className={`text-right py-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Valor Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {especiesMaisCapturadas().map((esp, index) => (
+                                            <tr key={index} className={`border-b ${temaEscuro ? 'border-gray-700' : 'border-gray-100'}`}>
+                                                <td className={`py-2 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{esp.nome}</td>
+                                                <td className={`text-right py-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>{esp.quantidade}</td>
+                                                <td className={`text-right py-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>{esp.peso.toFixed(2)}</td>
+                                                <td className={`text-right py-2 font-semibold ${temaEscuro ? 'text-green-400' : 'text-green-600'}`}>
+                                                    {formatarValor(esp.valor)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
+    );
+}
 
-        <nav className="flex flex-col gap-4">
-          <button onClick={() => router.push("/inicio")} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-teal-600">
-            <span>Dashboard</span>
-          </button>
-          <button onClick={() => router.push("/meus-desembarques")} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-800/50">
-            Meus Desembarques
-          </button>
-          <button onClick={() => router.push("/embarcacoes")} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-800/50">
-            Embarcações
-          </button>
-          {ehAdmin() && (
-            <>
-              <button onClick={() => router.push("/especies")} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-800/50">
-                Espécies
-              </button>
-              <button onClick={() => router.push("/usuarios")} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-800/50">
-                Usuários
-              </button>
-            </>
-          )}
-        </nav>
-
-        <div className="mt-auto pt-6">
-          <button onClick={() => router.push("/")} className="text-sm opacity-80">Sair</button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="flex-1 p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-            <p className="text-sm text-slate-500">Visão geral das atividades pesqueiras</p>
-          </div>
-
-          <div>
-            <button onClick={() => router.push("/desembarque")} className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600">
-              + Novo Desembarque
-            </button>
-          </div>
-        </div>
-
-        {/* Cards */}
-        <StatsCards
-          items={loadingStats ? [
-            { label: 'Desembarques (Mês)', value: '—' },
-            { label: 'Total Capturado', value: '—' },
-            { label: 'Embarcações Ativas', value: '—' },
-            { label: 'Crescimento', value: '—' }
-          ] : [
-            { label: 'Desembarques (Mês)', value: stats.desembarquesMes },
-            { label: 'Total Capturado', value: `${stats.totalCapturadoKg.toLocaleString()} kg` },
-            { label: 'Embarcações Ativas', value: stats.embarcacoesAtivas },
-            { label: 'Crescimento', value: `${stats.crescimentoPct >= 0 ? '+' : ''}${stats.crescimentoPct}%`, color: stats.crescimentoPct >= 0 ? 'text-green-600' : 'text-red-600' }
-          ]}
-        />
-
-        {/* Charts / Content */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="font-semibold mb-4">Desembarques por Mês</h3>
-            {loadingStats ? (
-              <div className="h-48 flex items-center justify-center text-slate-500">Carregando...</div>
-            ) : (
-              <BarChart labels={stats.labels} values={stats.counts} />
-            )}
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="font-semibold mb-4">Captura Total (kg)</h3>
-            {loadingStats ? (
-              <div className="h-48 flex items-center justify-center text-slate-500">Carregando...</div>
-            ) : (
-              <LineChart labels={stats.labels} values={stats.capturasPorMes} />
-            )}
-          </div>
-        </div>
-
-        {/* Function buttons */}
-        <div className="mt-8 max-w-md">
-          <FeatureCard title="Novo Desembarque" subtitle="Registrar novo desembarque" onClick={() => router.push("/desembarque")} />
-          {ehAdmin() && <FeatureCard title="Visualizar Desembarques" subtitle="Ver desembarques registrados" onClick={() => router.push("/meus-desembarques")} />}
-          {ehAdmin() && <FeatureCard title="Dashboard & Análises" subtitle="" onClick={() => router.push("/analytics")} />}
-          {ehAdmin() && <FeatureCard title="Gerenciar Usuários" subtitle="" onClick={() => router.push("/usuarios")} />}
-          {ehAdmin() && <FeatureCard title="Gerenciar Espécies" subtitle="" onClick={() => router.push("/especies")} />}
-          {ehAdmin() && <FeatureCard title="Gerenciar Embarcações" subtitle="" onClick={() => router.push("/embarcacoes")} />}
-        </div>
-
-        <Footer />
-      </main>
-    </div>
-  );
+export default function Inicio() {
+    return (
+        <ProtectedRoute>
+            <InicioContent />
+        </ProtectedRoute>
+    );
 }

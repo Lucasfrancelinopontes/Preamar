@@ -91,8 +91,8 @@ export default function DashboardOverview() {
 
   return (
     <div>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
             <p className="text-sm text-slate-500">Visão geral das atividades pesqueiras</p>
@@ -111,19 +111,23 @@ export default function DashboardOverview() {
           { label: 'Pescadores', value: stats.pescadoresUnicos }
         ]} />
 
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <div className="bg-white p-6 rounded-xl shadow">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow">
             <h3 className="font-semibold mb-4">Desembarques por Mês</h3>
-            {loading ? <div className="h-48 flex items-center justify-center text-slate-500">Carregando...</div> : <BarChart labels={stats.labels} values={stats.counts} />}
+            <div className="h-48 sm:h-64">
+              {loading ? <div className="h-full flex items-center justify-center text-slate-500">Carregando...</div> : <BarChart labels={stats.labels} values={stats.counts} />}
+            </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow">
+          <div className="bg-white p-4 sm:p-6 rounded-xl shadow">
             <h3 className="font-semibold mb-4">Captura Total (kg)</h3>
-            {loading ? <div className="h-48 flex items-center justify-center text-slate-500">Carregando...</div> : <LineChart labels={stats.labels} values={stats.capturasPorMes} />}
+            <div className="h-48 sm:h-64">
+              {loading ? <div className="h-full flex items-center justify-center text-slate-500">Carregando...</div> : <LineChart labels={stats.labels} values={stats.capturasPorMes} />}
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow">
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow">
           <h3 className="font-semibold mb-4">Desembarques por Município</h3>
           {loading ? (
             <div className="h-32 flex items-center justify-center text-slate-500">Carregando...</div>
