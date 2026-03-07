@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import api from '@/services/api';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/Button.js';
+import { Input } from '@/components/ui/Input.js';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Plus, Eye, Edit, Trash2, Search, ArrowLeft } from 'lucide-react';
 
 function MeusDesembarquesContent() {
     const router = useRouter();
@@ -95,210 +101,185 @@ function MeusDesembarquesContent() {
     return (
         <div className={`min-h-screen p-4 ${temaEscuro ? 'bg-gray-900' : 'bg-gray-50'}`}>
             {/* Header */}
-            <div className="max-w-6xl mx-auto mb-6">
-                <div className="flex items-center justify-between">
+            <div className="container mx-auto px-4 max-w-7xl">
+                <div className="flex justify-between items-center mb-8">
                     <div className="flex items-center gap-4">
-                        <button 
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => router.push('/')}
-                            className={`p-2 rounded-full ${temaEscuro ? 'hover:bg-gray-800' : 'hover:bg-gray-200'}`}
+                            className="h-10 w-10"
                         >
-                            <svg className={`w-6 h-6 ${temaEscuro ? 'text-white' : 'text-gray-900'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                            </svg>
-                        </button>
-                        <h1 className={`text-2xl font-bold ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                            Meus Desembarques
-                        </h1>
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                                Meus Desembarques
+                            </h1>
+                            <p className="text-gray-600 dark:text-gray-400 mt-1">
+                                Histórico de registros de desembarque
+                            </p>
+                        </div>
                     </div>
-                    <button 
-                        onClick={() => setTemaEscuro(!temaEscuro)}
-                        className={`p-2 rounded-full ${temaEscuro ? 'hover:bg-gray-800' : 'hover:bg-gray-200'}`}
+                    <Button
+                        onClick={() => router.push('/desembarque')}
+                        className="bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white h-12 px-6"
                     >
-                        {temaEscuro ? (
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                            </svg>
-                        ) : (
-                            <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                            </svg>
-                        )}
-                    </button>
+                        <Plus className="w-5 h-5 mr-2" />
+                        Novo Desembarque
+                    </Button>
                 </div>
             </div>
 
             {/* Content */}
             <div className="max-w-6xl mx-auto">
                 {loading && (
-                    <div className="flex items-center justify-center py-12">
-                        <div className={`text-lg ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>
-                            Carregando desembarques...
-                        </div>
-                    </div>
+                    <Card className="border-0 shadow-sm">
+                        <CardContent className="text-center py-16">
+                            <div className="animate-spin w-8 h-8 border-4 border-[#FF6B35] border-t-transparent rounded-full mx-auto mb-4"></div>
+                            <p className="text-gray-600">Carregando desembarques...</p>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                        {error}
-                    </div>
+                    <Card className="border-red-200 bg-red-50">
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="font-medium text-red-800">Erro ao carregar dados</h3>
+                                    <p className="text-red-600 text-sm mt-1">{error}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {!loading && !error && desembarques.length === 0 && (
-                    <div className={`text-center py-12 ${temaEscuro ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow`}>
-                        <svg className={`w-16 h-16 mx-auto mb-4 ${temaEscuro ? 'text-gray-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                        </svg>
-                        <p className={`text-lg ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>
-                            Nenhum desembarque registrado ainda
-                        </p>
-                        <button
-                            onClick={() => router.push('/desembarque')}
-                            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            Registrar Primeiro Desembarque
-                        </button>
-                    </div>
+                    <Card className="border-0 shadow-sm">
+                        <CardContent className="text-center py-16">
+                            <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                Nenhum desembarque registrado ainda
+                            </h3>
+                            <p className="text-gray-500 mb-6">
+                                Comece registrando seu primeiro desembarque de pesca
+                            </p>
+                            <Button
+                                onClick={() => router.push('/desembarque')}
+                                className="bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white"
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Registrar Primeiro Desembarque
+                            </Button>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {!loading && !error && desembarques.length > 0 && (
-                    <div className="space-y-4">
-                        {/* Barra de pesquisa */}
-                        <div className={`p-4 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
-                            <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-200' : 'text-gray-700'}`}>
-                                Pesquisar por código de coleta
-                            </label>
-                            <div className="relative">
-                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <svg
-                                        className={`h-5 w-5 ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M9 3a6 6 0 104.472 10.03l2.249 2.249a1 1 0 001.414-1.414l-2.249-2.249A6 6 0 009 3zm-4 6a4 4 0 118 0 4 4 0 01-8 0z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
+                    <>
+                        {/* Search Bar */}
+                        <Card className="mb-6 border-0 shadow-sm">
+                            <CardContent className="pt-6">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                                    <Input
+                                        type="text"
+                                        placeholder="Pesquisar por código de coleta..."
+                                        value={pesquisaCodigoColeta}
+                                        onChange={(e) => setPesquisaCodigoColeta(e.target.value)}
+                                        className="pl-10 h-12"
+                                    />
                                 </div>
-                                <input
-                                    type="text"
-                                    value={pesquisaCodigoColeta}
-                                    onChange={(e) => setPesquisaCodigoColeta(e.target.value)}
-                                    placeholder="Ex.: CÓDIGO-123"
-                                    className={`w-full pl-10 pr-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-brand/30 ${
-                                        temaEscuro
-                                            ? 'bg-gray-900 border-gray-700 text-gray-100 placeholder:text-gray-500 focus:border-brand'
-                                            : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-brand'
-                                    }`}
-                                />
-                            </div>
-                        </div>
+                            </CardContent>
+                        </Card>
 
-                        {desembarquesFiltrados.length === 0 ? (
-                            <div className={`text-center py-10 ${temaEscuro ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-600'} rounded-lg shadow`}>
-                                Nenhum desembarque encontrado para este código de coleta.
-                            </div>
-                        ) : (
-                            desembarquesFiltrados.map((desembarque) => (
-                            <div 
-                                key={desembarque.cod_desembarque}
-                                className={`p-6 rounded-lg shadow hover:shadow-lg transition-all ${
-                                    temaEscuro ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'
-                                }`}
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        {/* Código do Desembarque */}
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className={`text-sm font-mono px-3 py-1 rounded ${
-                                                temaEscuro ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'
-                                            }`}>
-                                                {desembarque.cod_desembarque}
-                                            </div>
-                                            <div className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                {formatarData(desembarque.data_coleta)}
-                                            </div>
-                                        </div>
-
-                                        {/* Grid de Informações */}
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                            <div>
-                                                <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    Município
-                                                </p>
-                                                <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                    {desembarque.municipio || '-'}
-                                                </p>
-                                            </div>
-
-                                            <div>
-                                                <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    Localidade
-                                                </p>
-                                                <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                    {desembarque.localidade || '-'}
-                                                </p>
-                                            </div>
-
-                                            <div>
-                                                <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    Pescador
-                                                </p>
-                                                <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                    {desembarque.pescador?.nome || '-'}
-                                                </p>
-                                            </div>
-
-                                            <div>
-                                                <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    Valor Total
-                                                </p>
-                                                <p className={`font-bold text-lg ${temaEscuro ? 'text-green-400' : 'text-green-600'}`}>
-                                                    {formatarValor(desembarque.total_desembarque)}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* Botões de Ação */}
-                                        <div className="flex gap-3 mt-4">
-                                            <button
-                                                onClick={() => router.push(`/meus-desembarques/${desembarque.ID_desembarque}`)}
-                                                className="flex-1 bg-brand hover:bg-brand-dark text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                                            >
-                                                <span>📄</span> Ver Detalhes Completos
-                                            </button>
-                                            <button
-                                                onClick={() => abrirDetalhes(desembarque)}
-                                                className={`px-4 py-2 rounded-lg transition-colors ${
-                                                    temaEscuro 
-                                                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' 
-                                                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                                                }`}
-                                            >
-                                                <span>👁️</span> Prévia
-                                            </button>
-                                            {user?.funcao === 'admin' && (
-                                                <button
-                                                    onClick={(e) => handleDelete(desembarque.ID_desembarque, e)}
-                                                    className={`px-4 py-2 rounded-lg transition-colors ${
-                                                        temaEscuro 
-                                                            ? 'bg-red-900/50 hover:bg-red-900 text-red-200' 
-                                                            : 'bg-red-100 hover:bg-red-200 text-red-800'
-                                                    }`}
-                                                    title="Excluir Desembarque"
-                                                >
-                                                    <span>🗑️</span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            ))
-                        )}
-                    </div>
+                        {/* Table */}
+                        <Card className="border-0 shadow-sm">
+                            <CardContent className="p-0">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Código</TableHead>
+                                            <TableHead>Data</TableHead>
+                                            <TableHead>Município</TableHead>
+                                            <TableHead>Localidade</TableHead>
+                                            <TableHead>Pescador</TableHead>
+                                            <TableHead className="text-right">Valor Total</TableHead>
+                                            <TableHead className="text-center">Ações</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {desembarquesFiltrados.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="text-center py-12 text-gray-500">
+                                                    Nenhum desembarque encontrado para este código de coleta.
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            desembarquesFiltrados.map((desembarque) => (
+                                                <TableRow key={desembarque.cod_desembarque}>
+                                                    <TableCell>
+                                                        <Badge variant="secondary" className="font-mono">
+                                                            {desembarque.cod_desembarque}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-gray-600">
+                                                        {formatarData(desembarque.data_coleta)}
+                                                    </TableCell>
+                                                    <TableCell>{desembarque.municipio || '-'}</TableCell>
+                                                    <TableCell>{desembarque.localidade || '-'}</TableCell>
+                                                    <TableCell>{desembarque.pescador?.nome || '-'}</TableCell>
+                                                    <TableCell className="text-right font-semibold text-green-600">
+                                                        {formatarValor(desembarque.total_desembarque)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => router.push(`/meus-desembarques/${desembarque.ID_desembarque}`)}
+                                                                className="h-8 w-8 p-0"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => abrirDetalhes(desembarque)}
+                                                                className="h-8 w-8 p-0"
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                            {user?.funcao === 'admin' && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={(e) => handleDelete(desembarque.ID_desembarque, e)}
+                                                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </>
                 )}
             </div>
 

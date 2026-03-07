@@ -1,6 +1,12 @@
 'use client'
 
 import { useFormContext } from '@/app/contexts/FormContext'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.js';
+import { Input } from '@/components/ui/Input.js';
+import { Label } from '@/components/ui/label.js';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.js';
+import { Ship } from 'lucide-react';
 
 export default function Step3Embarcacao({ nextStep, prevStep }) {
   const { formData, updateFormData } = useFormContext()
@@ -61,199 +67,185 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
   ]
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 p-4 max-w-2xl mx-auto">
+    <div className="space-y-8">
       {/* Seção Embarcação */}
-      <div className="card">
-        <h2 className="heading-secondary">
-          Embarcação
-        </h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="label-standard">
-              Nome da embarcação 
-            </label>
-            <input
-              type="text"
-              name="nomeEmbarcacao"
-              value={formData.nomeEmbarcacao || ''}
-              onChange={handleChange}
-              className="input-standard"
-            />
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+              <Ship className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </span>
+            Embarcação
+          </CardTitle>
+          <CardDescription>
+            Informações básicas da embarcação utilizada na pesca
+          </CardDescription>
+        </CardHeader>
 
-          <div>
-            <label className="label-standard">
-              Código da embarcação
-            </label>
-            <input
-              type="text"
-              name="codigoEmbarcacao"
-              value={formData.codigoEmbarcacao || ''}
-              onChange={handleChange}
-              className="input-standard"
-            />
-          </div>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="nomeEmbarcacao">Nome da embarcação</Label>
+              <Input
+                id="nomeEmbarcacao"
+                type="text"
+                name="nomeEmbarcacao"
+                value={formData.nomeEmbarcacao || ''}
+                onChange={handleChange}
+              />
+            </div>
 
-          <div>
-            <label className="label-standard">
-              N° de tripulantes
-            </label>
-            <input
-              type="number"
-              name="numTripulantes"
-              value={formData.numTripulantes || ''}
-              onChange={handleChange}
-              min="1"
-              className="input-standard"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="codigoEmbarcacao">Código da embarcação</Label>
+              <Input
+                id="codigoEmbarcacao"
+                type="text"
+                name="codigoEmbarcacao"
+                value={formData.codigoEmbarcacao || ''}
+                onChange={handleChange}
+              />
+            </div>
 
-          <div>
-            <label className="label-standard">
-              N° de pesqueiros
-            </label>
-            <input
-              type="number"
-              name="numPesqueiros"
-              value={formData.numPesqueiros || ''}
-              onChange={handleChange}
-              min="1"
-              className="input-standard"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="numTripulantes">N° de tripulantes</Label>
+              <Input
+                id="numTripulantes"
+                type="number"
+                name="numTripulantes"
+                value={formData.numTripulantes || ''}
+                onChange={handleChange}
+                min="1"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="numPesqueiros">N° de pesqueiros</Label>
+              <Input
+                id="numPesqueiros"
+                type="number"
+                name="numPesqueiros"
+                value={formData.numPesqueiros || ''}
+                onChange={handleChange}
+                min="1"
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Seção Tipo de embarcação */}
-      <div className="card">
-        <h2 className="heading-secondary">
-          Tipo de embarcação
-        </h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <label className="label-standard">
-              Tipo de embarcação
-            </label>
-            <select
-              name="tipoEmbarcacao"
-              value={formData.tipoEmbarcacao || ''}
-              onChange={handleChange}
-              className="select-standard"
-            >
-              <option value="">Selecione um tipo</option>
-              {tiposEmbarcacao.map(tipo => (
-                <option key={tipo.value} value={tipo.value}>
-                  {tipo.label}
-                </option>
-              ))}
-            </select>
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Tipo de embarcação</CardTitle>
+          <CardDescription>
+            Especificações técnicas da embarcação
+          </CardDescription>
+        </CardHeader>
 
-          {formData.tipoEmbarcacao === 'outro' && (
-            <div className="md:col-span-2">
-              <label className="label-standard">
-                Qual tipo de embarcação?
-              </label>
-              <input
-                type="text"
-                name="tipoEmbarcacaoOutro"
-                value={formData.tipoEmbarcacaoOutro || ''}
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="tipoEmbarcacao">Tipo de embarcação</Label>
+              <Select
+                value={formData.tipoEmbarcacao || ''}
+                onValueChange={(value) => handleChange({ target: { name: 'tipoEmbarcacao', value } })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposEmbarcacao.map(tipo => (
+                    <SelectItem key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.tipoEmbarcacao === 'outro' && (
+              <div className="space-y-2">
+                <Label htmlFor="tipoEmbarcacaoOutro">Qual tipo de embarcação?</Label>
+                <Input
+                  id="tipoEmbarcacaoOutro"
+                  type="text"
+                  name="tipoEmbarcacaoOutro"
+                  value={formData.tipoEmbarcacaoOutro || ''}
+                  onChange={handleChange}
+                  placeholder="Digite o tipo"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="comprimento">Comprimento (m)</Label>
+              <Input
+                id="comprimento"
+                type="number"
+                name="comprimento"
+                value={formData.comprimento || ''}
                 onChange={handleChange}
-                className="input-standard"
-                placeholder="Digite o tipo"
+                step="0.01"
+                min="0"
               />
             </div>
-          )}
 
-          <div>
-            <label className="label-standard">
-              Comprimento (m)
-            </label>
-            <input
-              type="number"
-              name="comprimento"
-              value={formData.comprimento || ''}
-              onChange={handleChange}
-              step="0.01"
-              min="0"
-              className="input-standard"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="capacidadeEstocagem">Capacidade de estocagem (kg)</Label>
+              <Input
+                id="capacidadeEstocagem"
+                type="number"
+                name="capacidadeEstocagem"
+                value={formData.capacidadeEstocagem || ''}
+                onChange={handleChange}
+                min="0"
+              />
+            </div>
 
-          <div>
-            <label className="label-standard">
-              Capacidade de estocagem (kg)
-            </label>
-            <input
-              type="number"
-              name="capacidadeEstocagem"
-              value={formData.capacidadeEstocagem || ''}
-              onChange={handleChange}
-              min="0"
-              className="input-standard"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="forcaMotor">Força do motor (HP)</Label>
+              <Input
+                id="forcaMotor"
+                type="number"
+                name="forcaMotor"
+                value={formData.forcaMotor || ''}
+                onChange={handleChange}
+                min="0"
+              />
+            </div>
           </div>
-
-          <div>
-            <label className="label-standard">
-              Força do motor (HP)
-            </label>
-            <input
-              type="number"
-              name="forcaMotor"
-              value={formData.forcaMotor || ''}
-              onChange={handleChange}
-              min="0"
-              className="input-standard"
-            />
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Seção Possui */}
-      <div className="card">
-        <h2 className="heading-secondary">
-          Possui
-        </h2>
-        <div className="space-y-4">
-          {opcoesArmazenamento.map(opcao => (
-            <div key={opcao.value} className="flex items-center">
-              <input
-                type="radio"
-                id={opcao.value}
-                name="armazenamento"
-                value={opcao.value}
-                checked={formData.armazenamento === opcao.value}
-                onChange={handleChange}
-                className="h-4 w-4 text-brand focus:ring-brand border-gray-300"
-              />
-              <label
-                htmlFor={opcao.value}
-                className="label-standard ml-2 mb-0"
-              >
-                {opcao.label}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Armazenamento</CardTitle>
+          <CardDescription>
+            Tipo de armazenamento utilizado para o pescado
+          </CardDescription>
+        </CardHeader>
 
-      {/* Botões de navegação */}
-      <div className="flex justify-between pt-4">
-        <button
-          type="button"
-          onClick={prevStep}
-          className="btn-secondary"
-        >
-          &lt; Voltar
-        </button>
-        <button
-          type="submit"
-          className="btn-primary"
-        >
-          Próximo &gt;
-        </button>
-      </div>
-    </form>
+        <CardContent>
+          <RadioGroup
+            value={formData.armazenamento || ''}
+            onValueChange={(value) => handleChange({ target: { name: 'armazenamento', value } })}
+            className="space-y-3"
+          >
+            {opcoesArmazenamento.map(opcao => (
+              <div key={opcao.value} className="flex items-center space-x-2">
+                <RadioGroupItem
+                  value={opcao.value}
+                  id={opcao.value}
+                />
+                <Label htmlFor={opcao.value} className="cursor-pointer">
+                  {opcao.label}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useFormContext } from '@/app/contexts/FormContext';
 import { validarCPF, formatarCPF } from '@/utils/validations';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.js';
+import { Input } from '@/components/ui/Input.js';
+import { Label } from '@/components/ui/label.js';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert.js';
+import { User } from 'lucide-react';
 
 export default function Step2Pescador({ nextStep, prevStep }) {
     const { formData, updateFormData } = useFormContext();
@@ -67,81 +73,71 @@ export default function Step2Pescador({ nextStep, prevStep }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Nome do Pescador */}
-            <div>
-                <label className="label-standard">
-                    Nome do pescador
-                </label>
-                <div className="relative">
-                    <input
-                        type="text"
-                        name="nomePescador"
-                        value={formFields.nomePescador}
-                        onChange={handleInputChange}
-                        className="input-standard pl-10"
-                        placeholder="Nome completo do pescador"
-                    />
-                </div>
-                {fieldErrors.nomePescador && (
-                    <p className="error-message">{fieldErrors.nomePescador}</p>
-                )}
-            </div>
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <span className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </span>
+                    Dados do Pescador
+                </CardTitle>
+                <CardDescription>
+                    Informe os dados do pescador responsável pela embarcação
+                </CardDescription>
+            </CardHeader>
 
-            {/* Apelido do Pescador */}
-            <div>
-                <label className="label-standard">
-                    Apelido do pescador
-                </label>
-                <div className="relative">
-                    <input
-                        type="text"
-                        name="apelidoPescador"
-                        value={formFields.apelidoPescador}
-                        onChange={handleInputChange}
-                        className="input-standard pl-10"
-                        placeholder="Apelido (opcional)"
-                    />
-                </div>
-            </div>
+            <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="nomePescador">Nome do pescador</Label>
+                        <Input
+                            id="nomePescador"
+                            type="text"
+                            name="nomePescador"
+                            value={formFields.nomePescador}
+                            onChange={handleInputChange}
+                            placeholder="Nome completo do pescador"
+                        />
+                        {fieldErrors.nomePescador && (
+                            <Alert variant="destructive" className="py-2">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>{fieldErrors.nomePescador}</AlertDescription>
+                            </Alert>
+                        )}
+                    </div>
 
-            {/* CPF do Pescador */}
-            <div>
-                <label className="label-standard">
-                    CPF (opcional)
-                </label>
-                <div className="relative">
-                    <input
+                    <div className="space-y-2">
+                        <Label htmlFor="apelidoPescador">Apelido do pescador</Label>
+                        <Input
+                            id="apelidoPescador"
+                            type="text"
+                            name="apelidoPescador"
+                            value={formFields.apelidoPescador}
+                            onChange={handleInputChange}
+                            placeholder="Apelido (opcional)"
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="cpfPescador">CPF (opcional)</Label>
+                    <Input
+                        id="cpfPescador"
                         type="text"
                         name="cpfPescador"
                         value={formFields.cpfPescador}
                         onChange={handleInputChange}
                         maxLength={14}
-                        className="input-standard pl-10"
                         placeholder="000.000.000-00"
                     />
+                    {fieldErrors.cpfPescador && (
+                        <Alert variant="destructive" className="py-2">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{fieldErrors.cpfPescador}</AlertDescription>
+                        </Alert>
+                    )}
                 </div>
-                {fieldErrors.cpfPescador && (
-                    <p className="error-message">{fieldErrors.cpfPescador}</p>
-                )}
-            </div>
-
-            {/* Botões */}
-            <div className="flex gap-4 pt-4">
-                <button
-                    type="button"
-                    onClick={prevStep}
-                    className="btn-secondary flex-1"
-                >
-                    Voltar
-                </button>
-                <button
-                    type="submit"
-                    className="btn-primary flex-1"
-                >
-                    Próximo
-                </button>
-            </div>
-        </form>
+            </CardContent>
+        </Card>
     );
 }
