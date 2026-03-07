@@ -228,11 +228,11 @@ export default function Step1Local({ nextStep }) {
                                     setValue('municipio', value, { shouldValidate: true, shouldDirty: false });
                                     setValue('localidade', '', { shouldValidate: true, shouldDirty: false });
                                 }}
-                                className="font-sans text-sm text-preamar-ocean-deep dark:text-white"
+                                className="font-sans text-sm text-preamar-ocean-deep dark:text-black"
                             >
                                 <option value="">Selecione um município</option>
                                 {municipios.map(m => (
-                                    <option key={m.municipioCode} value={m.municipio} className="text-preamar-ocean-deep dark:text-white">
+                                    <option key={m.municipioCode} value={m.municipio} className="text-preamar-ocean-deep dark:text-black">
                                         {m.municipio}
                                     </option>
                                 ))}
@@ -252,11 +252,11 @@ export default function Step1Local({ nextStep }) {
                             value={selectedLocalidade || ''}
                             onChange={(e) => setValue('localidade', e.target.value, { shouldValidate: true, shouldDirty: false })}
                             disabled={!selectedMunicipio}
-                            className="font-sans text-sm text-preamar-ocean-deep dark:text-white"
+                            className="font-sans text-sm text-preamar-ocean-deep dark:text-black"
                         >
                             <option value="">Selecione uma localidade</option>
                             {selectedMunicipioObj?.localidades.map(l => (
-                                <option key={l.localidadeCode} value={l.localidade} className="text-preamar-ocean-deep dark:text-white">
+                                <option key={l.localidadeCode} value={l.localidade} className="text-preamar-ocean-deep dark:text-black">
                                     {l.localidade}
                                 </option>
                             ))}
