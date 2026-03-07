@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,6 +35,7 @@ const step1Schema = z.object({
 });
 
 export default function Step1Local({ nextStep }) {
+    const router = useRouter();
     const { formData, updateFormData } = useFormContext();
     const [municipios, setMunicipios] = useState([]);
     const [selectedMunicipioObj, setSelectedMunicipioObj] = useState(null);
@@ -217,25 +219,24 @@ export default function Step1Local({ nextStep }) {
             <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label htmlFor="municipio">Município *</Label>
-                        <Select
-                            value={selectedMunicipio || ''}
-                            onValueChange={(value) => {
-                                setValue('municipio', value, { shouldValidate: true, shouldDirty: false });
-                                setValue('localidade', '', { shouldValidate: true, shouldDirty: false });
-                            }}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecione um município" />
-                            </SelectTrigger>
-                            <SelectContent>
+                            <Label htmlFor="municipio">Município *</Label>
+                            <Select
+                                id="municipio"
+                                value={selectedMunicipio || ''}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setValue('municipio', value, { shouldValidate: true, shouldDirty: false });
+                                    setValue('localidade', '', { shouldValidate: true, shouldDirty: false });
+                                }}
+                                className="font-sans text-sm text-preamar-ocean-deep dark:text-white"
+                            >
+                                <option value="">Selecione um município</option>
                                 {municipios.map(m => (
-                                    <SelectItem key={m.municipioCode} value={m.municipio}>
+                                    <option key={m.municipioCode} value={m.municipio} className="text-preamar-ocean-deep dark:text-white">
                                         {m.municipio}
-                                    </SelectItem>
+                                    </option>
                                 ))}
-                            </SelectContent>
-                        </Select>
+                            </Select>
                         {errors.municipio && (
                             <Alert variant="destructive" className="py-2">
                                 <AlertCircle className="h-4 w-4" />
@@ -247,20 +248,18 @@ export default function Step1Local({ nextStep }) {
                     <div className="space-y-2">
                         <Label htmlFor="localidade">Localidade *</Label>
                         <Select
+                            id="localidade"
                             value={selectedLocalidade || ''}
-                            onValueChange={(value) => setValue('localidade', value, { shouldValidate: true, shouldDirty: false })}
+                            onChange={(e) => setValue('localidade', e.target.value, { shouldValidate: true, shouldDirty: false })}
                             disabled={!selectedMunicipio}
+                            className="font-sans text-sm text-preamar-ocean-deep dark:text-white"
                         >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecione uma localidade" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {selectedMunicipioObj?.localidades.map(l => (
-                                    <SelectItem key={l.localidadeCode} value={l.localidade}>
-                                        {l.localidade}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
+                            <option value="">Selecione uma localidade</option>
+                            {selectedMunicipioObj?.localidades.map(l => (
+                                <option key={l.localidadeCode} value={l.localidade} className="text-preamar-ocean-deep dark:text-white">
+                                    {l.localidade}
+                                </option>
+                            ))}
                         </Select>
                         {errors.localidade && (
                             <Alert variant="destructive" className="py-2">
@@ -307,12 +306,12 @@ export default function Step1Local({ nextStep }) {
                 </div>
 
                 {codigoColeta && (
-                    <Alert className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <AlertDescription className="text-green-800 dark:text-green-200">
+                    <Alert className="border-preamar-teal/20 bg-preamar-sand dark:bg-preamar-ocean-deep/20 dark:border-preamar-teal/30">
+                        <CheckCircle className="h-4 w-4 text-preamar-teal" />
+                        <AlertDescription className="text-preamar-ocean-deep dark:text-white">
                             <div className="flex items-center justify-between">
                                 <span className="font-medium">Código de Coleta Gerado</span>
-                                <span className="font-mono font-bold text-lg">{codigoColeta}</span>
+                                <span className="font-mono font-bold text-lg text-preamar-teal dark:text-preamar-teal">{codigoColeta}</span>
                             </div>
                         </AlertDescription>
                     </Alert>
@@ -359,6 +358,13 @@ export default function Step1Local({ nextStep }) {
                         placeholder="Digite o código da foto (opcional)"
                         {...register('codigoFoto')}
                     />
+                </div>
+
+                <div className="flex items-center justify-between pt-4">
+                    <Button variant="outline" onClick={() => router.push('/inicio')}>
+                        ← Voltar para Início
+                    </Button>
+                    {/* O botão de avançar/navegação do wizard será mantido pelo container do wizard */}
                 </div>
             </CardContent>
         </Card>
