@@ -228,7 +228,7 @@ export default function Step1Local({ nextStep }) {
                                     setValue('municipio', value, { shouldValidate: true, shouldDirty: false });
                                     setValue('localidade', '', { shouldValidate: true, shouldDirty: false });
                                 }}
-                                className="font-sans text-sm text-preamar-ocean-deep dark:text-black"
+                                className="font-sans text-sm text-preamar-ocean-deep dark:text-white"
                             >
                                 <option value="">Selecione um município</option>
                                 {municipios.map(m => (
@@ -252,7 +252,7 @@ export default function Step1Local({ nextStep }) {
                             value={selectedLocalidade || ''}
                             onChange={(e) => setValue('localidade', e.target.value, { shouldValidate: true, shouldDirty: false })}
                             disabled={!selectedMunicipio}
-                            className="font-sans text-sm text-preamar-ocean-deep dark:text-black"
+                            className="font-sans text-sm text-preamar-ocean-deep dark:text-white"
                         >
                             <option value="">Selecione uma localidade</option>
                             {selectedMunicipioObj?.localidades.map(l => (
