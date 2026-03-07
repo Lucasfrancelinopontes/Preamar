@@ -5,6 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/app/contexts/AuthContext';
 import api from '@/services/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/Button';
+import { CheckCircle, FileText, Home, Printer, Download, Edit, Trash2, ArrowLeft, MapPin, Calendar, Users, Ship, Fish, DollarSign, Ruler } from 'lucide-react';
 
 export default function DetalhesDesembarque() {
   const params = useParams();
@@ -240,522 +243,568 @@ export default function DetalhesDesembarque() {
   return (
     <ProtectedRoute>
       {loading && (
-        <div className="min-h-screen bg-gray-50 dark:bg-dark-bg flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand border-t-transparent"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-300">Carregando desembarque...</p>
-          </div>
+        <div className="min-h-screen bg-preamar-sand dark:bg-preamar-ocean-deep flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardContent className="p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-preamar-teal border-t-transparent mb-4"></div>
+              <p className="text-preamar-ocean-deep dark:text-white">Carregando desembarque...</p>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {erro && (
-        <div className="min-h-screen bg-gray-50 dark:bg-dark-bg flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-8 max-w-md w-full">
-            <div className="text-center">
-              <div className="text-red-500 text-5xl mb-4">⚠️</div>
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Erro</h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">{erro}</p>
+        <div className="min-h-screen bg-preamar-sand dark:bg-preamar-ocean-deep flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardContent className="p-8 text-center">
+              <div className="text-preamar-error text-5xl mb-4">⚠️</div>
+              <CardTitle className="text-preamar-ocean-deep dark:text-white mb-2">Erro</CardTitle>
+              <p className="text-preamar-ocean-deep/70 dark:text-white/70 mb-6">{erro}</p>
               <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => carregarDesembarque()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
-                >
+                <Button onClick={() => carregarDesembarque()}>
                   Tentar Novamente
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => router.push('/meus-desembarques')}
-                  className="bg-brand hover:bg-brand-dark text-white font-medium py-2 px-6 rounded-lg transition-colors"
                 >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
                   Voltar para Lista
-                </button>
+                </Button>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {!loading && !erro && desembarque && (
-        <div className="min-h-screen bg-gray-50 dark:bg-dark-bg py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Cabeçalho */}
-        <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 mb-6 print:shadow-none">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {desembarque.cod_desembarque}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                {desembarque.municipio} - {desembarque.localidade}
-              </p>
-            </div>
-            
-            {/* Botões de Ação */}
-            <div className="flex gap-3 print:hidden">
-              <button
-                onClick={() => router.push('/meus-desembarques')}
-                className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
-              >
-                <span>←</span> Voltar
-              </button>
-              <button
-                onClick={handleImprimir}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
-              >
-                <span>🖨️</span> Imprimir
-              </button>
-              <button
-                onClick={handleExportar}
-                className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
-              >
-                <span>📥</span> Exportar
-              </button>
-              {usuario?.funcao === 'Administrador' && (
-                <>
-                  <button
-                    onClick={() => router.push(`/desembarque?edit=${params.id}`)}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    <span>✏️</span> Editar
-                  </button>
-                  <button
-                    onClick={handleExcluir}
-                    className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    <span>🗑️</span> Excluir
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Estatísticas Rápidas */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            <div className="bg-brand/10 dark:bg-brand/20 rounded-lg p-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Valor Total</p>
-              <p className="text-2xl font-bold text-brand dark:text-brand-light">
-                {formatarMoeda(desembarque.total_desembarque)}
-              </p>
-            </div>
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Espécies</p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {desembarque.estatisticas?.total_especies || 0}
-              </p>
-            </div>
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Peso Total</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {formatarPeso(desembarque.estatisticas?.peso_total_kg)}
-              </p>
-            </div>
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Indivíduos</p>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                {desembarque.estatisticas?.total_individuos_medidos || 0}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Dados da Viagem */}
-          <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 print:shadow-none">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <span>🚢</span> Dados da Viagem
-            </h2>
-            <div className="space-y-3">
-              <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                <span className="text-gray-600 dark:text-gray-300">Data da Coleta:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatarData(desembarque.data_coleta)}</span>
-              </div>
-              <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                <span className="text-gray-600 dark:text-gray-300">Data/Hora Saída:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatarDataHora(desembarque.data_saida)}</span>
-              </div>
-              <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                <span className="text-gray-600 dark:text-gray-300">Data/Hora Chegada:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatarDataHora(desembarque.data_chegada)}</span>
-              </div>
-              <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                <span className="text-gray-600 dark:text-gray-300">Tripulantes:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{desembarque.numero_tripulantes || '-'}</span>
-              </div>
-              <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                <span className="text-gray-600 dark:text-gray-300">Pesqueiros:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{desembarque.pesqueiros || '-'}</span>
-              </div>
-              {(desembarque.lat_ida || desembarque.long_ida) && (
-                <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-300">Coordenadas Ida:</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">
-                    {Number(desembarque.lat_ida)?.toFixed(6)}, {Number(desembarque.long_ida)?.toFixed(6)}
-                  </span>
-                </div>
-              )}
-              {(desembarque.lat_volta || desembarque.long_volta) && (
-                <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-300">Coordenadas Volta:</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">
-                    {Number(desembarque.lat_volta)?.toFixed(6)}, {Number(desembarque.long_volta)?.toFixed(6)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Pescador */}
-          {desembarque.pescador && (
-            <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 print:shadow-none">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <span>👤</span> Pescador
-              </h2>
-              <div className="space-y-3">
-                <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-300">Nome:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{desembarque.pescador.nome}</span>
-                </div>
-                {desembarque.pescador.apelido && (
-                  <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <span className="text-gray-600 dark:text-gray-300">Apelido:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{desembarque.pescador.apelido}</span>
+        <div className="min-h-screen bg-preamar-sand dark:bg-preamar-ocean-deep py-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Cabeçalho */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <CardTitle className="text-preamar-ocean-deep dark:text-white text-3xl">
+                      {desembarque.cod_desembarque}
+                    </CardTitle>
+                    <p className="text-preamar-ocean-deep/70 dark:text-white/70 mt-1 flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      {desembarque.municipio} - {desembarque.localidade}
+                    </p>
                   </div>
-                )}
-                {desembarque.pescador.cpf && (
-                  <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <span className="text-gray-600 dark:text-gray-300">CPF:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{desembarque.pescador.cpf}</span>
-                  </div>
-                )}
-                {desembarque.pescador.rgp && (
-                  <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <span className="text-gray-600 dark:text-gray-300">RGP:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{desembarque.pescador.rgp}</span>
-                  </div>
-                )}
-                {desembarque.pescador.nascimento && (
-                  <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <span className="text-gray-600 dark:text-gray-300">Nascimento:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{formatarData(desembarque.pescador.nascimento)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
-          {/* Embarcação */}
-          {desembarque.embarcacao && (
-            <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 print:shadow-none">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <span>⛵</span> Embarcação
-              </h2>
-              <div className="space-y-3">
-                <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-300">Nome:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.nome_embarcacao}</span>
-                </div>
-                {desembarque.embarcacao.codigo_embarcacao && (
-                  <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <span className="text-gray-600 dark:text-gray-300">Código:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.codigo_embarcacao}</span>
+                  {/* Botões de Ação */}
+                  <div className="flex gap-3 print:hidden flex-wrap">
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push('/meus-desembarques')}
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Voltar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleImprimir}
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      Imprimir
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleExportar}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Exportar
+                    </Button>
+                    {usuario?.funcao === 'Administrador' && (
+                      <>
+                        <Button
+                          variant="secondary"
+                          onClick={() => router.push(`/desembarque?edit=${params.id}`)}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={handleExcluir}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Excluir
+                        </Button>
+                      </>
+                    )}
                   </div>
-                )}
-                <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-300">Tipo:</span>
-                  <span className="font-medium text-gray-900 dark:text-white capitalize">{desembarque.embarcacao.tipo || '-'}</span>
                 </div>
-                <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-300">Comprimento:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.comprimento ? `${desembarque.embarcacao.comprimento} m` : '-'}</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                  <span className="text-gray-600 dark:text-gray-300">Potência:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.hp ? `${desembarque.embarcacao.hp} HP` : '-'}</span>
-                </div>
-                {desembarque.embarcacao.proprietario && (
-                  <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <span className="text-gray-600 dark:text-gray-300">Proprietário:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.proprietario}</span>
-                  </div>
-                )}
-                {desembarque.embarcacao.cpf_proprietario && (
-                  <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <span className="text-gray-600 dark:text-gray-300">CPF Proprietário:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{desembarque.embarcacao.cpf_proprietario}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
-          {/* Artes de Pesca */}
-          {desembarque.artes && desembarque.artes.length > 0 && (
-            <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 print:shadow-none">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <span>🎣</span> Artes de Pesca
-              </h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead>
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Arte</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tamanho</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unidade</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {desembarque.artes.map((arte, index) => (
-                      <tr key={index}>
-                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-white capitalize">{arte.arte?.replace(/_/g, ' ')}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{arte.tamanho || '-'}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{arte.unidade || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Despesas e Destino */}
-        <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 mt-6 print:shadow-none">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span>💰</span> Despesas e Destino
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h3 className="font-semibold text-gray-700 dark:text-gray-300 border-b pb-1">Combustível</h3>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Tipo:</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {desembarque.desp_diesel ? 'Diesel' : desembarque.desp_gasolina ? 'Gasolina' : '-'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Quantidade:</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {desembarque.litros ? `${desembarque.litros} L` : '-'}
-                </span>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <h3 className="font-semibold text-gray-700 dark:text-gray-300 border-b pb-1">Outros Custos</h3>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Gelo:</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {desembarque.gelo_kg ? `${desembarque.gelo_kg} kg` : '-'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Rancho:</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {formatarMoeda(desembarque.rancho_valor)}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-3 md:col-span-2">
-              <h3 className="font-semibold text-gray-700 dark:text-gray-300 border-b pb-1">Destino do Pescado</h3>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">Destino:</span>
-                <span className="font-medium text-gray-900 dark:text-white capitalize">
-                  {desembarque.destino_pescado || '-'}
-                </span>
-              </div>
-              {desembarque.destino_apelido && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-300">Comprador (Apelido):</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {desembarque.destino_apelido}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Capturas */}
-        {desembarque.capturas && desembarque.capturas.length > 0 && (
-          <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 mt-6 print:shadow-none">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <span>🐟</span> Espécies Capturadas
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Espécie
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Nome Científico
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Peso (kg)
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Preço/kg
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Total
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-dark-surface divide-y divide-gray-200 dark:divide-gray-700">
-                  {desembarque.capturas.map((captura) => (
-                    <tr key={captura.ID_captura} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {captura.especie?.nome_popular || 'Não identificada'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500 dark:text-gray-400 italic">
-                          {captura.especie?.nome_cientifico || '-'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="text-sm text-gray-900 dark:text-white">
-                          {formatarPeso(captura.peso_kg)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="text-sm text-gray-900 dark:text-white">
-                          {formatarMoeda(captura.preco_kg)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {formatarMoeda(captura.preco_total)}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="bg-gray-50 dark:bg-gray-800 font-bold">
-                    <td colSpan="4" className="px-6 py-4 text-right text-sm text-gray-900 dark:text-white">
-                      Total Geral:
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-white">
+                {/* Estatísticas Rápidas */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                  <div className="bg-preamar-teal/10 dark:bg-preamar-teal/20 rounded-lg p-4">
+                    <p className="text-sm text-preamar-ocean-deep/70 dark:text-white/70">Valor Total</p>
+                    <p className="text-2xl font-bold text-preamar-teal dark:text-preamar-teal">
                       {formatarMoeda(desembarque.total_desembarque)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+                    </p>
+                  </div>
+                  <div className="bg-preamar-coral/10 dark:bg-preamar-coral/20 rounded-lg p-4">
+                    <p className="text-sm text-preamar-ocean-deep/70 dark:text-white/70">Espécies</p>
+                    <p className="text-2xl font-bold text-preamar-coral dark:text-preamar-coral">
+                      {desembarque.estatisticas?.total_especies || 0}
+                    </p>
+                  </div>
+                  <div className="bg-preamar-success/10 dark:bg-preamar-success/20 rounded-lg p-4">
+                    <p className="text-sm text-preamar-ocean-deep/70 dark:text-white/70">Peso Total</p>
+                    <p className="text-2xl font-bold text-preamar-success dark:text-preamar-success">
+                      {formatarPeso(desembarque.estatisticas?.peso_total_kg)}
+                    </p>
+                  </div>
+                  <div className="bg-preamar-ocean-deep/10 dark:bg-preamar-ocean-deep/20 rounded-lg p-4">
+                    <p className="text-sm text-preamar-ocean-deep/70 dark:text-white/70">Indivíduos</p>
+                    <p className="text-2xl font-bold text-preamar-ocean-deep dark:text-white">
+                      {desembarque.estatisticas?.total_individuos_medidos || 0}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
 
-        {/* Indivíduos Medidos (Biometria) */}
-        {desembarque.individuos && desembarque.individuos.length > 0 && (
-          <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 mt-6 print:shadow-none">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <span>📏</span> Biometria de Indivíduos ({desembarque.individuos.length} medições)
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      #
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Espécie
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Comp. Total (cm)
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Comp. Padrão (cm)
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Comp. Forquilha (cm)
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Peso (g)
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Sexo
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Estádio
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-dark-surface divide-y divide-gray-200 dark:divide-gray-700">
-                  {desembarque.individuos.map((individuo, index) => (
-                    <tr key={individuo.ID_individuo} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {individuo.numero_individuo || index + 1}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {individuo.especie?.nome_popular || 'Não identificada'}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Dados da Viagem */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-preamar-ocean-deep dark:text-white">
+                    <Ship className="w-5 h-5" />
+                    Dados da Viagem
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                      <span className="text-preamar-ocean-deep/70 dark:text-white/70">Data da Coleta:</span>
+                      <span className="font-medium text-preamar-ocean-deep dark:text-white">{formatarData(desembarque.data_coleta)}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                      <span className="text-preamar-ocean-deep/70 dark:text-white/70">Data/Hora Saída:</span>
+                      <span className="font-medium text-preamar-ocean-deep dark:text-white">{formatarDataHora(desembarque.data_saida)}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                      <span className="text-preamar-ocean-deep/70 dark:text-white/70">Data/Hora Chegada:</span>
+                      <span className="font-medium text-preamar-ocean-deep dark:text-white">{formatarDataHora(desembarque.data_chegada)}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                      <span className="text-preamar-ocean-deep/70 dark:text-white/70">Tripulantes:</span>
+                      <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.numero_tripulantes || '-'}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                      <span className="text-preamar-ocean-deep/70 dark:text-white/70">Pesqueiros:</span>
+                      <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.pesqueiros || '-'}</span>
+                    </div>
+                    {(desembarque.lat_ida || desembarque.long_ida) && (
+                      <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                        <span className="text-preamar-ocean-deep/70 dark:text-white/70">Coordenadas Ida:</span>
+                        <span className="font-medium text-preamar-ocean-deep dark:text-white text-sm">
+                          {Number(desembarque.lat_ida)?.toFixed(6)}, {Number(desembarque.long_ida)?.toFixed(6)}
+                        </span>
+                      </div>
+                    )}
+                    {(desembarque.lat_volta || desembarque.long_volta) && (
+                      <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                        <span className="text-preamar-ocean-deep/70 dark:text-white/70">Coordenadas Volta:</span>
+                        <span className="font-medium text-preamar-ocean-deep dark:text-white text-sm">
+                          {Number(desembarque.lat_volta)?.toFixed(6)}, {Number(desembarque.long_volta)?.toFixed(6)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pescador */}
+              {desembarque.pescador && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-preamar-ocean-deep dark:text-white">
+                      <Users className="w-5 h-5" />
+                      Pescador
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                        <span className="text-preamar-ocean-deep/70 dark:text-white/70">Nome:</span>
+                        <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.pescador.nome}</span>
+                      </div>
+                      {desembarque.pescador.apelido && (
+                        <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                          <span className="text-preamar-ocean-deep/70 dark:text-white/70">Apelido:</span>
+                          <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.pescador.apelido}</span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
-                        {individuo.comprimento_total_cm ? parseFloat(individuo.comprimento_total_cm).toFixed(2) : '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
-                        {individuo.comprimento_padrao_cm ? parseFloat(individuo.comprimento_padrao_cm).toFixed(2) : '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
-                        {individuo.comprimento_forquilha_cm ? parseFloat(individuo.comprimento_forquilha_cm).toFixed(2) : '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
-                        {individuo.peso_g ? parseFloat(individuo.peso_g).toFixed(2) : '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900 dark:text-white uppercase">
-                        {individuo.sexo || '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900 dark:text-white">
-                        {individuo.estadio_gonadal || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      )}
+                      {desembarque.pescador.cpf && (
+                        <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                          <span className="text-preamar-ocean-deep/70 dark:text-white/70">CPF:</span>
+                          <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.pescador.cpf}</span>
+                        </div>
+                      )}
+                      {desembarque.pescador.rgp && (
+                        <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                          <span className="text-preamar-ocean-deep/70 dark:text-white/70">RGP:</span>
+                          <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.pescador.rgp}</span>
+                        </div>
+                      )}
+                      {desembarque.pescador.nascimento && (
+                        <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                          <span className="text-preamar-ocean-deep/70 dark:text-white/70">Nascimento:</span>
+                          <span className="font-medium text-preamar-ocean-deep dark:text-white">{formatarData(desembarque.pescador.nascimento)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Embarcação */}
+              {desembarque.embarcacao && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-preamar-ocean-deep dark:text-white">
+                      <Ship className="w-5 h-5" />
+                      Embarcação
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                        <span className="text-preamar-ocean-deep/70 dark:text-white/70">Nome:</span>
+                        <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.embarcacao.nome_embarcacao}</span>
+                      </div>
+                      {desembarque.embarcacao.codigo_embarcacao && (
+                        <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                          <span className="text-preamar-ocean-deep/70 dark:text-white/70">Código:</span>
+                          <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.embarcacao.codigo_embarcacao}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                        <span className="text-preamar-ocean-deep/70 dark:text-white/70">Tipo:</span>
+                        <span className="font-medium text-preamar-ocean-deep dark:text-white capitalize">{desembarque.embarcacao.tipo || '-'}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                        <span className="text-preamar-ocean-deep/70 dark:text-white/70">Comprimento:</span>
+                        <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.embarcacao.comprimento ? `${desembarque.embarcacao.comprimento} m` : '-'}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                        <span className="text-preamar-ocean-deep/70 dark:text-white/70">Potência:</span>
+                        <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.embarcacao.hp ? `${desembarque.embarcacao.hp} HP` : '-'}</span>
+                      </div>
+                      {desembarque.embarcacao.proprietario && (
+                        <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                          <span className="text-preamar-ocean-deep/70 dark:text-white/70">Proprietário:</span>
+                          <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.embarcacao.proprietario}</span>
+                        </div>
+                      )}
+                      {desembarque.embarcacao.cpf_proprietario && (
+                        <div className="flex justify-between border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-2">
+                          <span className="text-preamar-ocean-deep/70 dark:text-white/70">CPF Proprietário:</span>
+                          <span className="font-medium text-preamar-ocean-deep dark:text-white">{desembarque.embarcacao.cpf_proprietario}</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Artes de Pesca */}
+              {desembarque.artes && desembarque.artes.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-preamar-ocean-deep dark:text-white">
+                      <Fish className="w-5 h-5" />
+                      Artes de Pesca
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-preamar-ocean-deep/10 dark:divide-white/10">
+                        <thead>
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">Arte</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">Tamanho</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">Unidade</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-preamar-ocean-deep/10 dark:divide-white/10">
+                          {desembarque.artes.map((arte, index) => (
+                            <tr key={index}>
+                              <td className="px-4 py-2 text-sm text-preamar-ocean-deep dark:text-white capitalize">{arte.arte?.replace(/_/g, ' ')}</td>
+                              <td className="px-4 py-2 text-sm text-preamar-ocean-deep dark:text-white">{arte.tamanho || '-'}</td>
+                              <td className="px-4 py-2 text-sm text-preamar-ocean-deep dark:text-white">{arte.unidade || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Despesas e Destino */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-preamar-ocean-deep dark:text-white">
+                  <DollarSign className="w-5 h-5" />
+                  Despesas e Destino
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-preamar-ocean-deep dark:text-white border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-1">Combustível</h3>
+                    <div className="flex justify-between">
+                      <span className="text-preamar-ocean-deep/70 dark:text-white/70">Tipo:</span>
+                      <span className="font-medium text-preamar-ocean-deep dark:text-white">
+                        {desembarque.desp_diesel ? 'Diesel' : desembarque.desp_gasolina ? 'Gasolina' : '-'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-preamar-ocean-deep/70 dark:text-white/70">Quantidade:</span>
+                      <span className="font-medium text-preamar-ocean-deep dark:text-white">
+                        {desembarque.litros ? `${desembarque.litros} L` : '-'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-preamar-ocean-deep dark:text-white border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-1">Outros Custos</h3>
+                    <div className="flex justify-between">
+                      <span className="text-preamar-ocean-deep/70 dark:text-white/70">Gelo:</span>
+                      <span className="font-medium text-preamar-ocean-deep dark:text-white">
+                        {desembarque.gelo_kg ? `${desembarque.gelo_kg} kg` : '-'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-preamar-ocean-deep/70 dark:text-white/70">Rancho:</span>
+                      <span className="font-medium text-preamar-ocean-deep dark:text-white">
+                        {formatarMoeda(desembarque.rancho_valor)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 md:col-span-2">
+                    <h3 className="font-semibold text-preamar-ocean-deep dark:text-white border-b border-preamar-ocean-deep/10 dark:border-white/10 pb-1">Destino do Pescado</h3>
+                    <div className="flex justify-between">
+                      <span className="text-preamar-ocean-deep/70 dark:text-white/70">Destino:</span>
+                      <span className="font-medium text-preamar-ocean-deep dark:text-white capitalize">
+                        {desembarque.destino_pescado || '-'}
+                      </span>
+                    </div>
+                    {desembarque.destino_apelido && (
+                      <div className="flex justify-between">
+                        <span className="text-preamar-ocean-deep/70 dark:text-white/70">Comprador (Apelido):</span>
+                        <span className="font-medium text-preamar-ocean-deep dark:text-white">
+                          {desembarque.destino_apelido}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Capturas */}
+            {desembarque.capturas && desembarque.capturas.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-preamar-ocean-deep dark:text-white">
+                    <Fish className="w-5 h-5" />
+                    Espécies Capturadas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-preamar-ocean-deep/10 dark:divide-white/10">
+                      <thead className="bg-preamar-sand dark:bg-preamar-ocean-deep/50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Espécie
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Nome Científico
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Peso (kg)
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Preço/kg
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-preamar-ocean-deep/10 dark:divide-white/10">
+                        {desembarque.capturas.map((captura) => (
+                          <tr key={captura.ID_captura} className="hover:bg-preamar-sand/50 dark:hover:bg-preamar-ocean-deep/20">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-preamar-ocean-deep dark:text-white">
+                                {captura.especie?.nome_popular || 'Não identificada'}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-preamar-ocean-deep/70 dark:text-white/70 italic">
+                                {captura.especie?.nome_cientifico || '-'}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div className="text-sm text-preamar-ocean-deep dark:text-white">
+                                {formatarPeso(captura.peso_kg)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div className="text-sm text-preamar-ocean-deep dark:text-white">
+                                {formatarMoeda(captura.preco_kg)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div className="text-sm font-medium text-preamar-ocean-deep dark:text-white">
+                                {formatarMoeda(captura.preco_total)}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        <tr className="bg-preamar-sand dark:bg-preamar-ocean-deep/50 font-bold">
+                          <td colSpan="4" className="px-6 py-4 text-right text-sm text-preamar-ocean-deep dark:text-white">
+                            Total Geral:
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm text-preamar-ocean-deep dark:text-white">
+                            {formatarMoeda(desembarque.total_desembarque)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Indivíduos Medidos (Biometria) */}
+            {desembarque.individuos && desembarque.individuos.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-preamar-ocean-deep dark:text-white">
+                    <Ruler className="w-5 h-5" />
+                    Biometria de Indivíduos ({desembarque.individuos.length} medições)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-preamar-ocean-deep/10 dark:divide-white/10">
+                      <thead className="bg-preamar-sand dark:bg-preamar-ocean-deep/50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            #
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Espécie
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Comp. Total (cm)
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Comp. Padrão (cm)
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Comp. Forquilha (cm)
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Peso (g)
+                          </th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Sexo
+                          </th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-preamar-ocean-deep/70 dark:text-white/70 uppercase tracking-wider">
+                            Estádio
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-preamar-ocean-deep/10 dark:divide-white/10">
+                        {desembarque.individuos.map((individuo, index) => (
+                          <tr key={individuo.ID_individuo} className="hover:bg-preamar-sand/50 dark:hover:bg-preamar-ocean-deep/20">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-preamar-ocean-deep/70 dark:text-white/70">
+                              {individuo.numero_individuo || index + 1}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="text-sm font-medium text-preamar-ocean-deep dark:text-white">
+                                {individuo.especie?.nome_popular || 'Não identificada'}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-preamar-ocean-deep dark:text-white">
+                              {individuo.comprimento_total_cm ? parseFloat(individuo.comprimento_total_cm).toFixed(2) : '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-preamar-ocean-deep dark:text-white">
+                              {individuo.comprimento_padrao_cm ? parseFloat(individuo.comprimento_padrao_cm).toFixed(2) : '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-preamar-ocean-deep dark:text-white">
+                              {individuo.comprimento_forquilha_cm ? parseFloat(individuo.comprimento_forquilha_cm).toFixed(2) : '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-preamar-ocean-deep dark:text-white">
+                              {individuo.peso_g ? parseFloat(individuo.peso_g).toFixed(2) : '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-center text-sm text-preamar-ocean-deep dark:text-white uppercase">
+                              {individuo.sexo || '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-center text-sm text-preamar-ocean-deep dark:text-white">
+                              {individuo.estadio_gonadal || '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Rodapé */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-preamar-ocean-deep/70 dark:text-white/70">
+                  <div>
+                    <p className="font-medium text-preamar-ocean-deep dark:text-white">Coletor:</p>
+                    <p>{desembarque.coletor || '-'}</p>
+                    {desembarque.data_coletor && (
+                      <p className="text-xs">{formatarData(desembarque.data_coletor)}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-preamar-ocean-deep dark:text-white">Revisor:</p>
+                    <p>{desembarque.revisor || '-'}</p>
+                    {desembarque.data_revisor && (
+                      <p className="text-xs">{formatarData(desembarque.data_revisor)}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-preamar-ocean-deep dark:text-white">Digitador:</p>
+                    <p>{desembarque.digitador || '-'}</p>
+                    {desembarque.data_digitador && (
+                      <p className="text-xs">{formatarData(desembarque.data_digitador)}</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Botão Voltar no Final */}
+            <div className="print:hidden">
+              <Button
+                onClick={() => router.push('/meus-desembarques')}
+                className="w-full sm:w-auto"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar para Meus Desembarques
+              </Button>
             </div>
           </div>
-        )}
-
-        {/* Rodapé */}
-        <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 mt-6 print:shadow-none">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white">Coletor:</p>
-              <p>{desembarque.coletor || '-'}</p>
-              {desembarque.data_coletor && (
-                <p className="text-xs">{formatarData(desembarque.data_coletor)}</p>
-              )}
-            </div>
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white">Revisor:</p>
-              <p>{desembarque.revisor || '-'}</p>
-              {desembarque.data_revisor && (
-                <p className="text-xs">{formatarData(desembarque.data_revisor)}</p>
-              )}
-            </div>
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white">Digitador:</p>
-              <p>{desembarque.digitador || '-'}</p>
-              {desembarque.data_digitador && (
-                <p className="text-xs">{formatarData(desembarque.data_digitador)}</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Botão Voltar no Final */}
-        <div className="mt-6 print:hidden">
-          <button
-            onClick={() => router.push('/meus-desembarques')}
-            className="w-full sm:w-auto bg-brand hover:bg-brand-dark text-white font-medium py-3 px-8 rounded-lg transition-colors"
-          >
-            ← Voltar para Meus Desembarques
-          </button>
-        </div>
-      </div>
 
         {/* Estilos para impressão */}
         <style jsx global>{`

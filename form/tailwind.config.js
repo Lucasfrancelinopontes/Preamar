@@ -58,6 +58,14 @@ module.exports = {
           DEFAULT: '#C0E218',
           dark: '#a8c314',
         },
+        // Preamar MVP Color Palette
+        'preamar-ocean-deep': '#0B3B60',
+        'preamar-teal': '#00A896',
+        'preamar-coral': '#FF6B35',
+        'preamar-sand': '#F7F9FA',
+        'preamar-white': '#FFFFFF',
+        'preamar-success': '#28A745',
+        'preamar-error': '#DC3545',
         dark: {
           bg: '#0f172a',
           surface: '#1e293b',
