@@ -13,6 +13,10 @@ import Step6QuadrantesDestino from '@/components/Step6QuadrantesDestino';
 import Step7EspeciesCaptura from '@/components/Step7EspeciesCaptura';
 import Step8EspeciesIndividuos from '@/components/Step8EspeciesIndividuos';
 import Step9ResumoAnexos from '@/components/Step9ResumoAnexos';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.js';
+import { Progress } from '@/components/ui/progress.js';
+import { Button } from '@/components/ui/Button.js';
+import { ChevronLeft, ChevronRight, MapPin, User, Ship, Fish, DollarSign, Target, Package, FileText, CheckCircle } from 'lucide-react';
 
 function DesembarqueContent() {
     const [step, setStep] = useState(1);
@@ -336,15 +340,15 @@ function DesembarqueContent() {
 
     // Array de etapas para o indicador de progresso
     const steps = [
-        { number: 1, title: "Dados da viagem e embarcação" },
-        { number: 2, title: "Dados da viagem e embarcação" },
-        { number: 3, title: "Tipo de embarcação & artes de pesca" },
-        { number: 4, title: "Tipo de embarcação & artes de pesca" },
-        { number: 5, title: "Proprietário & despesas" },
-        { number: 6, title: "Quadrantes & destino do pescado" },
-        { number: 7, title: "Espécies & pesagens - Etapa 1" },
-        { number: 8, title: "Espécies & pesagens - Etapa 2" },
-        { number: 9, title: "Anexos & resumo" }
+        { number: 1, title: "Local e Identificação", description: "Dados da viagem e embarcação", icon: MapPin },
+        { number: 2, title: "Dados do Pescador", description: "Informações do pescador responsável", icon: User },
+        { number: 3, title: "Embarcação", description: "Dados da embarcação utilizada", icon: Ship },
+        { number: 4, title: "Artes de Pesca", description: "Equipamentos e métodos de pesca", icon: Fish },
+        { number: 5, title: "Proprietário", description: "Dados do proprietário e despesas", icon: DollarSign },
+        { number: 6, title: "Destino", description: "Quadrantes e destino do pescado", icon: Target },
+        { number: 7, title: "Espécies", description: "Capturas por espécie", icon: Package },
+        { number: 8, title: "Indivíduos", description: "Medidas dos indivíduos", icon: FileText },
+        { number: 9, title: "Resumo", description: "Revisão final e anexos", icon: CheckCircle }
     ];
 
     const nextStep = () => setStep(s => Math.min(s + 1, steps.length));
@@ -406,40 +410,92 @@ function DesembarqueContent() {
     };
 
     return (
-        <main className={`min-h-screen ${temaEscuro ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-            {/* Indicador de Progresso */}
-            <div className="px-4 pt-8 mb-8">
-                <div className="relative pt-1">
-                    <div className="flex mb-2 items-center justify-between">
-                        <div>
-                            <span className={`text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${
-                                temaEscuro ? 'bg-teal-900 text-teal-300' : 'bg-teal-200 text-teal-600'
-                            }`}>
-                                Etapa {step} de {steps.length}
-                            </span>
-                        </div>
-                        <div className="text-right">
-                            <span className={`text-xs font-semibold inline-block ${
-                                temaEscuro ? 'text-teal-300' : 'text-teal-600'
-                            }`}>
-                                {Math.round((step / steps.length) * 100)}%
-                            </span>
-                        </div>
-                    </div>
-                    <div className={`overflow-hidden h-2 mb-4 text-xs flex rounded ${
-                        temaEscuro ? 'bg-gray-700' : 'bg-gray-200'
-                    }`}>
-                        <div 
-                            style={{ width: progressWidth }}
-                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-teal-500 transition-all duration-500"
-                        />
-                    </div>
-                </div>
-            </div>
+        <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+            <div className="container mx-auto px-4 max-w-4xl">
+                <Card className="shadow-lg">
+                    <CardHeader className="text-center pb-6">
+                        <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
+                            Novo Desembarque
+                        </CardTitle>
+                        <CardDescription className="text-gray-600 dark:text-gray-400">
+                            Preencha os dados do desembarque de forma organizada e completa
+                        </CardDescription>
+                    </CardHeader>
 
-            {/* Conteúdo da Etapa */}
-            <div className="container mx-auto px-4 pb-12">
-                {renderStep()}
+                    <CardContent className="space-y-8">
+                        {/* Progress Bar */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                                <span>Etapa {step} de {steps.length}</span>
+                                <span>{Math.round((step / steps.length) * 100)}% concluído</span>
+                            </div>
+                            <Progress value={(step / steps.length) * 100} className="h-2" />
+                        </div>
+
+                        {/* Step Indicators */}
+                        <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
+                            {steps.map((stepInfo, index) => {
+                                const IconComponent = stepInfo.icon;
+                                const isCompleted = index + 1 < step;
+                                const isCurrent = index + 1 === step;
+                                const isUpcoming = index + 1 > step;
+
+                                return (
+                                    <div key={stepInfo.number} className="flex flex-col items-center space-y-1">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                                            isCompleted
+                                                ? 'bg-green-500 text-white'
+                                                : isCurrent
+                                                    ? 'bg-blue-500 text-white'
+                                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                                        }`}>
+                                            {isCompleted ? (
+                                                <CheckCircle className="w-4 h-4" />
+                                            ) : (
+                                                <IconComponent className="w-4 h-4" />
+                                            )}
+                                        </div>
+                                        <span className={`text-xs text-center leading-tight ${
+                                            isCurrent
+                                                ? 'text-blue-600 dark:text-blue-400 font-medium'
+                                                : 'text-gray-500 dark:text-gray-400'
+                                        }`}>
+                                            {stepInfo.title}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Step Content */}
+                        <div className="min-h-[400px]">
+                            {renderStep()}
+                        </div>
+
+                        {/* Navigation Buttons */}
+                        <div className="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <Button
+                                variant="outline"
+                                onClick={prevStep}
+                                disabled={step === 1 && !editId}
+                                className="flex items-center gap-2"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                {step === 1 ? 'Cancelar' : 'Anterior'}
+                            </Button>
+
+                            {step < steps.length && (
+                                <Button
+                                    onClick={nextStep}
+                                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                                >
+                                    Próximo
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </main>
     );
