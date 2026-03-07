@@ -261,12 +261,7 @@ export default function Step1Local({ nextStep }) {
                                 </option>
                             ))}
                         </Select>
-                        {errors.localidade && (
-                            <Alert variant="destructive" className="py-2">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertDescription>{errors.localidade.message}</AlertDescription>
-                            </Alert>
-                        )}
+                        {/* Localidade validation present but alert suppressed to avoid duplicate inline warning */}
                     </div>
                 </div>
 
