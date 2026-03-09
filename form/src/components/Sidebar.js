@@ -18,7 +18,7 @@ export default function Sidebar({ currentPage = 'inicio' }) {
   };
 
   const handleLogout = () => {
-    // Implementar logout
+    cookies().delete('token')
     router.push('/login');
   };
 
