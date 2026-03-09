@@ -1,5 +1,6 @@
 import { Home, Anchor, Ship, Fish, Users, LogOut, Waves } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {logout} from '../app/contexts/AuthContext';
 
 export default function Sidebar({ currentPage = 'inicio' }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function Sidebar({ currentPage = 'inicio' }) {
   };
 
   const handleLogout = () => {
-    cookies().delete('token')
+    logout();
     router.push('/login');
   };
 
