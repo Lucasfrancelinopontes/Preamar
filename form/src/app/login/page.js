@@ -90,7 +90,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="h-12 bg-white border-[#0B3B60]/20 focus:border-[#00A896] focus:ring-[#00A896]"
+                className="text-black h-12 bg-white border-[#0B3B60]/20 focus:border-[#00A896] focus:ring-[#00A896] "
                 required
               />
             </div>
@@ -107,7 +107,7 @@ export default function LoginPage() {
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 placeholder="••••••••"
-                className="h-12 bg-white border-[#0B3B60]/20 focus:border-[#00A896] focus:ring-[#00A896]"
+                className="text-black h-12 bg-white border-[#0B3B60]/20 focus:border-[#00A896] focus:ring-[#00A896]"
                 required
               />
             </div>
@@ -129,15 +129,6 @@ export default function LoginPage() {
               {carregando ? 'Entrando...' : 'Entrar'}
             </Button>
 
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => router.push('/register')}
-                className="text-[#00A896] hover:underline"
-              >
-                Não tem uma conta? Cadastre-se
-              </button>
-            </div>
           </form>
         </div>
       </div>
