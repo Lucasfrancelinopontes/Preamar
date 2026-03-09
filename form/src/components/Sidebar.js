@@ -1,9 +1,11 @@
+'use client';
 import { Home, Anchor, Ship, Fish, Users, LogOut, Waves } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import {logout} from '../app/contexts/AuthContext';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export default function Sidebar({ currentPage = 'inicio' }) {
   const router = useRouter();
+  const { logout } = useAuth();
 
   const menuItems = [
     { id: 'inicio', label: 'Dashboard', icon: Home, path: '/inicio' },
@@ -20,7 +22,6 @@ export default function Sidebar({ currentPage = 'inicio' }) {
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
   };
 
   return (
