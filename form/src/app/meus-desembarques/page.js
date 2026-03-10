@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -21,17 +20,7 @@ function MeusDesembarquesContent() {
     const [desembarqueSelecionado, setDesembarqueSelecionado] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { resolvedTheme, mounted } = useTheme();
-    const [temaEscuro, setTemaEscuro] = useState(false);
-
-    useEffect(() => {
-        if (!mounted) return; 
-        setTemaEscuro(resolvedTheme === 'dark');
-    }, [resolvedTheme, mounted]);
-
-
-
-
+    const [temaEscuro, setTemaEscuro] = useState(true);
 
     const desembarquesFiltrados = desembarques.filter((desembarque) => {
         const termo = (pesquisaCodigoColeta || '').trim().toLowerCase();
