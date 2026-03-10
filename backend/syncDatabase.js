@@ -99,17 +99,79 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const force = args.includes('--force');
   const alter = args.includes('--alter');
-  
-  syncDatabase({ force, alter })
-    .then(() => {
+  const verify = args.includes('--verify') || args.includes('--verify-schema');
+
+  (async () => {
+    try {
+      if (verify) {
+        await verifySchema();
+        console.log('Verificação de esquema completa!');
+        process.exit(0);
+      }
+
+      await syncDatabase({ force, alter });
       console.log('Sincronização completa!');
       process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Erro na sincronização:', error);
+    } catch (error) {
+      console.error('Erro na operação:', error);
       process.exit(1);
-    });
+    }
+  })();
 }
+
+// Verificar esquema: reimplementado aqui para evitar ficheiros dispersos
+const verifySchema = async () => {
+  try {
+    await connectDB();
+    console.log('✅ Conectado ao banco de dados!');
+    console.log('');
+    
+    // Verificar colunas da tabela desembarques
+    console.log('📋 Verificando estrutura da tabela DESEMBARQUES:');
+    const [desembarqueColumns] = await sequelize.query(
+      "DESCRIBE desembarques"
+    );
+    
+    const importantColumns = ['municipio_code', 'localidade_code', 'quadrante1', 'quadrante2', 'quadrante3', 
+                              'desp_diesel', 'desp_gasolina', 'litros', 'gelo_kg', 'rancho_valor',
+                              'destino_pescado', 'destino_apelido', 'destino_outros_qual'];
+    
+    importantColumns.forEach(col => {
+      const found = desembarqueColumns.find(c => c.Field === col);
+      console.log(`   ${found ? '✅' : '❌'} ${col}: ${found ? found.Type : 'NÃO ENCONTRADO'}`);
+    });
+    
+    console.log('');
+    console.log('📋 Verificando estrutura da tabela CAPTURAS:');
+    const [capturaColumns] = await sequelize.query(
+      "DESCRIBE capturas"
+    );
+    
+    const capturaImportant = ['ID_especie', 'peso_kg', 'preco_kg', 'preco_total', 'com_tripa'];
+    capturaImportant.forEach(col => {
+      const found = capturaColumns.find(c => c.Field === col);
+      console.log(`   ${found ? '✅' : '❌'} ${col}: ${found ? found.Type : 'NÃO ENCONTRADO'}`);
+    });
+    
+    console.log('');
+    console.log('📋 Verificando estrutura da tabela INDIVIDUOS:');
+    const [individuoColumns] = await sequelize.query(
+      "DESCRIBE individuos"
+    );
+    
+    const individuoImportant = ['ID_especie', 'peso_g', 'comprimento_cm'];
+    individuoImportant.forEach(col => {
+      const found = individuoColumns.find(c => c.Field === col);
+      console.log(`   ${found ? '✅' : '❌'} ${col}: ${found ? found.Type : 'NÃO ENCONTRADO'}`);
+    });
+    
+    console.log('');
+    console.log('✅ Verificação completa!');
+  } catch (error) {
+    console.error('❌ Erro:', error);
+    throw error;
+  }
+};
 
 const seedAdminUsuario = async () => {
   try {
