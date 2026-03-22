@@ -1,4 +1,4 @@
-'use client'
+// Exemplo de uso do ThemeToggle - Adicione ao seu header/navbar
 
 import { ThemeToggle } from '@/components/ThemeToggle';
 
