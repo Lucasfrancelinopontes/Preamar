@@ -16,8 +16,9 @@ const step1Schema = z.object({
     dataColeta: z.string().min(1, 'Data de coleta é obrigatória'),
     consecutivo: z.coerce.number().min(1, 'Número consecutivo inválido'),
     codigoFoto: z.string().optional(),
-    dataSaida: z.string().min(1, 'Data de saída é obrigatória'),
-    dataChegada: z.string().min(1, 'Data de chegada é obrigatória'),
+    // Tornar data/hora de saída/chegada opcionais
+    dataSaida: z.string().optional(),
+    dataChegada: z.string().optional(),
 }).refine((data) => {
     if (data.dataSaida && data.dataChegada) {
         return new Date(data.dataChegada) >= new Date(data.dataSaida);
@@ -287,19 +288,19 @@ export default function Step1Local({ nextStep }) {
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                 <Input
-                    label='Data/Hora Saída *'
+                    label='Data/Hora Saída'
                     type='datetime-local'
                     {...register('dataSaida')}
                     error={errors.dataSaida?.message}
-                    helperText='Data e hora de saída da embarcação'
+                    helperText='Opcional — data e hora de saída da embarcação'
                 />
                 
                 <Input
-                    label='Data/Hora Chegada *'
+                    label='Data/Hora Chegada'
                     type='datetime-local'
                     {...register('dataChegada')}
                     error={errors.dataChegada?.message}
-                    helperText='Data e hora de chegada da embarcação'
+                    helperText='Opcional — data e hora de chegada da embarcação'
                 />
             </div>
 
