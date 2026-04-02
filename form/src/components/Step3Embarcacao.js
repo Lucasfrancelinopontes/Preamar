@@ -41,6 +41,13 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
       return
     }
 
+    // Normalizar entrada decimal para Força do motor (aceitar vírgula e ponto)
+    if (name === 'forcaMotor') {
+      const normalized = value === '' ? '' : String(value).replace(',', '.')
+      updateFormData({ [name]: normalized })
+      return
+    }
+
     updateFormData({ [name]: value })
   }
 
@@ -204,6 +211,8 @@ export default function Step3Embarcacao({ nextStep, prevStep }) {
               value={formData.forcaMotor || ''}
               onChange={handleChange}
               min="0"
+              step="0.01"
+              inputMode="decimal"
               className="input-standard"
             />
           </div>

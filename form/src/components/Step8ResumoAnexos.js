@@ -76,7 +76,7 @@ export default function Step8ResumoAnexos({ prevStep }) {
       tipo_outro: formData.tipoEmbarcacao === 'outro' ? (formData.tipoEmbarcacaoOutro || null) : null,
       comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
       capacidade: formData.capacidadeEstocagem ? parseFloat(formData.capacidadeEstocagem) : null,
-      hp: formData.forcaMotor ? parseInt(formData.forcaMotor) : null,
+      hp: formData.forcaMotor ? parseFloat(String(formData.forcaMotor).replace(',', '.')) : null,
       possui: formData.armazenamento || null
     }
 

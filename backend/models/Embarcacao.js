@@ -33,7 +33,7 @@ export const Embarcacao = sequelize.define('Embarcacao', {
     comment: 'Capacidade de estocagem em kg'
   },
   hp: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.FLOAT,
     comment: 'Força do motor em HP'
   },
   tipo: {
