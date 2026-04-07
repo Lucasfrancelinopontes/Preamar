@@ -342,3 +342,15 @@ body {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
 }
+
+/* Garante visibilidade do icone de calendario em inputs date/datetime-local */
+.calendar-input-visible {
+  color-scheme: light;
+}
+
+.calendar-input-visible::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  display: block;
+  cursor: pointer;
+  filter: none;
+}

@@ -17,6 +17,8 @@ const ARTE_OPTIONS = [
 ];
 
 function InputGroup({ label, name, value, onChange, type = "text", placeholder = "", colSpan = 1 }) {
+    const isCalendarInput = type === "date" || type === "datetime-local";
+
     return (
         <div className={colSpan === 2 ? "md:col-span-2" : ""}>
             <label className="mb-1.5 block text-sm font-semibold text-black">{label}</label>
@@ -26,7 +28,7 @@ function InputGroup({ label, name, value, onChange, type = "text", placeholder =
                 value={value ?? ""}
                 onChange={onChange}
                 placeholder={placeholder}
-                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-blue-600"
+                className={`w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-blue-600 ${isCalendarInput ? "calendar-input-visible" : ""}`}
             />
         </div>
     );
