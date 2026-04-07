@@ -1,447 +1,797 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useFormContext } from '@/app/contexts/FormContext';
-import api from '@/services/api';
-import Step1Local from '@/components/Step1Local';
-import Step2Pescador from '@/components/Step2Pescador';
-import Step3Embarcacao from '@/components/Step3Embarcacao';
-import Step4ArtesPesca from '@/components/Step4ArtesPesca';
-import Step5ProprietarioDespesas from '@/components/Step5ProprietarioDespesas';
-import Step6QuadrantesDestino from '@/components/Step6QuadrantesDestino';
-import Step7EspeciesCaptura from '@/components/Step7EspeciesCaptura';
-import Step8EspeciesIndividuos from '@/components/Step8EspeciesIndividuos';
-import Step9ResumoAnexos from '@/components/Step9ResumoAnexos';
+import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import api from "@/services/api";
+
+const TOTAL_ETAPAS = 6;
+
+const createInitialFormData = () => ({
+    ID_desembarque: null,
+    municipio: "",
+    localidade: "",
+    dataColeta: "",
+    numConsecutivo: "",
+    dataSaida: "",
+    dataChegada: "",
+    codigoFoto: "",
+    nomePescador: "",
+    apelidoPescador: "",
+    cpfPescador: "",
+    nomeProprietario: "",
+    apelidoProprietario: "",
+    cpfProprietario: "",
+    naturalidadeProprietario: "",
+    atuouNaPesca: "",
+    nomeEmbarcacao: "",
+    codigoEmbarcacao: "",
+    numTripulantes: "",
+    numPesqueiros: "",
+    tipoEmbarcacao: "",
+    tipoEmbarcacaoOutro: "",
+    comprimento: "",
+    capacidadeEstocagem: "",
+    forcaMotor: "",
+    conservacao: "",
+    artePesca: "",
+    tamanhoArte: "",
+    gelo: "",
+    rancho: "",
+    litrosCombustivel: "",
+    tipoCombustivel: "",
+    latIda: "",
+    longIda: "",
+    latVolta: "",
+    longVolta: "",
+    quadrante1: "",
+    quadrante2: "",
+    quadrante3: "",
+    destino: "",
+    especie: "",
+    pesoTotalEspecie: "",
+    precoKg: "",
+    condicaoPeixe: "",
+    comprimentoIndividuo: "",
+    pesoIndividuo: ""
+});
+
+const toDateInput = (value) => {
+    if (!value) return "";
+    const raw = String(value);
+    if (raw.includes("T")) return raw.split("T")[0];
+    return raw;
+};
+
+const toTimeInput = (value) => {
+    if (!value) return "";
+    const raw = String(value).replace("Z", "");
+    if (raw.includes("T")) {
+        const t = raw.split("T")[1] || "";
+        return t.slice(0, 5);
+    }
+    if (/^\d{2}:\d{2}/.test(raw)) return raw.slice(0, 5);
+    return "";
+};
+
+const toDatetimeLocal = (dateValue, timeValue) => {
+    const date = toDateInput(dateValue);
+    if (!date) return "";
+    const time = toTimeInput(timeValue || dateValue);
+    return time ? `${date}T${time}` : "";
+};
+
+const splitDateTimeLocal = (value) => {
+    if (!value) return { date: null, time: null };
+    const str = String(value);
+    if (!str.includes("T")) return { date: str, time: null };
+    const [date, timeRaw] = str.split("T");
+    return { date, time: (timeRaw || "").slice(0, 5) || null };
+};
+
+const toNumberOrNull = (value) => {
+    if (value === null || value === undefined || value === "") return null;
+    const num = Number(String(value).replace(",", "."));
+    return Number.isFinite(num) ? num : null;
+};
+
+const parseCoord = (raw, kind) => {
+    if (!raw && raw !== 0) return null;
+    const max = kind === "lat" ? 90 : 180;
+    const normalized = String(raw).trim().replace(",", ".");
+    if (!normalized) return null;
+    const numeric = Number(normalized);
+    if (Number.isFinite(numeric) && Math.abs(numeric) <= max) {
+        return numeric;
+    }
+    return null;
+};
+
+const mapToArray = (response) => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    return [];
+};
+
+const mapApiToFormData = (data) => {
+    const captura = Array.isArray(data?.capturas) && data.capturas.length > 0 ? data.capturas[0] : null;
+    const individuo = Array.isArray(data?.individuos) && data.individuos.length > 0 ? data.individuos[0] : null;
+    const arte = Array.isArray(data?.artes) && data.artes.length > 0 ? data.artes[0] : null;
+
+    return {
+        ...createInitialFormData(),
+        ID_desembarque: data?.ID_desembarque || null,
+        municipio: data?.municipio || "",
+        localidade: data?.localidade || "",
+        dataColeta: toDateInput(data?.data_coleta),
+        numConsecutivo: data?.consecutivo != null ? String(data.consecutivo) : "",
+        dataSaida: toDatetimeLocal(data?.data_saida, data?.hora_saida),
+        dataChegada: toDatetimeLocal(data?.data_chegada, data?.hora_desembarque),
+        codigoFoto: data?.cod_foto || "",
+        nomePescador: data?.pescador?.nome || "",
+        apelidoPescador: data?.pescador?.apelido || "",
+        cpfPescador: data?.pescador?.cpf || "",
+        nomeProprietario: data?.proprietario || data?.embarcacao?.proprietario || "",
+        apelidoProprietario: data?.apelido_proprietario || "",
+        cpfProprietario: data?.embarcacao?.cpf_proprietario || "",
+        naturalidadeProprietario: data?.embarcacao?.localidade || "",
+        atuouNaPesca: data?.atuou_pesca === "S" ? "sim" : data?.atuou_pesca === "N" ? "nao" : "",
+        nomeEmbarcacao: data?.embarcacao?.nome_embarcacao || "",
+        codigoEmbarcacao: data?.embarcacao?.codigo_embarcacao || "",
+        numTripulantes: data?.numero_tripulantes != null ? String(data.numero_tripulantes) : "",
+        numPesqueiros: data?.pesqueiros != null ? String(data.pesqueiros) : "",
+        tipoEmbarcacao: data?.embarcacao?.tipo || "",
+        tipoEmbarcacaoOutro: data?.embarcacao?.tipo_outro || "",
+        comprimento: data?.embarcacao?.comprimento != null ? String(data.embarcacao.comprimento) : "",
+        capacidadeEstocagem: data?.embarcacao?.capacidade != null ? String(data.embarcacao.capacidade) : "",
+        forcaMotor: data?.embarcacao?.hp != null ? String(data.embarcacao.hp) : "",
+        conservacao: data?.embarcacao?.possui || "",
+        artePesca: arte?.arte || "",
+        tamanhoArte: arte?.tamanho != null ? String(arte.tamanho) : "",
+        gelo: data?.gelo_kg != null ? String(data.gelo_kg) : "",
+        rancho: data?.rancho_valor != null ? String(data.rancho_valor) : "",
+        litrosCombustivel: data?.litros != null ? String(data.litros) : "",
+        tipoCombustivel: data?.desp_diesel ? "Diesel" : data?.desp_gasolina ? "Gasolina" : "",
+        latIda: data?.lat_ida != null ? String(data.lat_ida) : "",
+        longIda: data?.long_ida != null ? String(data.long_ida) : "",
+        latVolta: data?.lat_volta != null ? String(data.lat_volta) : "",
+        longVolta: data?.long_volta != null ? String(data.long_volta) : "",
+        quadrante1: data?.quadrante1 || "",
+        quadrante2: data?.quadrante2 || "",
+        quadrante3: data?.quadrante3 || "",
+        destino: data?.destino_pescado ? String(data.destino_pescado).split(",")[0].trim().toLowerCase() : "",
+        especie: captura?.ID_especie != null ? String(captura.ID_especie) : "",
+        pesoTotalEspecie: captura?.peso_kg != null ? String(captura.peso_kg) : "",
+        precoKg: captura?.preco_kg != null ? String(captura.preco_kg) : "",
+        condicaoPeixe: captura ? (captura.com_tripa === false ? "sem_visceras" : "com_visceras") : "",
+        comprimentoIndividuo: individuo?.comprimento_total_cm != null
+            ? String(individuo.comprimento_total_cm)
+            : individuo?.comprimento_cm != null
+                ? String(individuo.comprimento_cm)
+                : "",
+        pesoIndividuo: individuo?.peso_g != null ? String(individuo.peso_g) : ""
+    };
+};
 
 function DesembarqueContent() {
-    const [step, setStep] = useState(1);
-    const [temaEscuro, setTemaEscuro] = useState(false);
-    const [carregandoEdicao, setCarregandoEdicao] = useState(false);
-    const [edicaoCarregada, setEdicaoCarregada] = useState(false);
-    const [formSessionKey, setFormSessionKey] = useState(() => `new-${Date.now()}`);
-    const [inicializando, setInicializando] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
-    const editId = searchParams.get('edit');
-    const { formData, updateFormData, resetForm } = useFormContext();
+    const editId = searchParams.get("edit");
 
-    const initKeyRef = useRef(null);
+    const [etapaAtual, setEtapaAtual] = useState(1);
+    const [carregandoEnvio, setCarregandoEnvio] = useState(false);
+    const [erroEnvio, setErroEnvio] = useState("");
+    const [sucessoEnvio, setSucessoEnvio] = useState("");
+    const [municipios, setMunicipios] = useState([]);
+    const [especies, setEspecies] = useState([]);
+    const [carregandoInicial, setCarregandoInicial] = useState(true);
+    const [carregandoEdicao, setCarregandoEdicao] = useState(false);
+    const [erroInicial, setErroInicial] = useState("");
+    const [formData, setFormData] = useState(createInitialFormData);
 
-    const carregarDadosEdicao = useCallback(async (id) => {
-        try {
-            const response = await api.getDesembarque(id);
-            if (response.success) {
-                const data = response.data;
-
-                const makeTempId = (prefix, stable) => {
-                    const seed = stable != null && stable !== '' ? String(stable) : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-                    return `${prefix}_${seed}`;
-                };
-
-                const toStr = (v) => (v === undefined || v === null ? '' : String(v));
-
-                const isoToDate = (value) => {
-                    if (!value) return '';
-                    const s = String(value);
-                    if (s.includes('T')) return s.split('T')[0];
-                    // DATEONLY já vem como YYYY-MM-DD
-                    return s;
-                };
-
-                const timeToHHmm = (value) => {
-                    if (!value) return '';
-                    const s = String(value);
-                    if (s.includes('T')) {
-                        const timePart = s.split('T')[1] || '';
-                        return timePart.replace('Z', '').slice(0, 5);
-                    }
-                    // TIME pode vir como HH:mm:ss
-                    if (/^\d{2}:\d{2}/.test(s)) return s.slice(0, 5);
-                    return '';
-                };
-
-                const toDatetimeLocal = (dateOrIso, timeOrNull) => {
-                    const datePart = isoToDate(dateOrIso);
-                    if (!datePart) return '';
-                    const timePart = timeToHHmm(timeOrNull || dateOrIso);
-                    return timePart ? `${datePart}T${timePart}` : datePart;
-                };
-
-                const parseDestinoPescado = (value) => {
-                    const arr = typeof value === 'string'
-                        ? value
-                            .split(',')
-                            .map(s => s.trim())
-                            .filter(Boolean)
-                        : (Array.isArray(value) ? value : []);
-
-                    return arr.map(s => {
-                        const v = String(s).trim().toLowerCase();
-                        if (v === 'atravessador') return 'Atravessador';
-                        if (v === 'armador') return 'Armador';
-                        if (v === 'consumidor') return 'Consumidor';
-                        if (v === 'outros' || v === 'outro') return 'Outros';
-                        return s;
-                    });
-                };
-
-                const parseDestinoApelidos = (value) => {
-                    const base = { Atravessador: '', Armador: '', Consumidor: '' };
-                    if (!value) return base;
-
-                    if (typeof value === 'object' && !Array.isArray(value)) {
-                        return { ...base, ...value };
-                    }
-
-                    const parts = String(value)
-                        .split(',')
-                        .map(s => s.trim())
-                        .filter(Boolean);
-
-                    for (const item of parts) {
-                        const [kRaw, ...rest] = item.split(':');
-                        const k = String(kRaw || '').trim().toLowerCase();
-                        const v = rest.join(':').trim();
-                        if (!v) continue;
-                        if (k === 'atravessador') base.Atravessador = v;
-                        if (k === 'armador') base.Armador = v;
-                        if (k === 'consumidor') base.Consumidor = v;
-                    }
-
-                    return base;
-                };
-
-                // Capturas -> Step7 (id, peso, preco, comTripa) + ids auxiliares
-                const especiesCapturaRaw = Array.isArray(data.capturas)
-                    ? data.capturas.map((c) => ({
-                        id_temporario: makeTempId('captura', c.ID_captura ?? c.ID_especie),
-                        ID_captura: c.ID_captura,
-                        id: c.ID_especie != null ? String(c.ID_especie) : '',
-                        peso: c.peso_kg != null ? toStr(c.peso_kg) : '',
-                        preco: c.preco_kg != null ? toStr(c.preco_kg) : '',
-                        comTripa: c.com_tripa !== undefined && c.com_tripa !== null ? Boolean(c.com_tripa) : true
-                    }))
-                    : [];
-
-                // Indivíduos -> Step8 (peso, comprimento) agrupados por espécie
-                const individuosByEspecie = new Map();
-                if (Array.isArray(data.individuos)) {
-                    for (const ind of data.individuos) {
-                        const especieId = ind.ID_especie != null ? String(ind.ID_especie) : '';
-                        if (!especieId) continue;
-                        const list = individuosByEspecie.get(especieId) || [];
-
-                        const comprimento = ind.comprimento_total_cm ?? ind.comprimento_padrao_cm ?? ind.comprimento_forquilha_cm ?? '';
-                        list.push({
-                            id_temporario: makeTempId('individuo', ind.ID_individuo ?? `${especieId}-${ind.numero_individuo ?? list.length + 1}`),
-                            ID_individuo: ind.ID_individuo,
-                            peso: ind.peso_g != null ? toStr(ind.peso_g) : '',
-                            comprimento: comprimento != null ? toStr(comprimento) : ''
-                        });
-                        individuosByEspecie.set(especieId, list);
-                    }
-                }
-
-                // Garantir que espécies presentes em indivíduos também apareçam na lista principal
-                const especieIdsSet = new Set(especiesCapturaRaw.map(e => String(e.id)).filter(Boolean));
-                for (const especieId of individuosByEspecie.keys()) {
-                    if (!especieIdsSet.has(especieId)) {
-                        especiesCapturaRaw.push({
-                            id_temporario: makeTempId('captura', `from-individuos-${especieId}`),
-                            ID_captura: null,
-                            id: especieId,
-                            peso: '',
-                            preco: '',
-                            comTripa: true
-                        });
-                        especieIdsSet.add(especieId);
-                    }
-                }
-
-                const especiesIndividuos = especiesCapturaRaw
-                    .filter(e => e.id)
-                    .map(e => ({
-                        ...e,
-                        individuos: individuosByEspecie.get(String(e.id)) || []
-                    }));
-
-                const destinoPescado = parseDestinoPescado(data.destino_pescado);
-
-                const mappedData = {
-                    // Identificador do desembarque (para edição)
-                    ID_desembarque: data.ID_desembarque,
-                    codigoColeta: data.cod_desembarque,
-                    // Step 1
-                    municipio: data.municipio,
-                    localidade: data.localidade,
-                    municipioCode: data.municipio_code || data.municipioCode || null,
-                    localidadeCode: data.localidade_code || data.localidadeCode || null,
-                    dataColeta: isoToDate(data.data_coleta),
-                    consecutivo: data.consecutivo,
-                    codigoFoto: data.cod_foto,
-                    // No front, Step1 usa datetime-local. Também preenchemos horaSaida/horaChegada para compatibilidade.
-                    dataSaida: toDatetimeLocal(data.data_saida, data.hora_saida),
-                    horaSaida: timeToHHmm(data.hora_saida || data.data_saida),
-                    dataChegada: toDatetimeLocal(data.data_chegada, data.hora_desembarque),
-                    horaChegada: timeToHHmm(data.hora_desembarque || data.data_chegada),
-                    
-                    // Step 2
-                    nomePescador: data.pescador?.nome || '',
-                    apelidoPescador: data.pescador?.apelido || '',
-                    cpfPescador: data.pescador?.cpf || '',
-                    nascimentoPescador: isoToDate(data.pescador?.nascimento),
-
-                    // Step 3
-                    nomeEmbarcacao: data.embarcacao?.nome_embarcacao || '',
-                    codigoEmbarcacao: data.embarcacao?.codigo_embarcacao || '',
-                    tipoEmbarcacao: (() => {
-                        const known = new Set(['catraia', 'caico', 'jangada', 'boteLancha', 'canoa', 'barco', 'outro']);
-                        const tipo = data.embarcacao?.tipo;
-                        const tipoOutro = data.embarcacao?.tipo_outro;
-
-                        if (tipoOutro) return 'outro';
-                        if (tipo && known.has(String(tipo))) return String(tipo);
-                        if (tipo) return 'outro';
-                        return '';
-                    })(),
-                    tipoEmbarcacaoOutro: (() => {
-                        const tipoOutro = data.embarcacao?.tipo_outro;
-                        if (tipoOutro) return String(tipoOutro);
-
-                        const tipo = data.embarcacao?.tipo;
-                        const known = new Set(['catraia', 'caico', 'jangada', 'boteLancha', 'canoa', 'barco', 'outro']);
-                        if (tipo && !known.has(String(tipo))) return String(tipo);
-                        return '';
-                    })(),
-                    comprimento: data.embarcacao?.comprimento != null ? toStr(data.embarcacao.comprimento) : '',
-                    forcaMotor: data.embarcacao?.hp != null ? toStr(data.embarcacao.hp) : '',
-                    armazenamento: data.embarcacao?.possui || '',
-                    capacidadeEstocagem: data.embarcacao?.capacidade != null ? toStr(data.embarcacao.capacidade) : '',
-                    numTripulantes: data.numero_tripulantes != null ? toStr(data.numero_tripulantes) : '',
-                    numPesqueiros: data.pesqueiros != null ? toStr(data.pesqueiros) : '',
-
-                    // Step 4 (preserve IDs for incremental update)
-                    arteSelecionadas: Array.isArray(data.artes)
-                        ? data.artes.map(a => ({
-                            id_temporario: makeTempId('arte', a.ID ?? `${a.arte}-${a.tamanho}`),
-                            ID: a.ID,
-                            arte: (() => {
-                                const known = new Set(['rede_boirea', 'espinhel_mergulho', 'rede_fundeio', 'linha_mao', 'rede_cacoaria', 'covo', 'outras']);
-                                const v = a.arte;
-                                if (!v) return '';
-                                return known.has(String(v)) ? String(v) : 'outras';
-                            })(),
-                            arte_outro: (() => {
-                                const known = new Set(['rede_boirea', 'espinhel_mergulho', 'rede_fundeio', 'linha_mao', 'rede_cacoaria', 'covo', 'outras']);
-                                const v = a.arte;
-                                if (!v) return '';
-                                const normalizedArte = known.has(String(v)) ? String(v) : 'outras';
-                                const nome = a.nome != null ? String(a.nome) : '';
-                                const legacyNome = known.has(String(v)) ? '' : String(v);
-                                return normalizedArte === 'outras' ? (nome || legacyNome) : '';
-                            })(),
-                            tamanho: a.tamanho != null ? toStr(a.tamanho) : '',
-                            unidade: a.unidade
-                        }))
-                        : [],
-                    arte_obs: data.arte_obs || '',
-
-                    // Step 5
-                    nomeProprietario: data.proprietario || data.embarcacao?.proprietario || '',
-                    apelidoProprietario: data.apelido_proprietario || '',
-                    cpfProprietario: data.embarcacao?.cpf_proprietario || '',
-                    naturalidadeProprietario: data.embarcacao?.localidade || '',
-                    atuouNaPesca: data.atuou_pesca === 'S' ? true : (data.atuou_pesca === 'N' ? false : null),
-                    quantidadeGelo: data.gelo_kg != null ? toStr(data.gelo_kg) : '',
-                    valorRancho: data.rancho_valor != null ? toStr(data.rancho_valor) : '',
-                    litrosCombustivel: data.litros != null ? toStr(data.litros) : '',
-                    tipoCombustivel: data.desp_diesel ? 'Diesel' : (data.desp_gasolina ? 'Gasolina' : 'Outro'),
-
-                    // Step 6
-                    quadrante1: data.quadrante1,
-                    quadrante2: data.quadrante2,
-                    quadrante3: data.quadrante3,
-                    destinoPescado,
-                    apelidoDestino: data.destino_apelido || '',
-                    apelidosDestino: parseDestinoApelidos(data.destino_apelido),
-                    outroDestino: data.destino_outros_qual || '',
-
-                    // Coordinates (decimal)
-                    latIda: data.lat_ida != null ? toStr(data.lat_ida) : '',
-                    longIda: data.long_ida != null ? toStr(data.long_ida) : '',
-                    latVolta: data.lat_volta != null ? toStr(data.lat_volta) : '',
-                    longVolta: data.long_volta != null ? toStr(data.long_volta) : '',
-
-                    // Step 7 & 8
-                    especiesCaptura: especiesCapturaRaw.filter(e => e.id),
-                    especiesIndividuos,
-                };
-
-                return mappedData;
+    useEffect(() => {
+        const carregarListas = async () => {
+            setCarregandoInicial(true);
+            setErroInicial("");
+            try {
+                const [municipiosRes, especiesRes] = await Promise.all([
+                    api.getMunicipios(),
+                    api.getEspecies()
+                ]);
+                setMunicipios(mapToArray(municipiosRes));
+                setEspecies(mapToArray(especiesRes));
+            } catch (error) {
+                setErroInicial(error?.message || "Nao foi possivel carregar municipios e especies");
+            } finally {
+                setCarregandoInicial(false);
             }
-        } catch (error) {
-            console.error("Erro ao carregar dados para edição", error);
-        }
+        };
 
-        return null;
+        carregarListas();
     }, []);
 
     useEffect(() => {
-        let cancelled = false;
-
-        const run = async () => {
-            setInicializando(true);
-
-            if (!editId) {
-                setEdicaoCarregada(false);
-                // Inicializa modo "novo" apenas uma vez, para não apagar dados ao avançar etapas.
-                if (initKeyRef.current !== 'new') {
-                    resetForm();
-                    setStep(1);
-                    setFormSessionKey(`new-${Date.now()}`);
-                    initKeyRef.current = 'new';
-                }
-                if (!cancelled) setInicializando(false);
-                return;
-            }
-
-            const targetKey = `edit:${editId}`;
-            if (initKeyRef.current === targetKey && edicaoCarregada) {
-                if (!cancelled) setInicializando(false);
-                return;
-            }
-
+        const carregarEdicao = async () => {
+            if (!editId) return;
             setCarregandoEdicao(true);
+            setErroEnvio("");
             try {
-                const mapped = await carregarDadosEdicao(editId);
-                if (!cancelled && mapped) {
-                    updateFormData(mapped);
-                    setEdicaoCarregada(true);
-                    setFormSessionKey(`edit-${editId}`);
-                    initKeyRef.current = targetKey;
-                }
+                const response = await api.getDesembarque(editId);
+                const data = response?.data || response;
+                setFormData(mapApiToFormData(data));
+            } catch (error) {
+                setErroEnvio(error?.message || "Nao foi possivel carregar dados para edicao");
             } finally {
-                if (!cancelled) setCarregandoEdicao(false);
-                if (!cancelled) setInicializando(false);
+                setCarregandoEdicao(false);
             }
         };
 
-        run();
+        carregarEdicao();
+    }, [editId]);
 
-        return () => {
-            cancelled = true;
-        };
-    }, [editId, carregarDadosEdicao, updateFormData, resetForm, edicaoCarregada]);
+    const municipioSelecionado = useMemo(
+        () => municipios.find((m) => m.municipio === formData.municipio) || null,
+        [municipios, formData.municipio]
+    );
 
-    // Array de etapas para o indicador de progresso
-    const steps = [
-        { number: 1, title: "Dados da viagem e embarcação" },
-        { number: 2, title: "Dados da viagem e embarcação" },
-        { number: 3, title: "Tipo de embarcação & artes de pesca" },
-        { number: 4, title: "Tipo de embarcação & artes de pesca" },
-        { number: 5, title: "Proprietário & despesas" },
-        { number: 6, title: "Quadrantes & destino do pescado" },
-        { number: 7, title: "Espécies & pesagens - Etapa 1" },
-        { number: 8, title: "Espécies & pesagens - Etapa 2" },
-        { number: 9, title: "Anexos & resumo" }
-    ];
+    const localidadesDisponiveis = useMemo(
+        () => municipioSelecionado?.localidades || [],
+        [municipioSelecionado]
+    );
 
-    const nextStep = () => setStep(s => Math.min(s + 1, steps.length));
-    const prevStep = () => {
-        if (step === 1) {
-            router.push('/'); // Volta para a home se estiver no primeiro passo
+    const localidadeSelecionada = useMemo(
+        () => localidadesDisponiveis.find((l) => l.localidade === formData.localidade) || null,
+        [localidadesDisponiveis, formData.localidade]
+    );
+
+    const codigoDesembarqueGerado = useMemo(() => {
+        const municipioCode = municipioSelecionado?.municipioCode?.trim();
+        const localidadeCode = localidadeSelecionada?.localidadeCode?.trim();
+        if (!municipioCode || !localidadeCode || !formData.dataColeta) return "";
+
+        const partesData = formData.dataColeta.split("-");
+        if (partesData.length !== 3) return "";
+
+        const [ano, mes, dia] = partesData;
+        const consecutivoNumero = Number(formData.numConsecutivo || 1);
+        if (!Number.isInteger(consecutivoNumero) || consecutivoNumero <= 0) return "";
+
+        const consecutivo = String(consecutivoNumero).padStart(2, "0");
+        return `${municipioCode} ${localidadeCode} ${dia} ${mes} ${ano.slice(-2)} ${consecutivo}`;
+    }, [municipioSelecionado, localidadeSelecionada, formData.dataColeta, formData.numConsecutivo]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => {
+            if (name === "municipio") {
+                return { ...prev, municipio: value, localidade: "" };
+            }
+            return { ...prev, [name]: value };
+        });
+    };
+
+    const proximaEtapa = () => {
+        if (etapaAtual < TOTAL_ETAPAS) setEtapaAtual((atual) => atual + 1);
+        window.scrollTo(0, 0);
+    };
+
+    const etapaAnterior = () => {
+        if (etapaAtual > 1) {
+            setEtapaAtual((atual) => atual - 1);
         } else {
-            setStep(s => s - 1);
+            router.push("/");
+        }
+        window.scrollTo(0, 0);
+    };
+
+    const montarPayload = () => {
+        const especieId = Number(formData.especie);
+        const municipioCode = municipioSelecionado?.municipioCode || null;
+        const localidadeCode = localidadeSelecionada?.localidadeCode || null;
+        const saida = splitDateTimeLocal(formData.dataSaida);
+        const chegada = splitDateTimeLocal(formData.dataChegada);
+
+        return {
+            pescador: {
+                nome: (formData.nomePescador || "").trim() || null,
+                apelido: (formData.apelidoPescador || "").trim() || null,
+                cpf: (formData.cpfPescador || "").replace(/\D/g, "") || null
+            },
+            embarcacao: {
+                nome_embarcacao: formData.nomeEmbarcacao || null,
+                codigo_embarcacao: formData.codigoEmbarcacao || null,
+                tipo: formData.tipoEmbarcacao || null,
+                tipo_outro: formData.tipoEmbarcacao === "outro" ? (formData.tipoEmbarcacaoOutro || null) : null,
+                comprimento: toNumberOrNull(formData.comprimento),
+                capacidade: toNumberOrNull(formData.capacidadeEstocagem),
+                hp: toNumberOrNull(formData.forcaMotor),
+                possui: formData.conservacao || null,
+                proprietario: formData.nomeProprietario || null,
+                cpf_proprietario: (formData.cpfProprietario || "").replace(/\D/g, "") || null,
+                localidade: formData.naturalidadeProprietario || null
+            },
+            desembarque: {
+                cod_desembarque: codigoDesembarqueGerado || null,
+                municipio: formData.municipio || null,
+                municipio_code: municipioCode,
+                localidade: formData.localidade || null,
+                localidade_code: localidadeCode,
+                data_coleta: formData.dataColeta || null,
+                consecutivo: Number(formData.numConsecutivo) || 1,
+                data_saida: saida.date,
+                hora_saida: saida.time,
+                data_chegada: chegada.date,
+                hora_desembarque: chegada.time,
+                cod_foto: formData.codigoFoto || null,
+                numero_tripulantes: Number(formData.numTripulantes) || null,
+                pesqueiros: formData.numPesqueiros || null,
+                lat_ida: parseCoord(formData.latIda, "lat"),
+                long_ida: parseCoord(formData.longIda, "long"),
+                lat_volta: parseCoord(formData.latVolta, "lat"),
+                long_volta: parseCoord(formData.longVolta, "long"),
+                quadrante1: formData.quadrante1 || null,
+                quadrante2: formData.quadrante2 || null,
+                quadrante3: formData.quadrante3 || null,
+                gelo_kg: toNumberOrNull(formData.gelo),
+                rancho_valor: toNumberOrNull(formData.rancho),
+                litros: toNumberOrNull(formData.litrosCombustivel),
+                desp_diesel: formData.tipoCombustivel === "Diesel",
+                desp_gasolina: formData.tipoCombustivel === "Gasolina",
+                destino_pescado: formData.destino || null,
+                proprietario: formData.nomeProprietario || null,
+                apelido_proprietario: formData.apelidoProprietario || null,
+                atuou_pesca: formData.atuouNaPesca === "sim" ? "S" : formData.atuouNaPesca === "nao" ? "N" : null
+            },
+            artes: formData.artePesca
+                ? [{
+                        arte: formData.artePesca,
+                        nome: null,
+                        tamanho: toNumberOrNull(formData.tamanhoArte),
+                        unidade: "m"
+                    }]
+                : [],
+            capturas: Number.isInteger(especieId)
+                ? [{
+                        ID_especie: especieId,
+                        peso_kg: toNumberOrNull(formData.pesoTotalEspecie),
+                        preco_kg: toNumberOrNull(formData.precoKg),
+                        com_tripa: formData.condicaoPeixe === "com_visceras"
+                    }]
+                : [],
+            individuos: (formData.pesoIndividuo || formData.comprimentoIndividuo) && Number.isInteger(especieId)
+                ? [{
+                        ID_especie: especieId,
+                        numero_individuo: 1,
+                        comprimento_cm: toNumberOrNull(formData.comprimentoIndividuo),
+                        peso_g: toNumberOrNull(formData.pesoIndividuo)
+                    }]
+                : []
+        };
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setErroEnvio("");
+        setSucessoEnvio("");
+        setCarregandoEnvio(true);
+
+        try {
+            const payload = montarPayload();
+
+            if (formData.ID_desembarque) {
+                await api.atualizarDesembarque(formData.ID_desembarque, payload);
+                setSucessoEnvio("Desembarque atualizado com sucesso!");
+            } else {
+                const response = await api.criarDesembarque(payload);
+                const codigo = response?.data?.cod_desembarque || codigoDesembarqueGerado;
+                setSucessoEnvio(codigo ? `Desembarque ${codigo} salvo com sucesso!` : "Desembarque salvo com sucesso!");
+                setFormData(createInitialFormData());
+                setEtapaAtual(1);
+            }
+        } catch (error) {
+            setErroEnvio(error?.message || "Falha ao salvar desembarque");
+        } finally {
+            setCarregandoEnvio(false);
         }
     };
 
-    // Determina a largura da barra de progresso com base na etapa atual
-    const progressWidth = `${((step - 1) / (steps.length - 1)) * 100}%`;
-
-    // Renderiza o componente da etapa atual
-    const renderStep = () => {
-        if (inicializando) {
-            return (
-                <div className="max-w-3xl mx-auto p-6">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                        <p className="text-gray-700 dark:text-gray-200">Preparando formulário...</p>
-                    </div>
-                </div>
-            );
-        }
-
-        if (editId && (carregandoEdicao || !edicaoCarregada)) {
-            return (
-                <div className="max-w-3xl mx-auto p-6">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                        <p className="text-gray-700 dark:text-gray-200">Carregando dados do desembarque para edição...</p>
-                    </div>
-                </div>
-            );
-        }
-
-        switch (step) {
-            case 1:
-                return <Step1Local key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
-            case 2:
-                return <Step2Pescador key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
-            case 3:
-                return <Step3Embarcacao key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
-            case 4:
-                return <Step4ArtesPesca key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
-            case 5:
-                return <Step5ProprietarioDespesas key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
-            case 6:
-                return <Step6QuadrantesDestino key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
-            case 7:
-                return <Step7EspeciesCaptura key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
-            case 8:
-                return <Step8EspeciesIndividuos key={formSessionKey} nextStep={nextStep} prevStep={prevStep} />;
-            case 9:
-                return <Step9ResumoAnexos key={formSessionKey} prevStep={prevStep} />;
-            default:
-                return null;
-        }
-    };
+    const InputGroup = ({ label, name, type = "text", placeholder = "", colSpan = 1 }) => (
+        <div className={colSpan === 2 ? "md:col-span-2" : ""}>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-900">{label}</label>
+            <input
+                type={type}
+                name={name}
+                value={formData[name]}
+                onChange={handleInputChange}
+                placeholder={placeholder}
+                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-blue-600"
+            />
+        </div>
+    );
 
     return (
-        <main className={`min-h-screen ${temaEscuro ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-            {/* Indicador de Progresso */}
-            <div className="px-4 pt-8 mb-8">
-                <div className="relative pt-1">
-                    <div className="flex mb-2 items-center justify-between">
-                        <div>
-                            <span className={`text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${
-                                temaEscuro ? 'bg-teal-900 text-teal-300' : 'bg-teal-200 text-teal-600'
-                            }`}>
-                                Etapa {step} de {steps.length}
-                            </span>
-                        </div>
-                        <div className="text-right">
-                            <span className={`text-xs font-semibold inline-block ${
-                                temaEscuro ? 'text-teal-300' : 'text-teal-600'
-                            }`}>
-                                {Math.round((step / steps.length) * 100)}%
-                            </span>
-                        </div>
+        <div className="min-h-screen bg-slate-100 pb-10">
+            <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-8 py-4 shadow-sm">
+                <h1 className="text-lg font-bold text-slate-900">Sistema Preamar</h1>
+                <p className="text-xs text-slate-500">Registro de Desembarque</p>
+            </header>
+
+            <main className="mx-auto flex w-full max-w-5xl flex-col items-center p-4 pt-8 sm:p-6">
+                <div className="mb-8 w-full max-w-4xl">
+                    <div className="mb-2 flex justify-between px-1 text-xs font-medium text-slate-400 sm:text-sm">
+                        <span className={etapaAtual >= 1 ? "font-bold text-blue-600" : "hidden sm:inline"}>1. Local</span>
+                        <span className={etapaAtual >= 2 ? "font-bold text-blue-600" : "hidden sm:inline"}>2. Pessoas</span>
+                        <span className={etapaAtual >= 3 ? "font-bold text-blue-600" : "hidden sm:inline"}>3. Embarcacao</span>
+                        <span className={etapaAtual >= 4 ? "font-bold text-blue-600" : "hidden sm:inline"}>4. Viagem</span>
+                        <span className={etapaAtual >= 5 ? "font-bold text-blue-600" : "hidden sm:inline"}>5. Captura</span>
+                        <span className={etapaAtual >= 6 ? "font-bold text-blue-600" : "hidden sm:inline"}>6. Resumo</span>
                     </div>
-                    <div className={`overflow-hidden h-2 mb-4 text-xs flex rounded ${
-                        temaEscuro ? 'bg-gray-700' : 'bg-gray-200'
-                    }`}>
-                        <div 
-                            style={{ width: progressWidth }}
-                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-teal-500 transition-all duration-500"
+                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                            className="h-full bg-blue-600 transition-all duration-300"
+                            style={{ width: `${((etapaAtual - 1) / (TOTAL_ETAPAS - 1)) * 100}%` }}
                         />
                     </div>
                 </div>
-            </div>
 
-            {/* Conteúdo da Etapa */}
-            <div className="container mx-auto px-4 pb-12">
-                {renderStep()}
-            </div>
-        </main>
+                <div className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
+                    <div className="px-6 py-8 sm:p-10">
+                        <form onSubmit={etapaAtual === TOTAL_ETAPAS ? handleSubmit : (e) => e.preventDefault()}>
+                            {carregandoInicial && (
+                                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-600">
+                                    Carregando municipios e especies...
+                                </div>
+                            )}
+
+                            {carregandoEdicao && (
+                                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-600">
+                                    Carregando dados para edicao...
+                                </div>
+                            )}
+
+                            {erroInicial && (
+                                <div className="mb-6 rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm font-medium text-amber-700">
+                                    {erroInicial}
+                                </div>
+                            )}
+
+                            {erroEnvio && (
+                                <div className="mb-6 rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-medium text-red-600">
+                                    {erroEnvio}
+                                </div>
+                            )}
+
+                            {sucessoEnvio && (
+                                <div className="mb-6 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
+                                    {sucessoEnvio}
+                                </div>
+                            )}
+
+                            {etapaAtual === 1 && (
+                                <div className="animate-in fade-in duration-300">
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Local e Identificacao</h2>
+
+                                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                        <div className="md:col-span-2">
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Codigo do Desembarque (gerado)</label>
+                                            <input
+                                                type="text"
+                                                value={codigoDesembarqueGerado}
+                                                readOnly
+                                                placeholder="Selecione municipio, localidade e data da coleta"
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-2.5 text-slate-900 outline-none"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Municipio</label>
+                                            <select
+                                                name="municipio"
+                                                value={formData.municipio}
+                                                onChange={handleInputChange}
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
+                                                disabled={carregandoInicial}
+                                            >
+                                                <option value="">Selecione o municipio...</option>
+                                                {municipios.map((municipio) => (
+                                                    <option key={municipio.municipioCode || municipio.municipio} value={municipio.municipio}>
+                                                        {municipio.municipio}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Localidade</label>
+                                            <select
+                                                name="localidade"
+                                                value={formData.localidade}
+                                                onChange={handleInputChange}
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
+                                                disabled={!formData.municipio || carregandoInicial}
+                                            >
+                                                <option value="">Selecione a localidade...</option>
+                                                {localidadesDisponiveis.map((localidade) => (
+                                                    <option key={localidade.localidadeCode || localidade.localidade} value={localidade.localidade}>
+                                                        {localidade.localidade}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <InputGroup label="Data da Coleta" name="dataColeta" type="date" />
+                                        <InputGroup label="Numero Consecutivo" name="numConsecutivo" placeholder="Ex: 1, 2, 3..." />
+                                        <InputGroup label="Data/Hora Saida" name="dataSaida" type="datetime-local" />
+                                        <InputGroup label="Data/Hora Chegada" name="dataChegada" type="datetime-local" />
+                                        <InputGroup label="Codigo da Foto" name="codigoFoto" placeholder="Opcional" colSpan={2} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {etapaAtual === 2 && (
+                                <div className="animate-in fade-in duration-300">
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Pescador e Proprietario</h2>
+
+                                    <h3 className="mb-4 text-lg font-semibold text-slate-900">Dados do Pescador</h3>
+                                    <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+                                        <InputGroup label="Nome Completo" name="nomePescador" colSpan={2} />
+                                        <InputGroup label="Apelido" name="apelidoPescador" />
+                                        <InputGroup label="CPF" name="cpfPescador" placeholder="000.000.000-00" />
+                                    </div>
+
+                                    <h3 className="mb-4 text-lg font-semibold text-slate-900">Dados do Proprietario</h3>
+                                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                        <InputGroup label="Nome do Proprietario" name="nomeProprietario" colSpan={2} />
+                                        <InputGroup label="Apelido" name="apelidoProprietario" />
+                                        <InputGroup label="CPF" name="cpfProprietario" placeholder="000.000.000-00" />
+                                        <InputGroup label="Naturalidade" name="naturalidadeProprietario" />
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Atuou na pesca?</label>
+                                            <select
+                                                name="atuouNaPesca"
+                                                value={formData.atuouNaPesca}
+                                                onChange={handleInputChange}
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
+                                            >
+                                                <option value="">Selecione...</option>
+                                                <option value="sim">Sim</option>
+                                                <option value="nao">Nao</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {etapaAtual === 3 && (
+                                <div className="animate-in fade-in duration-300">
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Embarcacao e Artes de Pesca</h2>
+
+                                    <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+                                        <InputGroup label="Nome da embarcacao" name="nomeEmbarcacao" />
+                                        <InputGroup label="Codigo da embarcacao" name="codigoEmbarcacao" />
+                                        <InputGroup label="N de tripulantes" name="numTripulantes" type="number" />
+                                        <InputGroup label="N de pesqueiros" name="numPesqueiros" type="number" />
+                                        <div className="md:col-span-2">
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Tipo de embarcacao</label>
+                                            <select
+                                                name="tipoEmbarcacao"
+                                                value={formData.tipoEmbarcacao}
+                                                onChange={handleInputChange}
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
+                                            >
+                                                <option value="">Selecione um tipo...</option>
+                                                <option value="catraia">Catraia</option>
+                                                <option value="caico">Caico</option>
+                                                <option value="jangada">Jangada</option>
+                                                <option value="boteLancha">Bote/Lancha</option>
+                                                <option value="canoa">Canoa</option>
+                                                <option value="barco">Barco</option>
+                                                <option value="outro">Outro</option>
+                                            </select>
+                                        </div>
+                                        {formData.tipoEmbarcacao === "outro" && (
+                                            <InputGroup label="Tipo (outro)" name="tipoEmbarcacaoOutro" colSpan={2} />
+                                        )}
+                                        <InputGroup label="Comprimento (m)" name="comprimento" type="number" />
+                                        <InputGroup label="Capacidade (kg)" name="capacidadeEstocagem" type="number" />
+                                        <InputGroup label="Forca do motor (HP)" name="forcaMotor" type="number" />
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Conservacao (possui)</label>
+                                            <select
+                                                name="conservacao"
+                                                value={formData.conservacao}
+                                                onChange={handleInputChange}
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
+                                            >
+                                                <option value="">Selecione...</option>
+                                                <option value="urna">Urna</option>
+                                                <option value="caixa">Caixa Termica</option>
+                                                <option value="in_natura">Pescado In Natura</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-slate-900">Arte de Pesca</h3>
+                                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                        <InputGroup label="Arte Utilizada" name="artePesca" placeholder="Ex: rede_fundeio" />
+                                        <InputGroup label="Tamanho (m)" name="tamanhoArte" type="number" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {etapaAtual === 4 && (
+                                <div className="animate-in fade-in duration-300">
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Viagem, Despesas e Destino</h2>
+
+                                    <h3 className="mb-4 text-lg font-semibold text-slate-900">Despesas Locais</h3>
+                                    <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+                                        <InputGroup label="Gelo (kg)" name="gelo" type="number" />
+                                        <InputGroup label="Rancho (R$)" name="rancho" type="number" />
+                                        <InputGroup label="Litros de combustivel" name="litrosCombustivel" type="number" />
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Tipo de combustivel</label>
+                                            <select
+                                                name="tipoCombustivel"
+                                                value={formData.tipoCombustivel}
+                                                onChange={handleInputChange}
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
+                                            >
+                                                <option value="">Selecione...</option>
+                                                <option value="Diesel">Diesel</option>
+                                                <option value="Gasolina">Gasolina</option>
+                                                <option value="Outro">Outro</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-slate-900">Coordenadas e Quadrantes</h3>
+                                    <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+                                        <InputGroup label="Ponto de Ida - Latitude" name="latIda" placeholder="-0.000000" />
+                                        <InputGroup label="Ponto de Ida - Longitude" name="longIda" placeholder="-0.000000" />
+                                        <InputGroup label="Ponto de Volta - Latitude" name="latVolta" placeholder="-0.000000" />
+                                        <InputGroup label="Ponto de Volta - Longitude" name="longVolta" placeholder="-0.000000" />
+                                        <InputGroup label="Quadrante 1" name="quadrante1" placeholder="Ex: 123" />
+                                        <InputGroup label="Quadrante 2" name="quadrante2" placeholder="Ex: 456" />
+                                        <InputGroup label="Quadrante 3" name="quadrante3" placeholder="Ex: 789" />
+                                    </div>
+
+                                    <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-slate-900">Destino do Pescado</h3>
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        {["Atravessador", "Armador", "Consumidor", "Outros"].map((dest) => {
+                                            const value = dest.toLowerCase();
+                                            return (
+                                                <label key={dest} className="flex cursor-pointer items-center rounded-lg border border-slate-200 p-4 transition-colors hover:bg-blue-50">
+                                                    <input
+                                                        type="radio"
+                                                        name="destino"
+                                                        value={value}
+                                                        onChange={handleInputChange}
+                                                        checked={formData.destino === value}
+                                                        className="h-4 w-4 text-blue-600"
+                                                    />
+                                                    <span className="ml-3 font-medium text-slate-700">{dest}</span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {etapaAtual === 5 && (
+                                <div className="animate-in fade-in duration-300">
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Dados de Captura</h2>
+
+                                    <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
+                                        <h3 className="mb-4 text-base font-bold text-slate-800">Registro Geral da Especie</h3>
+                                        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                                            <div>
+                                                <label className="mb-1.5 block text-sm font-semibold text-slate-900">Especie</label>
+                                                <select
+                                                    name="especie"
+                                                    value={formData.especie}
+                                                    onChange={handleInputChange}
+                                                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
+                                                >
+                                                    <option value="">Selecione...</option>
+                                                    {especies.map((esp) => (
+                                                        <option key={esp.ID} value={esp.ID}>
+                                                            {esp.Nome_popular} ({esp.Nome_cientifico})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <InputGroup label="Peso Total (kg)" name="pesoTotalEspecie" type="number" />
+                                            <InputGroup label="Preco/kg (R$)" name="precoKg" type="number" />
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center text-slate-900">
+                                                <input
+                                                    type="radio"
+                                                    name="condicaoPeixe"
+                                                    value="com_visceras"
+                                                    onChange={handleInputChange}
+                                                    checked={formData.condicaoPeixe === "com_visceras"}
+                                                    className="mr-2"
+                                                />
+                                                Com visceras
+                                            </label>
+                                            <label className="flex items-center text-slate-900">
+                                                <input
+                                                    type="radio"
+                                                    name="condicaoPeixe"
+                                                    value="sem_visceras"
+                                                    onChange={handleInputChange}
+                                                    checked={formData.condicaoPeixe === "sem_visceras"}
+                                                    className="mr-2"
+                                                />
+                                                Sem visceras
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                                        <h3 className="mb-2 text-base font-bold text-slate-800">Biometria (Dados Individuais)</h3>
+                                        <p className="mb-4 text-sm text-slate-500">Adicione peso e comprimento de peixes individuais, se houver.</p>
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            <InputGroup label="Comprimento (cm)" name="comprimentoIndividuo" type="number" />
+                                            <InputGroup label="Peso (g)" name="pesoIndividuo" type="number" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {etapaAtual === 6 && (
+                                <div className="animate-in fade-in duration-300">
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Resumo</h2>
+
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
+                                        <h3 className="mb-4 border-b pb-2 text-lg font-bold text-slate-900">Resumo dos Dados</h3>
+                                        <div className="grid grid-cols-2 gap-y-3">
+                                            <p><span className="font-semibold">Codigo:</span> {codigoDesembarqueGerado || "-"}</p>
+                                            <p><span className="font-semibold">Data coleta:</span> {formData.dataColeta || "-"}</p>
+                                            <p><span className="font-semibold">Localidade:</span> {formData.localidade || "-"}</p>
+                                            <p><span className="font-semibold">Pescador:</span> {formData.nomePescador || "-"}</p>
+                                            <p><span className="font-semibold">Embarcacao:</span> {formData.nomeEmbarcacao || "-"}</p>
+                                            <p><span className="font-semibold">Especie:</span> {formData.especie || "-"}</p>
+                                            <p><span className="font-semibold">Destino:</span> {formData.destino || "-"}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-10 flex gap-4 border-t border-slate-100 pt-6">
+                                <button
+                                    type="button"
+                                    onClick={etapaAnterior}
+                                    className="flex-1 rounded-lg border border-slate-300 px-6 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50 md:w-40 md:flex-none"
+                                >
+                                    Voltar
+                                </button>
+
+                                <div className="flex-1" />
+
+                                {etapaAtual < TOTAL_ETAPAS ? (
+                                    <button
+                                        type="button"
+                                        onClick={proximaEtapa}
+                                        className="flex-1 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 md:w-56 md:flex-none"
+                                    >
+                                        Proximo Passo
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="submit"
+                                        disabled={carregandoEnvio || carregandoInicial || carregandoEdicao}
+                                        className="flex-1 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 md:w-56 md:flex-none"
+                                    >
+                                        {carregandoEnvio ? "Enviando..." : formData.ID_desembarque ? "Atualizar Cadastro" : "Enviar Cadastro"}
+                                    </button>
+                                )}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
     );
 }
 
