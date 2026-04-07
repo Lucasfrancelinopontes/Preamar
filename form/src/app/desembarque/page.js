@@ -6,6 +6,32 @@ import api from "@/services/api";
 
 const TOTAL_ETAPAS = 6;
 
+const ARTE_OPTIONS = [
+    { value: "rede_boirea", label: "Rede Boireia" },
+    { value: "espinhel_mergulho", label: "Espinhel/Mergulho" },
+    { value: "rede_fundeio", label: "Rede Fundeio" },
+    { value: "linha_mao", label: "Linha de Mao" },
+    { value: "rede_cacoaria", label: "Rede Cacoaria" },
+    { value: "covo", label: "Covo" },
+    { value: "outras", label: "Outras" }
+];
+
+function InputGroup({ label, name, value, onChange, type = "text", placeholder = "", colSpan = 1 }) {
+    return (
+        <div className={colSpan === 2 ? "md:col-span-2" : ""}>
+            <label className="mb-1.5 block text-sm font-semibold text-black">{label}</label>
+            <input
+                type={type}
+                name={name}
+                value={value ?? ""}
+                onChange={onChange}
+                placeholder={placeholder}
+                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-blue-600"
+            />
+        </div>
+    );
+}
+
 const createInitialFormData = () => ({
     ID_desembarque: null,
     municipio: "",
@@ -34,6 +60,7 @@ const createInitialFormData = () => ({
     forcaMotor: "",
     conservacao: "",
     artePesca: "",
+    artePescaOutro: "",
     tamanhoArte: "",
     gelo: "",
     rancho: "",
@@ -116,6 +143,8 @@ const mapApiToFormData = (data) => {
     const captura = Array.isArray(data?.capturas) && data.capturas.length > 0 ? data.capturas[0] : null;
     const individuo = Array.isArray(data?.individuos) && data.individuos.length > 0 ? data.individuos[0] : null;
     const arte = Array.isArray(data?.artes) && data.artes.length > 0 ? data.artes[0] : null;
+    const arteRaw = arte?.arte || "";
+    const arteIsKnown = ARTE_OPTIONS.some((item) => item.value === arteRaw);
 
     return {
         ...createInitialFormData(),
@@ -145,7 +174,8 @@ const mapApiToFormData = (data) => {
         capacidadeEstocagem: data?.embarcacao?.capacidade != null ? String(data.embarcacao.capacidade) : "",
         forcaMotor: data?.embarcacao?.hp != null ? String(data.embarcacao.hp) : "",
         conservacao: data?.embarcacao?.possui || "",
-        artePesca: arte?.arte || "",
+        artePesca: arteRaw ? (arteIsKnown ? arteRaw : "outras") : "",
+        artePescaOutro: arteRaw ? (arteIsKnown ? (arte?.nome || "") : arteRaw) : "",
         tamanhoArte: arte?.tamanho != null ? String(arte.tamanho) : "",
         gelo: data?.gelo_kg != null ? String(data.gelo_kg) : "",
         rancho: data?.rancho_valor != null ? String(data.rancho_valor) : "",
@@ -265,6 +295,9 @@ function DesembarqueContent() {
             if (name === "municipio") {
                 return { ...prev, municipio: value, localidade: "" };
             }
+            if (name === "artePesca") {
+                return { ...prev, artePesca: value, artePescaOutro: value === "outras" ? prev.artePescaOutro : "" };
+            }
             return { ...prev, [name]: value };
         });
     };
@@ -344,7 +377,7 @@ function DesembarqueContent() {
             artes: formData.artePesca
                 ? [{
                         arte: formData.artePesca,
-                        nome: null,
+                        nome: formData.artePesca === "outras" ? (formData.artePescaOutro || null) : null,
                         tamanho: toNumberOrNull(formData.tamanhoArte),
                         unidade: "m"
                     }]
@@ -394,25 +427,11 @@ function DesembarqueContent() {
         }
     };
 
-    const InputGroup = ({ label, name, type = "text", placeholder = "", colSpan = 1 }) => (
-        <div className={colSpan === 2 ? "md:col-span-2" : ""}>
-            <label className="mb-1.5 block text-sm font-semibold text-slate-900">{label}</label>
-            <input
-                type={type}
-                name={name}
-                value={formData[name]}
-                onChange={handleInputChange}
-                placeholder={placeholder}
-                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-blue-600"
-            />
-        </div>
-    );
-
     return (
-        <div className="min-h-screen bg-slate-100 pb-10">
+        <div className="min-h-screen bg-slate-100 pb-10 text-black">
             <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-8 py-4 shadow-sm">
-                <h1 className="text-lg font-bold text-slate-900">Sistema Preamar</h1>
-                <p className="text-xs text-slate-500">Registro de Desembarque</p>
+                <h1 className="text-lg font-bold text-black">Sistema Preamar</h1>
+                <p className="text-xs text-black">Registro de Desembarque</p>
             </header>
 
             <main className="mx-auto flex w-full max-w-5xl flex-col items-center p-4 pt-8 sm:p-6">
@@ -435,7 +454,7 @@ function DesembarqueContent() {
 
                 <div className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
                     <div className="px-6 py-8 sm:p-10">
-                        <form onSubmit={etapaAtual === TOTAL_ETAPAS ? handleSubmit : (e) => e.preventDefault()}>
+                        <form onSubmit={etapaAtual === TOTAL_ETAPAS ? handleSubmit : (e) => e.preventDefault()} className="text-black">
                             {carregandoInicial && (
                                 <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-600">
                                     Carregando municipios e especies...
@@ -468,22 +487,22 @@ function DesembarqueContent() {
 
                             {etapaAtual === 1 && (
                                 <div className="animate-in fade-in duration-300">
-                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Local e Identificacao</h2>
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Local e Identificacao</h2>
 
                                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                                         <div className="md:col-span-2">
-                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Codigo do Desembarque (gerado)</label>
+                                            <label className="mb-1.5 block text-sm font-semibold text-black">Codigo do Desembarque (gerado)</label>
                                             <input
                                                 type="text"
                                                 value={codigoDesembarqueGerado}
                                                 readOnly
                                                 placeholder="Selecione municipio, localidade e data da coleta"
-                                                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-2.5 text-slate-900 outline-none"
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-2.5 text-black outline-none"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Municipio</label>
+                                            <label className="mb-1.5 block text-sm font-semibold text-black">Municipio</label>
                                             <select
                                                 name="municipio"
                                                 value={formData.municipio}
@@ -501,7 +520,7 @@ function DesembarqueContent() {
                                         </div>
 
                                         <div>
-                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Localidade</label>
+                                            <label className="mb-1.5 block text-sm font-semibold text-black">Localidade</label>
                                             <select
                                                 name="localidade"
                                                 value={formData.localidade}
@@ -518,34 +537,34 @@ function DesembarqueContent() {
                                             </select>
                                         </div>
 
-                                        <InputGroup label="Data da Coleta" name="dataColeta" type="date" />
-                                        <InputGroup label="Numero Consecutivo" name="numConsecutivo" placeholder="Ex: 1, 2, 3..." />
-                                        <InputGroup label="Data/Hora Saida" name="dataSaida" type="datetime-local" />
-                                        <InputGroup label="Data/Hora Chegada" name="dataChegada" type="datetime-local" />
-                                        <InputGroup label="Codigo da Foto" name="codigoFoto" placeholder="Opcional" colSpan={2} />
+                                        <InputGroup label="Data da Coleta" name="dataColeta" type="date" value={formData.dataColeta} onChange={handleInputChange} />
+                                        <InputGroup label="Numero Consecutivo" name="numConsecutivo" placeholder="Ex: 1, 2, 3..." value={formData.numConsecutivo} onChange={handleInputChange} />
+                                        <InputGroup label="Data/Hora Saida" name="dataSaida" type="datetime-local" value={formData.dataSaida} onChange={handleInputChange} />
+                                        <InputGroup label="Data/Hora Chegada" name="dataChegada" type="datetime-local" value={formData.dataChegada} onChange={handleInputChange} />
+                                        <InputGroup label="Codigo da Foto" name="codigoFoto" placeholder="Opcional" colSpan={2} value={formData.codigoFoto} onChange={handleInputChange} />
                                     </div>
                                 </div>
                             )}
 
                             {etapaAtual === 2 && (
                                 <div className="animate-in fade-in duration-300">
-                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Pescador e Proprietario</h2>
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Pescador e Proprietario</h2>
 
-                                    <h3 className="mb-4 text-lg font-semibold text-slate-900">Dados do Pescador</h3>
+                                    <h3 className="mb-4 text-lg font-semibold text-black">Dados do Pescador</h3>
                                     <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
-                                        <InputGroup label="Nome Completo" name="nomePescador" colSpan={2} />
-                                        <InputGroup label="Apelido" name="apelidoPescador" />
-                                        <InputGroup label="CPF" name="cpfPescador" placeholder="000.000.000-00" />
+                                        <InputGroup label="Nome Completo" name="nomePescador" colSpan={2} value={formData.nomePescador} onChange={handleInputChange} />
+                                        <InputGroup label="Apelido" name="apelidoPescador" value={formData.apelidoPescador} onChange={handleInputChange} />
+                                        <InputGroup label="CPF" name="cpfPescador" placeholder="000.000.000-00" value={formData.cpfPescador} onChange={handleInputChange} />
                                     </div>
 
-                                    <h3 className="mb-4 text-lg font-semibold text-slate-900">Dados do Proprietario</h3>
+                                    <h3 className="mb-4 text-lg font-semibold text-black">Dados do Proprietario</h3>
                                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                                        <InputGroup label="Nome do Proprietario" name="nomeProprietario" colSpan={2} />
-                                        <InputGroup label="Apelido" name="apelidoProprietario" />
-                                        <InputGroup label="CPF" name="cpfProprietario" placeholder="000.000.000-00" />
-                                        <InputGroup label="Naturalidade" name="naturalidadeProprietario" />
+                                        <InputGroup label="Nome do Proprietario" name="nomeProprietario" colSpan={2} value={formData.nomeProprietario} onChange={handleInputChange} />
+                                        <InputGroup label="Apelido" name="apelidoProprietario" value={formData.apelidoProprietario} onChange={handleInputChange} />
+                                        <InputGroup label="CPF" name="cpfProprietario" placeholder="000.000.000-00" value={formData.cpfProprietario} onChange={handleInputChange} />
+                                        <InputGroup label="Naturalidade" name="naturalidadeProprietario" value={formData.naturalidadeProprietario} onChange={handleInputChange} />
                                         <div>
-                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Atuou na pesca?</label>
+                                            <label className="mb-1.5 block text-sm font-semibold text-black">Atuou na pesca?</label>
                                             <select
                                                 name="atuouNaPesca"
                                                 value={formData.atuouNaPesca}
@@ -563,15 +582,15 @@ function DesembarqueContent() {
 
                             {etapaAtual === 3 && (
                                 <div className="animate-in fade-in duration-300">
-                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Embarcacao e Artes de Pesca</h2>
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Embarcacao e Artes de Pesca</h2>
 
                                     <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
-                                        <InputGroup label="Nome da embarcacao" name="nomeEmbarcacao" />
-                                        <InputGroup label="Codigo da embarcacao" name="codigoEmbarcacao" />
-                                        <InputGroup label="N de tripulantes" name="numTripulantes" type="number" />
-                                        <InputGroup label="N de pesqueiros" name="numPesqueiros" type="number" />
+                                        <InputGroup label="Nome da embarcacao" name="nomeEmbarcacao" value={formData.nomeEmbarcacao} onChange={handleInputChange} />
+                                        <InputGroup label="Codigo da embarcacao" name="codigoEmbarcacao" value={formData.codigoEmbarcacao} onChange={handleInputChange} />
+                                        <InputGroup label="N de tripulantes" name="numTripulantes" type="number" value={formData.numTripulantes} onChange={handleInputChange} />
+                                        <InputGroup label="N de pesqueiros" name="numPesqueiros" type="number" value={formData.numPesqueiros} onChange={handleInputChange} />
                                         <div className="md:col-span-2">
-                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Tipo de embarcacao</label>
+                                            <label className="mb-1.5 block text-sm font-semibold text-black">Tipo de embarcacao</label>
                                             <select
                                                 name="tipoEmbarcacao"
                                                 value={formData.tipoEmbarcacao}
@@ -589,13 +608,13 @@ function DesembarqueContent() {
                                             </select>
                                         </div>
                                         {formData.tipoEmbarcacao === "outro" && (
-                                            <InputGroup label="Tipo (outro)" name="tipoEmbarcacaoOutro" colSpan={2} />
+                                            <InputGroup label="Tipo (outro)" name="tipoEmbarcacaoOutro" colSpan={2} value={formData.tipoEmbarcacaoOutro} onChange={handleInputChange} />
                                         )}
-                                        <InputGroup label="Comprimento (m)" name="comprimento" type="number" />
-                                        <InputGroup label="Capacidade (kg)" name="capacidadeEstocagem" type="number" />
-                                        <InputGroup label="Forca do motor (HP)" name="forcaMotor" type="number" />
+                                        <InputGroup label="Comprimento (m)" name="comprimento" type="number" value={formData.comprimento} onChange={handleInputChange} />
+                                        <InputGroup label="Capacidade (kg)" name="capacidadeEstocagem" type="number" value={formData.capacidadeEstocagem} onChange={handleInputChange} />
+                                        <InputGroup label="Forca do motor (HP)" name="forcaMotor" type="number" value={formData.forcaMotor} onChange={handleInputChange} />
                                         <div>
-                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Conservacao (possui)</label>
+                                            <label className="mb-1.5 block text-sm font-semibold text-black">Conservacao (possui)</label>
                                             <select
                                                 name="conservacao"
                                                 value={formData.conservacao}
@@ -610,25 +629,41 @@ function DesembarqueContent() {
                                         </div>
                                     </div>
 
-                                    <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-slate-900">Arte de Pesca</h3>
+                                    <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-black">Arte de Pesca</h3>
                                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                                        <InputGroup label="Arte Utilizada" name="artePesca" placeholder="Ex: rede_fundeio" />
-                                        <InputGroup label="Tamanho (m)" name="tamanhoArte" type="number" />
+                                        <div>
+                                            <label className="mb-1.5 block text-sm font-semibold text-black">Arte Utilizada</label>
+                                            <select
+                                                name="artePesca"
+                                                value={formData.artePesca}
+                                                onChange={handleInputChange}
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600"
+                                            >
+                                                <option value="">Selecione...</option>
+                                                {ARTE_OPTIONS.map((item) => (
+                                                    <option key={item.value} value={item.value}>{item.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <InputGroup label="Tamanho (m)" name="tamanhoArte" type="number" value={formData.tamanhoArte} onChange={handleInputChange} />
+                                        {formData.artePesca === "outras" && (
+                                            <InputGroup label="Qual arte?" name="artePescaOutro" colSpan={2} value={formData.artePescaOutro} onChange={handleInputChange} />
+                                        )}
                                     </div>
                                 </div>
                             )}
 
                             {etapaAtual === 4 && (
                                 <div className="animate-in fade-in duration-300">
-                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Viagem, Despesas e Destino</h2>
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Viagem, Despesas e Destino</h2>
 
-                                    <h3 className="mb-4 text-lg font-semibold text-slate-900">Despesas Locais</h3>
+                                    <h3 className="mb-4 text-lg font-semibold text-black">Despesas Locais</h3>
                                     <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
-                                        <InputGroup label="Gelo (kg)" name="gelo" type="number" />
-                                        <InputGroup label="Rancho (R$)" name="rancho" type="number" />
-                                        <InputGroup label="Litros de combustivel" name="litrosCombustivel" type="number" />
+                                        <InputGroup label="Gelo (kg)" name="gelo" type="number" value={formData.gelo} onChange={handleInputChange} />
+                                        <InputGroup label="Rancho (R$)" name="rancho" type="number" value={formData.rancho} onChange={handleInputChange} />
+                                        <InputGroup label="Litros de combustivel" name="litrosCombustivel" type="number" value={formData.litrosCombustivel} onChange={handleInputChange} />
                                         <div>
-                                            <label className="mb-1.5 block text-sm font-semibold text-slate-900">Tipo de combustivel</label>
+                                            <label className="mb-1.5 block text-sm font-semibold text-black">Tipo de combustivel</label>
                                             <select
                                                 name="tipoCombustivel"
                                                 value={formData.tipoCombustivel}
@@ -643,18 +678,18 @@ function DesembarqueContent() {
                                         </div>
                                     </div>
 
-                                    <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-slate-900">Coordenadas e Quadrantes</h3>
+                                    <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-black">Coordenadas e Quadrantes</h3>
                                     <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
-                                        <InputGroup label="Ponto de Ida - Latitude" name="latIda" placeholder="-0.000000" />
-                                        <InputGroup label="Ponto de Ida - Longitude" name="longIda" placeholder="-0.000000" />
-                                        <InputGroup label="Ponto de Volta - Latitude" name="latVolta" placeholder="-0.000000" />
-                                        <InputGroup label="Ponto de Volta - Longitude" name="longVolta" placeholder="-0.000000" />
-                                        <InputGroup label="Quadrante 1" name="quadrante1" placeholder="Ex: 123" />
-                                        <InputGroup label="Quadrante 2" name="quadrante2" placeholder="Ex: 456" />
-                                        <InputGroup label="Quadrante 3" name="quadrante3" placeholder="Ex: 789" />
+                                        <InputGroup label="Ponto de Ida - Latitude" name="latIda" placeholder="-0.000000" value={formData.latIda} onChange={handleInputChange} />
+                                        <InputGroup label="Ponto de Ida - Longitude" name="longIda" placeholder="-0.000000" value={formData.longIda} onChange={handleInputChange} />
+                                        <InputGroup label="Ponto de Volta - Latitude" name="latVolta" placeholder="-0.000000" value={formData.latVolta} onChange={handleInputChange} />
+                                        <InputGroup label="Ponto de Volta - Longitude" name="longVolta" placeholder="-0.000000" value={formData.longVolta} onChange={handleInputChange} />
+                                        <InputGroup label="Quadrante 1" name="quadrante1" placeholder="Ex: 123" value={formData.quadrante1} onChange={handleInputChange} />
+                                        <InputGroup label="Quadrante 2" name="quadrante2" placeholder="Ex: 456" value={formData.quadrante2} onChange={handleInputChange} />
+                                        <InputGroup label="Quadrante 3" name="quadrante3" placeholder="Ex: 789" value={formData.quadrante3} onChange={handleInputChange} />
                                     </div>
 
-                                    <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-slate-900">Destino do Pescado</h3>
+                                    <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-black">Destino do Pescado</h3>
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                         {["Atravessador", "Armador", "Consumidor", "Outros"].map((dest) => {
                                             const value = dest.toLowerCase();
@@ -668,7 +703,7 @@ function DesembarqueContent() {
                                                         checked={formData.destino === value}
                                                         className="h-4 w-4 text-blue-600"
                                                     />
-                                                    <span className="ml-3 font-medium text-slate-700">{dest}</span>
+                                                    <span className="ml-3 font-medium text-black">{dest}</span>
                                                 </label>
                                             );
                                         })}
@@ -678,13 +713,13 @@ function DesembarqueContent() {
 
                             {etapaAtual === 5 && (
                                 <div className="animate-in fade-in duration-300">
-                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Dados de Captura</h2>
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Dados de Captura</h2>
 
                                     <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
-                                        <h3 className="mb-4 text-base font-bold text-slate-800">Registro Geral da Especie</h3>
+                                        <h3 className="mb-4 text-base font-bold text-black">Registro Geral da Especie</h3>
                                         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                                             <div>
-                                                <label className="mb-1.5 block text-sm font-semibold text-slate-900">Especie</label>
+                                                <label className="mb-1.5 block text-sm font-semibold text-black">Especie</label>
                                                 <select
                                                     name="especie"
                                                     value={formData.especie}
@@ -699,11 +734,11 @@ function DesembarqueContent() {
                                                     ))}
                                                 </select>
                                             </div>
-                                            <InputGroup label="Peso Total (kg)" name="pesoTotalEspecie" type="number" />
-                                            <InputGroup label="Preco/kg (R$)" name="precoKg" type="number" />
+                                            <InputGroup label="Peso Total (kg)" name="pesoTotalEspecie" type="number" value={formData.pesoTotalEspecie} onChange={handleInputChange} />
+                                            <InputGroup label="Preco/kg (R$)" name="precoKg" type="number" value={formData.precoKg} onChange={handleInputChange} />
                                         </div>
                                         <div className="flex gap-4">
-                                            <label className="flex items-center text-slate-900">
+                                            <label className="flex items-center text-black">
                                                 <input
                                                     type="radio"
                                                     name="condicaoPeixe"
@@ -714,7 +749,7 @@ function DesembarqueContent() {
                                                 />
                                                 Com visceras
                                             </label>
-                                            <label className="flex items-center text-slate-900">
+                                            <label className="flex items-center text-black">
                                                 <input
                                                     type="radio"
                                                     name="condicaoPeixe"
@@ -729,11 +764,11 @@ function DesembarqueContent() {
                                     </div>
 
                                     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                                        <h3 className="mb-2 text-base font-bold text-slate-800">Biometria (Dados Individuais)</h3>
-                                        <p className="mb-4 text-sm text-slate-500">Adicione peso e comprimento de peixes individuais, se houver.</p>
+                                        <h3 className="mb-2 text-base font-bold text-black">Biometria (Dados Individuais)</h3>
+                                        <p className="mb-4 text-sm text-black">Adicione peso e comprimento de peixes individuais, se houver.</p>
                                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                            <InputGroup label="Comprimento (cm)" name="comprimentoIndividuo" type="number" />
-                                            <InputGroup label="Peso (g)" name="pesoIndividuo" type="number" />
+                                            <InputGroup label="Comprimento (cm)" name="comprimentoIndividuo" type="number" value={formData.comprimentoIndividuo} onChange={handleInputChange} />
+                                            <InputGroup label="Peso (g)" name="pesoIndividuo" type="number" value={formData.pesoIndividuo} onChange={handleInputChange} />
                                         </div>
                                     </div>
                                 </div>
@@ -741,10 +776,10 @@ function DesembarqueContent() {
 
                             {etapaAtual === 6 && (
                                 <div className="animate-in fade-in duration-300">
-                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-slate-900">Resumo</h2>
+                                    <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Resumo</h2>
 
-                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
-                                        <h3 className="mb-4 border-b pb-2 text-lg font-bold text-slate-900">Resumo dos Dados</h3>
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-sm text-black">
+                                        <h3 className="mb-4 border-b pb-2 text-lg font-bold text-black">Resumo dos Dados</h3>
                                         <div className="grid grid-cols-2 gap-y-3">
                                             <p><span className="font-semibold">Codigo:</span> {codigoDesembarqueGerado || "-"}</p>
                                             <p><span className="font-semibold">Data coleta:</span> {formData.dataColeta || "-"}</p>
@@ -762,7 +797,7 @@ function DesembarqueContent() {
                                 <button
                                     type="button"
                                     onClick={etapaAnterior}
-                                    className="flex-1 rounded-lg border border-slate-300 px-6 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50 md:w-40 md:flex-none"
+                                    className="flex-1 rounded-lg border border-slate-300 px-6 py-3 font-semibold text-black transition-colors hover:bg-slate-50 md:w-40 md:flex-none"
                                 >
                                     Voltar
                                 </button>
