@@ -11,6 +11,9 @@ function MeusDesembarquesContent() {
     const { user } = useAuth();
     const [desembarques, setDesembarques] = useState([]);
     const [pesquisaCodigoColeta, setPesquisaCodigoColeta] = useState('');
+    const [mostrarFiltrosData, setMostrarFiltrosData] = useState(false);
+    const [dataInicio, setDataInicio] = useState('');
+    const [dataFim, setDataFim] = useState('');
     const [desembarqueSelecionado, setDesembarqueSelecionado] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -18,10 +21,30 @@ function MeusDesembarquesContent() {
 
     const desembarquesFiltrados = desembarques.filter((desembarque) => {
         const termo = (pesquisaCodigoColeta || '').trim().toLowerCase();
-        if (!termo) return true;
-
         const codigo = (desembarque?.cod_desembarque || '').toString().toLowerCase();
-        return codigo.includes(termo);
+        const passouFiltroCodigo = !termo || codigo.includes(termo);
+
+        const dataColetaRaw = desembarque?.data_coleta;
+        const dataColeta = dataColetaRaw ? new Date(dataColetaRaw) : null;
+        const dataColetaValida = dataColeta instanceof Date && !Number.isNaN(dataColeta?.getTime());
+
+        let passouFiltroData = true;
+
+        if ((dataInicio || dataFim) && !dataColetaValida) {
+            passouFiltroData = false;
+        }
+
+        if (dataInicio && dataColetaValida) {
+            const inicio = new Date(`${dataInicio}T00:00:00`);
+            passouFiltroData = passouFiltroData && dataColeta >= inicio;
+        }
+
+        if (dataFim && dataColetaValida) {
+            const fim = new Date(`${dataFim}T23:59:59.999`);
+            passouFiltroData = passouFiltroData && dataColeta <= fim;
+        }
+
+        return passouFiltroCodigo && passouFiltroData;
     });
 
     useEffect(() => {
@@ -90,6 +113,11 @@ function MeusDesembarquesContent() {
 
     const fecharDetalhes = () => {
         setDesembarqueSelecionado(null);
+    };
+
+    const limparFiltrosData = () => {
+        setDataInicio('');
+        setDataFim('');
     };
 
     return (
@@ -164,9 +192,23 @@ function MeusDesembarquesContent() {
                     <div className="space-y-4">
                         {/* Barra de pesquisa */}
                         <div className={`p-4 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
-                            <label className={`block text-sm font-medium mb-2 ${temaEscuro ? 'text-gray-200' : 'text-gray-700'}`}>
+                            <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                                <label className={`block text-sm font-medium ${temaEscuro ? 'text-gray-200' : 'text-gray-700'}`}>
                                 Pesquisar por código de coleta
-                            </label>
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setMostrarFiltrosData((prev) => !prev)}
+                                    className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                                        temaEscuro
+                                            ? 'border-gray-600 bg-gray-700 text-gray-100 hover:bg-gray-600'
+                                            : 'border-gray-300 bg-white text-gray-800 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    <span>🗓️</span>
+                                    {mostrarFiltrosData ? 'Ocultar filtro de data' : 'Filtrar por data'}
+                                </button>
+                            </div>
                             <div className="relative">
                                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <svg
@@ -194,6 +236,56 @@ function MeusDesembarquesContent() {
                                     }`}
                                 />
                             </div>
+
+                            {mostrarFiltrosData && (
+                                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                                    <div>
+                                        <label className={`mb-1 block text-xs font-medium ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>
+                                            Data inicial
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={dataInicio}
+                                            onChange={(e) => setDataInicio(e.target.value)}
+                                            className={`w-full rounded-lg border px-3 py-2 transition-colors focus:outline-none focus:ring-2 focus:ring-brand/30 ${
+                                                temaEscuro
+                                                    ? 'bg-gray-900 border-gray-700 text-gray-100 focus:border-brand'
+                                                    : 'bg-white border-gray-300 text-gray-900 focus:border-brand'
+                                            }`}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className={`mb-1 block text-xs font-medium ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>
+                                            Data final
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={dataFim}
+                                            onChange={(e) => setDataFim(e.target.value)}
+                                            className={`w-full rounded-lg border px-3 py-2 transition-colors focus:outline-none focus:ring-2 focus:ring-brand/30 ${
+                                                temaEscuro
+                                                    ? 'bg-gray-900 border-gray-700 text-gray-100 focus:border-brand'
+                                                    : 'bg-white border-gray-300 text-gray-900 focus:border-brand'
+                                            }`}
+                                        />
+                                    </div>
+
+                                    <div className="flex items-end">
+                                        <button
+                                            type="button"
+                                            onClick={limparFiltrosData}
+                                            className={`w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                                                temaEscuro
+                                                    ? 'bg-gray-700 text-gray-100 hover:bg-gray-600'
+                                                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            Limpar datas
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {desembarquesFiltrados.length === 0 ? (
