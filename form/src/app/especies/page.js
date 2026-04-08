@@ -112,13 +112,23 @@ export default function EspeciesPage() {
         setSucesso('')
 
         try {
+            const dadosEnvio = {
+                ...formData,
+                nivel_trofico: formData.nivel_trofico === '' ? null : parseFloat(formData.nivel_trofico),
+                valor_comercial: formData.valor_comercial === '' ? null : parseInt(formData.valor_comercial, 10),
+                mercado: formData.mercado === '' ? null : parseInt(formData.mercado, 10),
+                comprimento_max_cm: formData.comprimento_max_cm === '' ? null : parseFloat(formData.comprimento_max_cm),
+                inicio_maturacao_cm: formData.inicio_maturacao_cm === '' ? null : parseFloat(formData.inicio_maturacao_cm),
+                pesca: formData.pesca === '' ? null : parseInt(formData.pesca, 10)
+            }
+
             if (especieEditando) {
                 // Editar espécie existente
-                await api.atualizarEspecie(especieEditando.ID, formData)
+                await api.atualizarEspecie(especieEditando.ID, dadosEnvio)
                 setSucesso('Espécie atualizada com sucesso!')
             } else {
                 // Criar nova espécie
-                await api.criarEspecie(formData)
+                await api.criarEspecie(dadosEnvio)
                 setSucesso('Espécie criada com sucesso!')
             }
             

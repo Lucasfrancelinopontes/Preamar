@@ -1,6 +1,41 @@
 import { Especie, Captura } from '../models/index.js';
 import { Op } from 'sequelize';
 
+const sanitizeEspeciePayload = (input = {}) => {
+  const dados = { ...input };
+
+  const decimalFields = ['nivel_trofico', 'comprimento_max_cm', 'inicio_maturacao_cm'];
+  const intFields = ['valor_comercial', 'mercado', 'pesca'];
+
+  decimalFields.forEach((field) => {
+    if (!(field in dados)) return;
+
+    const raw = dados[field];
+    if (raw === null || raw === undefined || (typeof raw === 'string' && raw.trim() === '')) {
+      dados[field] = null;
+      return;
+    }
+
+    const parsed = Number.parseFloat(raw);
+    dados[field] = Number.isNaN(parsed) ? null : parsed;
+  });
+
+  intFields.forEach((field) => {
+    if (!(field in dados)) return;
+
+    const raw = dados[field];
+    if (raw === null || raw === undefined || (typeof raw === 'string' && raw.trim() === '')) {
+      dados[field] = null;
+      return;
+    }
+
+    const parsed = Number.parseInt(raw, 10);
+    dados[field] = Number.isNaN(parsed) ? null : parsed;
+  });
+
+  return dados;
+};
+
 export const listarEspecies = async (req, res) => {
   try {
     const { 
@@ -79,7 +114,7 @@ export const listarEspecies = async (req, res) => {
 
 export const criarEspecie = async (req, res) => {
   try {
-    const dados = req.body;
+    const dados = sanitizeEspeciePayload(req.body || {});
 
     // Validar dados obrigatórios
     if (!dados.nome_popular || !dados.nome_cientifico) {
@@ -121,7 +156,7 @@ export const criarEspecie = async (req, res) => {
 export const atualizarEspecie = async (req, res) => {
   try {
     const { id } = req.params;
-    const dados = req.body;
+    const dados = sanitizeEspeciePayload(req.body || {});
 
     const especie = await Especie.findByPk(id);
     if (!especie) {
