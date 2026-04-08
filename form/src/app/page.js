@@ -151,9 +151,6 @@ export default function Home() {
 
                                     <Link href="/embarcacoes" className="block group">
                                         <div className="bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-gray-200 hover:border-emerald-400 transition-all cursor-pointer flex items-center gap-4 h-full relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
-                                                AVANCADO
-                                            </div>
                                             <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors shrink-0">
                                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v8m-4-4h8"></path>
