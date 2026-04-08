@@ -321,61 +321,61 @@ export default function GerenciarUsuarios() {
             {/* Modal de Criar Usuário */}
             {mostrarModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6">Novo Usuário</h2>
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-black">
+                        <h2 className="text-2xl font-bold text-black mb-6">Novo Usuário</h2>
 
                         <form onSubmit={handleCriarUsuario} className="space-y-4">
                             {/* Nome */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-black mb-2">
                                     Nome Completo <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={novoUsuario.nome}
                                     onChange={(e) => setNovoUsuario({...novoUsuario, nome: e.target.value})}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Nome completo"
                                 />
                             </div>
 
                             {/* Email */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-black mb-2">
                                     Email <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="email"
                                     value={novoUsuario.email}
                                     onChange={(e) => setNovoUsuario({...novoUsuario, email: e.target.value})}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="email@exemplo.com"
                                 />
                             </div>
 
                             {/* Senha */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-black mb-2">
                                     Senha <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="password"
                                     value={novoUsuario.senha}
                                     onChange={(e) => setNovoUsuario({...novoUsuario, senha: e.target.value})}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Mínimo 6 caracteres"
                                 />
                             </div>
 
                             {/* Função */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-black mb-2">
                                     Função <span className="text-red-500">*</span>
                                 </label>
                                 <select
                                     value={novoUsuario.funcao}
                                     onChange={(e) => setNovoUsuario({...novoUsuario, funcao: e.target.value})}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="Administrador">Administrador</option>
                                     <option value="Coletor">Coletor</option>
@@ -392,7 +392,7 @@ export default function GerenciarUsuarios() {
                                         setMostrarModal(false);
                                         setErro('');
                                     }}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-black hover:bg-gray-50 transition-colors"
                                 >
                                     Cancelar
                                 </button>
@@ -411,47 +411,47 @@ export default function GerenciarUsuarios() {
             {/* Modal de Editar Usuário */}
             {mostrarModalEdicao && usuarioEditando && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6">Editar Usuário</h2>
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-black">
+                        <h2 className="text-2xl font-bold text-black mb-6">Editar Usuário</h2>
 
                         <form onSubmit={handleSalvarEdicao} className="space-y-4">
                             {/* Nome */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-black mb-2">
                                     Nome Completo <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={usuarioEditando.nome}
                                     onChange={(e) => setUsuarioEditando({...usuarioEditando, nome: e.target.value})}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Nome completo"
                                 />
                             </div>
 
                             {/* Email */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-black mb-2">
                                     Email <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="email"
                                     value={usuarioEditando.email}
                                     onChange={(e) => setUsuarioEditando({...usuarioEditando, email: e.target.value})}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="email@exemplo.com"
                                 />
                             </div>
 
                             {/* Função */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-black mb-2">
                                     Função <span className="text-red-500">*</span>
                                 </label>
                                 <select
                                     value={usuarioEditando.funcao}
                                     onChange={(e) => setUsuarioEditando({...usuarioEditando, funcao: e.target.value})}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="Administrador">Administrador</option>
                                     <option value="Coletor">Coletor</option>
@@ -462,11 +462,11 @@ export default function GerenciarUsuarios() {
 
                             {/* Status */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-black mb-2">
                                     Status
                                 </label>
                                 <div className="flex items-center gap-4">
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    <label className="flex items-center gap-2 cursor-pointer text-black">
                                         <input
                                             type="radio"
                                             checked={usuarioEditando.ativo}
@@ -475,7 +475,7 @@ export default function GerenciarUsuarios() {
                                         />
                                         <span>Ativo</span>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    <label className="flex items-center gap-2 cursor-pointer text-black">
                                         <input
                                             type="radio"
                                             checked={!usuarioEditando.ativo}
@@ -496,7 +496,7 @@ export default function GerenciarUsuarios() {
                                         setUsuarioEditando(null);
                                         setErro('');
                                     }}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-black hover:bg-gray-50 transition-colors"
                                 >
                                     Cancelar
                                 </button>
