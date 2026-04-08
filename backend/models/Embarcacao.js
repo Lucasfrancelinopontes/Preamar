@@ -46,6 +46,9 @@ export const Embarcacao = sequelize.define('Embarcacao', {
   possui: {
     type: DataTypes.ENUM('urna', 'caixaTermica', 'pescadoInNatura')
   },
+  municipio: {
+    type: DataTypes.STRING(100)
+  },
   localidade: {
     type: DataTypes.STRING(100)
   }

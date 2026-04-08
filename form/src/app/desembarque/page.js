@@ -215,7 +215,7 @@ function DesembarqueContent() {
     const [sucessoEnvio, setSucessoEnvio] = useState("");
     const [municipios, setMunicipios] = useState([]);
     const [especies, setEspecies] = useState([]);
-    const [embarcacoesDaLocalidade, setEmbarcacoesDaLocalidade] = useState([]);
+    const [embarcacoesDoMunicipio, setEmbarcacoesDoMunicipio] = useState([]);
     const [embarcacaoSelecionadaId, setEmbarcacaoSelecionadaId] = useState("");
     const [carregandoEmbarcacoes, setCarregandoEmbarcacoes] = useState(false);
     const [erroEmbarcacoes, setErroEmbarcacoes] = useState("");
@@ -265,31 +265,31 @@ function DesembarqueContent() {
     }, [editId]);
 
     useEffect(() => {
-        const carregarEmbarcacoesPorLocalidade = async () => {
-            const localidade = (formData.localidade || "").trim();
+        const carregarEmbarcacoesPorMunicipio = async () => {
+            const municipio = (formData.municipio || "").trim();
 
             setEmbarcacaoSelecionadaId("");
             setErroEmbarcacoes("");
 
-            if (!localidade) {
-                setEmbarcacoesDaLocalidade([]);
+            if (!municipio) {
+                setEmbarcacoesDoMunicipio([]);
                 return;
             }
 
             setCarregandoEmbarcacoes(true);
             try {
-                const response = await api.listarEmbarcacoes({ localidade, limit: 200 });
-                setEmbarcacoesDaLocalidade(mapToArray(response));
+                const response = await api.listarEmbarcacoes({ municipio, limit: 200 });
+                setEmbarcacoesDoMunicipio(mapToArray(response));
             } catch (error) {
-                setEmbarcacoesDaLocalidade([]);
-                setErroEmbarcacoes(error?.message || "Nao foi possivel carregar embarcacoes da localidade");
+                setEmbarcacoesDoMunicipio([]);
+                setErroEmbarcacoes(error?.message || "Nao foi possivel carregar embarcacoes do municipio");
             } finally {
                 setCarregandoEmbarcacoes(false);
             }
         };
 
-        carregarEmbarcacoesPorLocalidade();
-    }, [formData.localidade]);
+        carregarEmbarcacoesPorMunicipio();
+    }, [formData.municipio]);
 
     const municipioSelecionado = useMemo(
         () => municipios.find((m) => m.municipio === formData.municipio) || null,
@@ -341,7 +341,7 @@ function DesembarqueContent() {
 
         if (!selectedId) return;
 
-        const embarcacao = embarcacoesDaLocalidade.find(
+        const embarcacao = embarcacoesDoMunicipio.find(
             (item) => String(item.ID_embarcacao) === String(selectedId)
         );
 
@@ -399,6 +399,7 @@ function DesembarqueContent() {
                 capacidade: toNumberOrNull(formData.capacidadeEstocagem),
                 hp: toNumberOrNull(formData.forcaMotor),
                 possui: formData.conservacao || null,
+                municipio: formData.municipio || null,
                 proprietario: formData.nomeProprietario || null,
                 cpf_proprietario: (formData.cpfProprietario || "").replace(/\D/g, "") || null,
                 localidade: formData.naturalidadeProprietario || null
@@ -654,16 +655,16 @@ function DesembarqueContent() {
                                                 value={embarcacaoSelecionadaId}
                                                 onChange={handleSelecionarEmbarcacao}
                                                 className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
-                                                disabled={!formData.localidade || carregandoEmbarcacoes}
+                                                disabled={!formData.municipio || carregandoEmbarcacoes}
                                             >
                                                 <option value="">
-                                                    {!formData.localidade
-                                                        ? "Selecione uma localidade na etapa 1"
+                                                    {!formData.municipio
+                                                        ? "Selecione um municipio na etapa 1"
                                                         : carregandoEmbarcacoes
                                                             ? "Carregando embarcacoes..."
                                                             : "Selecione uma embarcacao (opcional)"}
                                                 </option>
-                                                {embarcacoesDaLocalidade.map((embarcacao) => (
+                                                {embarcacoesDoMunicipio.map((embarcacao) => (
                                                     <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
                                                         {embarcacao.nome_embarcacao || "Sem nome"}
                                                         {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
@@ -674,8 +675,8 @@ function DesembarqueContent() {
                                             {erroEmbarcacoes && (
                                                 <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoes}</p>
                                             )}
-                                            {!carregandoEmbarcacoes && formData.localidade && embarcacoesDaLocalidade.length === 0 && !erroEmbarcacoes && (
-                                                <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para esta localidade.</p>
+                                            {!carregandoEmbarcacoes && formData.municipio && embarcacoesDoMunicipio.length === 0 && !erroEmbarcacoes && (
+                                                <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para este municipio.</p>
                                             )}
                                         </div>
 
