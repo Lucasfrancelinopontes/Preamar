@@ -215,6 +215,10 @@ function DesembarqueContent() {
     const [sucessoEnvio, setSucessoEnvio] = useState("");
     const [municipios, setMunicipios] = useState([]);
     const [especies, setEspecies] = useState([]);
+    const [embarcacoesDaLocalidade, setEmbarcacoesDaLocalidade] = useState([]);
+    const [embarcacaoSelecionadaId, setEmbarcacaoSelecionadaId] = useState("");
+    const [carregandoEmbarcacoes, setCarregandoEmbarcacoes] = useState(false);
+    const [erroEmbarcacoes, setErroEmbarcacoes] = useState("");
     const [carregandoInicial, setCarregandoInicial] = useState(true);
     const [carregandoEdicao, setCarregandoEdicao] = useState(false);
     const [erroInicial, setErroInicial] = useState("");
@@ -260,6 +264,33 @@ function DesembarqueContent() {
         carregarEdicao();
     }, [editId]);
 
+    useEffect(() => {
+        const carregarEmbarcacoesPorLocalidade = async () => {
+            const localidade = (formData.localidade || "").trim();
+
+            setEmbarcacaoSelecionadaId("");
+            setErroEmbarcacoes("");
+
+            if (!localidade) {
+                setEmbarcacoesDaLocalidade([]);
+                return;
+            }
+
+            setCarregandoEmbarcacoes(true);
+            try {
+                const response = await api.listarEmbarcacoes({ localidade, limit: 200 });
+                setEmbarcacoesDaLocalidade(mapToArray(response));
+            } catch (error) {
+                setEmbarcacoesDaLocalidade([]);
+                setErroEmbarcacoes(error?.message || "Nao foi possivel carregar embarcacoes da localidade");
+            } finally {
+                setCarregandoEmbarcacoes(false);
+            }
+        };
+
+        carregarEmbarcacoesPorLocalidade();
+    }, [formData.localidade]);
+
     const municipioSelecionado = useMemo(
         () => municipios.find((m) => m.municipio === formData.municipio) || null,
         [municipios, formData.municipio]
@@ -302,6 +333,34 @@ function DesembarqueContent() {
             }
             return { ...prev, [name]: value };
         });
+    };
+
+    const handleSelecionarEmbarcacao = (e) => {
+        const selectedId = e.target.value;
+        setEmbarcacaoSelecionadaId(selectedId);
+
+        if (!selectedId) return;
+
+        const embarcacao = embarcacoesDaLocalidade.find(
+            (item) => String(item.ID_embarcacao) === String(selectedId)
+        );
+
+        if (!embarcacao) return;
+
+        setFormData((prev) => ({
+            ...prev,
+            nomeEmbarcacao: embarcacao.nome_embarcacao || "",
+            codigoEmbarcacao: embarcacao.codigo_embarcacao || "",
+            tipoEmbarcacao: embarcacao.tipo || "",
+            tipoEmbarcacaoOutro: embarcacao.tipo_outro || "",
+            comprimento: embarcacao.comprimento != null ? String(embarcacao.comprimento) : "",
+            capacidadeEstocagem: embarcacao.capacidade != null ? String(embarcacao.capacidade) : "",
+            forcaMotor: embarcacao.hp != null ? String(embarcacao.hp) : "",
+            conservacao: embarcacao.possui || "",
+            nomeProprietario: prev.nomeProprietario || embarcacao.proprietario || "",
+            cpfProprietario: prev.cpfProprietario || embarcacao.cpf_proprietario || "",
+            naturalidadeProprietario: prev.naturalidadeProprietario || embarcacao.localidade || ""
+        }));
     };
 
     const proximaEtapa = () => {
@@ -587,6 +646,39 @@ function DesembarqueContent() {
                                     <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Embarcacao e Artes de Pesca</h2>
 
                                     <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+                                        <div className="md:col-span-2">
+                                            <label className="mb-1.5 block text-sm font-semibold text-black">
+                                                Selecionar embarcacao ja cadastrada
+                                            </label>
+                                            <select
+                                                value={embarcacaoSelecionadaId}
+                                                onChange={handleSelecionarEmbarcacao}
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
+                                                disabled={!formData.localidade || carregandoEmbarcacoes}
+                                            >
+                                                <option value="">
+                                                    {!formData.localidade
+                                                        ? "Selecione uma localidade na etapa 1"
+                                                        : carregandoEmbarcacoes
+                                                            ? "Carregando embarcacoes..."
+                                                            : "Selecione uma embarcacao (opcional)"}
+                                                </option>
+                                                {embarcacoesDaLocalidade.map((embarcacao) => (
+                                                    <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
+                                                        {embarcacao.nome_embarcacao || "Sem nome"}
+                                                        {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
+                                                        {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {erroEmbarcacoes && (
+                                                <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoes}</p>
+                                            )}
+                                            {!carregandoEmbarcacoes && formData.localidade && embarcacoesDaLocalidade.length === 0 && !erroEmbarcacoes && (
+                                                <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para esta localidade.</p>
+                                            )}
+                                        </div>
+
                                         <InputGroup label="Nome da embarcacao" name="nomeEmbarcacao" value={formData.nomeEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="Codigo da embarcacao" name="codigoEmbarcacao" value={formData.codigoEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="N de tripulantes" name="numTripulantes" type="number" value={formData.numTripulantes} onChange={handleInputChange} />

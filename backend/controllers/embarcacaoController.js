@@ -7,6 +7,7 @@ export const listarEmbarcacoes = async (req, res) => {
       nome, 
       codigo,
       tipo,
+      localidade,
       page = 1, 
       limit = 50 
     } = req.query;
@@ -15,6 +16,7 @@ export const listarEmbarcacoes = async (req, res) => {
     if (nome) where.nome_embarcacao = { [Op.like]: `%${nome}%` };
     if (codigo) where.codigo_embarcacao = codigo;
     if (tipo) where.tipo = tipo;
+    if (localidade) where.localidade = localidade;
 
     const { count, rows } = await Embarcacao.findAndCountAll({
       where,
