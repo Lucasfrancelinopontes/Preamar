@@ -48,6 +48,8 @@ const createInitialFormData = () => ({
     cpfPescador: "",
     nomeProprietario: "",
     apelidoProprietario: "",
+    apelidoProprietarioEmbarcacao: "",
+    municipioEmbarcacao: "",
     cpfProprietario: "",
     naturalidadeProprietario: "",
     atuouNaPesca: "",
@@ -163,6 +165,8 @@ const mapApiToFormData = (data) => {
         cpfPescador: data?.pescador?.cpf || "",
         nomeProprietario: data?.proprietario || data?.embarcacao?.proprietario || "",
         apelidoProprietario: data?.apelido_proprietario || "",
+        apelidoProprietarioEmbarcacao: data?.embarcacao?.apelido_propietario || "",
+        municipioEmbarcacao: data?.embarcacao?.municipio || data?.municipio || "",
         cpfProprietario: data?.embarcacao?.cpf_proprietario || "",
         naturalidadeProprietario: data?.embarcacao?.localidade || "",
         atuouNaPesca: data?.atuou_pesca === "S" ? "sim" : data?.atuou_pesca === "N" ? "nao" : "",
@@ -326,7 +330,7 @@ function DesembarqueContent() {
         const { name, value } = e.target;
         setFormData((prev) => {
             if (name === "municipio") {
-                return { ...prev, municipio: value, localidade: "" };
+                return { ...prev, municipio: value, municipioEmbarcacao: value, localidade: "" };
             }
             if (name === "artePesca") {
                 return { ...prev, artePesca: value, artePescaOutro: value === "outras" ? prev.artePescaOutro : "" };
@@ -357,7 +361,9 @@ function DesembarqueContent() {
             capacidadeEstocagem: embarcacao.capacidade != null ? String(embarcacao.capacidade) : "",
             forcaMotor: embarcacao.hp != null ? String(embarcacao.hp) : "",
             conservacao: embarcacao.possui || "",
+            municipioEmbarcacao: embarcacao.municipio || prev.municipioEmbarcacao || prev.municipio || "",
             nomeProprietario: prev.nomeProprietario || embarcacao.proprietario || "",
+            apelidoProprietarioEmbarcacao: embarcacao.apelido_propietario || prev.apelidoProprietarioEmbarcacao || "",
             cpfProprietario: prev.cpfProprietario || embarcacao.cpf_proprietario || "",
             naturalidadeProprietario: prev.naturalidadeProprietario || embarcacao.localidade || ""
         }));
@@ -399,8 +405,9 @@ function DesembarqueContent() {
                 capacidade: toNumberOrNull(formData.capacidadeEstocagem),
                 hp: toNumberOrNull(formData.forcaMotor),
                 possui: formData.conservacao || null,
-                municipio: formData.municipio || null,
+                municipio: formData.municipioEmbarcacao || formData.municipio || null,
                 proprietario: formData.nomeProprietario || null,
+                apelido_propietario: formData.apelidoProprietarioEmbarcacao || null,
                 cpf_proprietario: (formData.cpfProprietario || "").replace(/\D/g, "") || null,
                 localidade: formData.naturalidadeProprietario || null
             },
@@ -682,6 +689,8 @@ function DesembarqueContent() {
 
                                         <InputGroup label="Nome da embarcacao" name="nomeEmbarcacao" value={formData.nomeEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="Codigo da embarcacao" name="codigoEmbarcacao" value={formData.codigoEmbarcacao} onChange={handleInputChange} />
+                                        <InputGroup label="Municipio da embarcacao" name="municipioEmbarcacao" value={formData.municipioEmbarcacao} onChange={handleInputChange} />
+                                        <InputGroup label="Apelido do proprietario da embarcacao" name="apelidoProprietarioEmbarcacao" value={formData.apelidoProprietarioEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="N de tripulantes" name="numTripulantes" type="number" value={formData.numTripulantes} onChange={handleInputChange} />
                                         <InputGroup label="N de pesqueiros" name="numPesqueiros" type="number" value={formData.numPesqueiros} onChange={handleInputChange} />
                                         <div className="md:col-span-2">

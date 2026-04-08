@@ -18,6 +18,9 @@ export const Embarcacao = sequelize.define('Embarcacao', {
   proprietario: {
     type: DataTypes.STRING(255)
   },
+  apelido_propietario: {
+    type: DataTypes.STRING(100)
+  },
   cpf_proprietario: {
     type: DataTypes.STRING(14)
   },
