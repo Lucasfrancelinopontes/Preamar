@@ -50,6 +50,7 @@ const createInitialFormData = () => ({
     apelidoProprietario: "",
     apelidoProprietarioEmbarcacao: "",
     municipioEmbarcacao: "",
+    municipioEmbarcacaoOutro: "",
     cpfProprietario: "",
     naturalidadeProprietario: "",
     atuouNaPesca: "",
@@ -167,6 +168,7 @@ const mapApiToFormData = (data) => {
         apelidoProprietario: data?.apelido_proprietario || "",
         apelidoProprietarioEmbarcacao: data?.embarcacao?.apelido_propietario || "",
         municipioEmbarcacao: data?.embarcacao?.municipio || data?.municipio || "",
+        municipioEmbarcacaoOutro: "",
         cpfProprietario: data?.embarcacao?.cpf_proprietario || "",
         naturalidadeProprietario: data?.embarcacao?.localidade || "",
         atuouNaPesca: data?.atuou_pesca === "S" ? "sim" : data?.atuou_pesca === "N" ? "nao" : "",
@@ -330,7 +332,21 @@ function DesembarqueContent() {
         const { name, value } = e.target;
         setFormData((prev) => {
             if (name === "municipio") {
-                return { ...prev, municipio: value, municipioEmbarcacao: value, localidade: "" };
+                const syncMunicipioEmbarcacao = !prev.municipioEmbarcacao || prev.municipioEmbarcacao === prev.municipio;
+                return {
+                    ...prev,
+                    municipio: value,
+                    municipioEmbarcacao: syncMunicipioEmbarcacao ? value : prev.municipioEmbarcacao,
+                    municipioEmbarcacaoOutro: syncMunicipioEmbarcacao ? "" : prev.municipioEmbarcacaoOutro,
+                    localidade: ""
+                };
+            }
+            if (name === "municipioEmbarcacao") {
+                return {
+                    ...prev,
+                    municipioEmbarcacao: value,
+                    municipioEmbarcacaoOutro: value === "outro" ? prev.municipioEmbarcacaoOutro : ""
+                };
             }
             if (name === "artePesca") {
                 return { ...prev, artePesca: value, artePescaOutro: value === "outras" ? prev.artePescaOutro : "" };
@@ -405,7 +421,9 @@ function DesembarqueContent() {
                 capacidade: toNumberOrNull(formData.capacidadeEstocagem),
                 hp: toNumberOrNull(formData.forcaMotor),
                 possui: formData.conservacao || null,
-                municipio: formData.municipioEmbarcacao || formData.municipio || null,
+                municipio: formData.municipioEmbarcacao === "outro"
+                    ? ((formData.municipioEmbarcacaoOutro || "").trim() || null)
+                    : (formData.municipioEmbarcacao || formData.municipio || null),
                 proprietario: formData.nomeProprietario || null,
                 apelido_propietario: formData.apelidoProprietarioEmbarcacao || null,
                 cpf_proprietario: (formData.cpfProprietario || "").replace(/\D/g, "") || null,
@@ -632,6 +650,37 @@ function DesembarqueContent() {
                                         <InputGroup label="Apelido" name="apelidoProprietario" value={formData.apelidoProprietario} onChange={handleInputChange} />
                                         <InputGroup label="CPF" name="cpfProprietario" placeholder="000.000.000-00" value={formData.cpfProprietario} onChange={handleInputChange} />
                                         <InputGroup label="Naturalidade" name="naturalidadeProprietario" value={formData.naturalidadeProprietario} onChange={handleInputChange} />
+                                        <div className="md:col-span-2">
+                                            <label className="mb-1.5 block text-sm font-semibold text-black">Municipio da embarcacao</label>
+                                            <select
+                                                name="municipioEmbarcacao"
+                                                value={formData.municipioEmbarcacao}
+                                                onChange={handleInputChange}
+                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600"
+                                            >
+                                                <option value="">Selecione...</option>
+                                                {formData.municipioEmbarcacao &&
+                                                    formData.municipioEmbarcacao !== "outro" &&
+                                                    !municipios.some((m) => m.municipio === formData.municipioEmbarcacao) && (
+                                                        <option value={formData.municipioEmbarcacao}>{formData.municipioEmbarcacao}</option>
+                                                    )}
+                                                {municipios.map((municipio) => (
+                                                    <option key={municipio.municipioCode || municipio.municipio} value={municipio.municipio}>
+                                                        {municipio.municipio}
+                                                    </option>
+                                                ))}
+                                                <option value="outro">Outro</option>
+                                            </select>
+                                        </div>
+                                        {formData.municipioEmbarcacao === "outro" && (
+                                            <InputGroup
+                                                label="Digite o municipio da embarcacao"
+                                                name="municipioEmbarcacaoOutro"
+                                                colSpan={2}
+                                                value={formData.municipioEmbarcacaoOutro}
+                                                onChange={handleInputChange}
+                                            />
+                                        )}
                                         <div>
                                             <label className="mb-1.5 block text-sm font-semibold text-black">Atuou na pesca?</label>
                                             <select
@@ -689,7 +738,6 @@ function DesembarqueContent() {
 
                                         <InputGroup label="Nome da embarcacao" name="nomeEmbarcacao" value={formData.nomeEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="Codigo da embarcacao" name="codigoEmbarcacao" value={formData.codigoEmbarcacao} onChange={handleInputChange} />
-                                        <InputGroup label="Municipio da embarcacao" name="municipioEmbarcacao" value={formData.municipioEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="Apelido do proprietario da embarcacao" name="apelidoProprietarioEmbarcacao" value={formData.apelidoProprietarioEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="N de tripulantes" name="numTripulantes" type="number" value={formData.numTripulantes} onChange={handleInputChange} />
                                         <InputGroup label="N de pesqueiros" name="numPesqueiros" type="number" value={formData.numPesqueiros} onChange={handleInputChange} />
