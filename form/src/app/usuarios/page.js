@@ -20,6 +20,7 @@ export default function GerenciarUsuarios() {
 
     const router = useRouter();
     const { token, ehAdmin, estaAutenticado } = useAuth();
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
     // Verificar permissões
     useEffect(() => {
@@ -39,7 +40,6 @@ export default function GerenciarUsuarios() {
     const carregarUsuarios = async () => {
         try {
             setCarregando(true);
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
             const response = await fetch(`${apiUrl}/usuarios`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -78,7 +78,7 @@ export default function GerenciarUsuarios() {
         }
 
         try {
-            const response = await fetch('http://localhost:3001/api/usuarios', {
+            const response = await fetch(`${apiUrl}/usuarios`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ export default function GerenciarUsuarios() {
         setSucesso('');
 
         try {
-            const response = await fetch(`http://localhost:3001/api/usuarios/${usuarioEditando.ID_usuario}`, {
+            const response = await fetch(`${apiUrl}/usuarios/${usuarioEditando.ID_usuario}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ export default function GerenciarUsuarios() {
         }
 
         try {
-            const response = await fetch(`http://localhost:3001/api/usuarios/${id}`, {
+            const response = await fetch(`${apiUrl}/usuarios/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
