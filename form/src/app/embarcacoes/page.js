@@ -5,6 +5,31 @@ import { useAuth } from '@/app/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import api from '@/services/api'
 
+const TIPOS_VALIDOS = ['catraia', 'caico', 'jangada', 'boteLancha', 'canoa', 'barco', 'outro']
+const POSSUI_VALIDOS = ['urna', 'caixaTermica', 'pescadoInNatura']
+
+const normalizarTipo = (tipo) => {
+    const valor = (tipo || '').trim()
+    const map = {
+        bote: 'boteLancha',
+        outros: 'outro',
+        traineira: 'outro',
+        chalana: 'outro'
+    }
+    return map[valor] || valor
+}
+
+const normalizarPossui = (possui) => {
+    const valor = (possui || '').trim()
+    const map = {
+        caixa: 'caixaTermica',
+        in_natura: 'pescadoInNatura',
+        gelo: '',
+        sem: ''
+    }
+    return map[valor] ?? valor
+}
+
 export default function EmbarcacoesPage() {
     const { estaAutenticado, ehAdmin } = useAuth()
     const router = useRouter()
@@ -106,11 +131,27 @@ export default function EmbarcacoesPage() {
         setSucesso('')
 
         try {
+            const tipoNormalizado = normalizarTipo(formData.tipo)
+            const possuiNormalizado = normalizarPossui(formData.possui)
+
+            if (!TIPOS_VALIDOS.includes(tipoNormalizado)) {
+                setErro('Tipo de embarcação inválido. Selecione uma opção válida.')
+                return
+            }
+
+            if (possuiNormalizado && !POSSUI_VALIDOS.includes(possuiNormalizado)) {
+                setErro('Armazenamento inválido. Selecione uma opção válida.')
+                return
+            }
+
             const dadosEnvio = {
                 ...formData,
+                codigo_embarcacao: formData.codigo_embarcacao?.trim() || null,
+                tipo: tipoNormalizado,
+                possui: possuiNormalizado || null,
                 comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
                 capacidade: formData.capacidade ? parseFloat(formData.capacidade) : null,
-                hp: formData.hp ? parseInt(formData.hp) : null
+                hp: formData.hp ? parseInt(formData.hp, 10) : null
             }
 
             if (embarcacaoEditando) {
@@ -373,14 +414,13 @@ export default function EmbarcacoesPage() {
                                         required
                                     >
                                         <option value="">Selecione o tipo</option>
-                                        <option value="jangada">Jangada</option>
-                                        <option value="bote">Bote</option>
-                                        <option value="barco">Barco</option>
-                                        <option value="traineira">Traineira</option>
                                         <option value="catraia">Catraia</option>
+                                        <option value="caico">Caico</option>
+                                        <option value="jangada">Jangada</option>
+                                        <option value="boteLancha">Bote/Lancha</option>
                                         <option value="canoa">Canoa</option>
-                                        <option value="chalana">Chalana</option>
-                                        <option value="outros">Outros</option>
+                                        <option value="barco">Barco</option>
+                                        <option value="outro">Outro</option>
                                     </select>
                                 </div>
 
@@ -436,8 +476,7 @@ export default function EmbarcacoesPage() {
                                         <option value="">Selecione</option>
                                         <option value="caixaTermica">Caixa Térmica</option>
                                         <option value="urna">Urna</option>
-                                        <option value="gelo">Gelo</option>
-                                        <option value="sem">Sem Armazenamento</option>
+                                        <option value="pescadoInNatura">Pescado In Natura</option>
                                     </select>
                                 </div>
                             </div>
