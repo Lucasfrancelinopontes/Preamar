@@ -13,6 +13,7 @@ export const Embarcacao = sequelize.define('Embarcacao', {
   },
   codigo_embarcacao: {
     type: DataTypes.STRING(100), // Expandido de 50 para 100 chars
+    allowNull: true,
     unique: true
   },
   proprietario: {

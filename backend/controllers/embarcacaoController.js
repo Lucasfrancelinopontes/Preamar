@@ -1,6 +1,12 @@
 import { Embarcacao, Desembarque } from '../models/index.js';
 import { Op } from 'sequelize';
 
+const normalizarCodigoEmbarcacao = (value) => {
+  if (value === null || value === undefined) return null;
+  const codigo = String(value).trim();
+  return codigo || null;
+};
+
 export const listarEmbarcacoes = async (req, res) => {
   try {
     const { 
@@ -46,26 +52,31 @@ export const listarEmbarcacoes = async (req, res) => {
 
 export const criarEmbarcacao = async (req, res) => {
   try {
-    const dados = req.body;
+    const dados = {
+      ...req.body,
+      codigo_embarcacao: normalizarCodigoEmbarcacao(req.body?.codigo_embarcacao)
+    };
 
     // Validar dados obrigatórios
-    if (!dados.nome_embarcacao || !dados.codigo_embarcacao) {
+    if (!dados.nome_embarcacao) {
       return res.status(400).json({
         success: false,
-        message: 'Nome e código da embarcação são obrigatórios'
+        message: 'Nome da embarcação é obrigatório'
       });
     }
 
-    // Verificar se já existe embarcação com este código
-    const embarcacaoExistente = await Embarcacao.findOne({
-      where: { codigo_embarcacao: dados.codigo_embarcacao }
-    });
-
-    if (embarcacaoExistente) {
-      return res.status(400).json({
-        success: false,
-        message: 'Já existe uma embarcação cadastrada com este código'
+    if (dados.codigo_embarcacao) {
+      // Verificar se já existe embarcação com este código
+      const embarcacaoExistente = await Embarcacao.findOne({
+        where: { codigo_embarcacao: dados.codigo_embarcacao }
       });
+
+      if (embarcacaoExistente) {
+        return res.status(400).json({
+          success: false,
+          message: 'Já existe uma embarcação cadastrada com este código'
+        });
+      }
     }
 
     const embarcacao = await Embarcacao.create(dados);
@@ -88,7 +99,11 @@ export const criarEmbarcacao = async (req, res) => {
 export const atualizarEmbarcacao = async (req, res) => {
   try {
     const { id } = req.params;
-    const dados = req.body;
+    const dados = { ...req.body };
+
+    if (Object.prototype.hasOwnProperty.call(dados, 'codigo_embarcacao')) {
+      dados.codigo_embarcacao = normalizarCodigoEmbarcacao(dados.codigo_embarcacao);
+    }
 
     const embarcacao = await Embarcacao.findByPk(id);
     if (!embarcacao) {

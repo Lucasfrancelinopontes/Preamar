@@ -312,7 +312,7 @@ export default function EmbarcacoesPage() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-black mb-1">
-                                        Código da Embarcação *
+                                        Código da Embarcação (opcional)
                                     </label>
                                     <input
                                         type="text"
@@ -320,7 +320,6 @@ export default function EmbarcacoesPage() {
                                         onChange={(e) => setFormData({...formData, codigo_embarcacao: e.target.value})}
                                         className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
                                         placeholder="Ex: JP-001"
-                                        required
                                     />
                                 </div>
 
