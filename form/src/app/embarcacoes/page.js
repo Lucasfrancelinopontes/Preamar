@@ -147,6 +147,7 @@ export default function EmbarcacoesPage() {
             const dadosEnvio = {
                 ...formData,
                 codigo_embarcacao: formData.codigo_embarcacao?.trim() || null,
+                proprietario: formData.proprietario?.trim() || null,
                 tipo: tipoNormalizado,
                 possui: possuiNormalizado || null,
                 comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
@@ -366,14 +367,13 @@ export default function EmbarcacoesPage() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-black mb-1">
-                                        Proprietário *
+                                        Proprietário (opcional)
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.proprietario}
                                         onChange={(e) => setFormData({...formData, proprietario: e.target.value})}
                                         className="w-full p-2 border rounded-lg text-black"
-                                        required
                                     />
                                 </div>
 
