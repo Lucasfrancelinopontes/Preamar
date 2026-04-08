@@ -152,20 +152,20 @@ export default function EspeciesPage() {
     )
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 text-black">
             {/* Header */}
             <header className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.push('/')}
-                            className="p-2 text-gray-600 hover:text-gray-800"
+                            className="p-2 text-black hover:text-black/80"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-                        <h1 className="text-2xl font-bold text-gray-800">Gerenciar Espécies</h1>
+                        <h1 className="text-2xl font-bold text-black">Gerenciar Espécies</h1>
                     </div>
                     <button
                         onClick={() => abrirModal()}
@@ -196,7 +196,7 @@ export default function EspeciesPage() {
                         value={busca}
                         onChange={(e) => setBusca(e.target.value)}
                         placeholder="Buscar espécies por nome popular, científico ou família..."
-                        className="w-full max-w-md p-3 border rounded-lg"
+                        className="w-full max-w-md p-3 border rounded-lg text-black placeholder:text-gray-500"
                     />
                 </div>
 
@@ -204,7 +204,7 @@ export default function EspeciesPage() {
                 {loading ? (
                     <div className="text-center py-8">
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <p className="mt-2 text-gray-600">Carregando espécies...</p>
+                        <p className="mt-2 text-black">Carregando espécies...</p>
                     </div>
                 ) : (
                     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -212,22 +212,22 @@ export default function EspeciesPage() {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Nome Popular
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Nome Científico
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Família
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Habitat
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Valor Comercial
                                         </th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
                                             Ações
                                         </th>
                                     </tr>
@@ -235,19 +235,19 @@ export default function EspeciesPage() {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {especiesFiltradas.map((especie) => (
                                         <tr key={especie.ID} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
                                                 {especie.Nome_popular}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 <em>{especie.Nome_cientifico}</em>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {especie.Familia}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {especie.Habitat}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {especie.Valor_comercial}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -271,7 +271,7 @@ export default function EspeciesPage() {
                         </div>
 
                         {especiesFiltradas.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-black">
                                 {busca ? 'Nenhuma espécie encontrada para a busca.' : 'Nenhuma espécie cadastrada.'}
                             </div>
                         )}
@@ -282,71 +282,71 @@ export default function EspeciesPage() {
             {/* Modal */}
             {modalAberto && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-xl font-bold mb-4">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto text-black">
+                        <h2 className="text-xl font-bold text-black mb-4">
                             {especieEditando ? 'Editar Espécie' : 'Nova Espécie'}
                         </h2>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Nome Popular *
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.nome_popular}
                                         onChange={(e) => setFormData({...formData, nome_popular: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Nome Científico *
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.nome_cientifico}
                                         onChange={(e) => setFormData({...formData, nome_cientifico: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Família
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.familia}
                                         onChange={(e) => setFormData({...formData, familia: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Gênero
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.genero}
                                         onChange={(e) => setFormData({...formData, genero: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Habitat
                                     </label>
                                     <select
                                         value={formData.habitat}
                                         onChange={(e) => setFormData({...formData, habitat: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value="">Selecione</option>
                                         <option value="Costeiro">Costeiro</option>
@@ -358,13 +358,13 @@ export default function EspeciesPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Grau de Ameaça
                                     </label>
                                     <select
                                         value={formData.grau_ameaca}
                                         onChange={(e) => setFormData({...formData, grau_ameaca: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value="NA">NA (Não Avaliado)</option>
                                         <option value="LC">LC (Pouco Preocupante)</option>
@@ -377,7 +377,7 @@ export default function EspeciesPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Nível Trófico
                                     </label>
                                     <input
@@ -385,18 +385,18 @@ export default function EspeciesPage() {
                                         step="0.1"
                                         value={formData.nivel_trofico}
                                         onChange={(e) => setFormData({...formData, nivel_trofico: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Valor Comercial
                                     </label>
                                     <select
                                         value={formData.valor_comercial}
                                         onChange={(e) => setFormData({...formData, valor_comercial: parseInt(e.target.value)})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value={1}>1 - Baixo</option>
                                         <option value={2}>2 - Médio</option>
@@ -405,7 +405,7 @@ export default function EspeciesPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Comprimento Máximo (cm)
                                     </label>
                                     <input
@@ -413,12 +413,12 @@ export default function EspeciesPage() {
                                         step="0.1"
                                         value={formData.comprimento_max_cm}
                                         onChange={(e) => setFormData({...formData, comprimento_max_cm: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Início da Maturação (cm)
                                     </label>
                                     <input
@@ -426,18 +426,18 @@ export default function EspeciesPage() {
                                         step="0.1"
                                         value={formData.inicio_maturacao_cm}
                                         onChange={(e) => setFormData({...formData, inicio_maturacao_cm: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Mercado
                                     </label>
                                     <select
                                         value={formData.mercado}
                                         onChange={(e) => setFormData({...formData, mercado: parseInt(e.target.value)})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value={0}>Não</option>
                                         <option value={1}>Sim</option>
@@ -445,13 +445,13 @@ export default function EspeciesPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Pesca Direcionada
                                     </label>
                                     <select
                                         value={formData.pesca}
                                         onChange={(e) => setFormData({...formData, pesca: parseInt(e.target.value)})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value={0}>Não</option>
                                         <option value={1}>Sim</option>
@@ -463,7 +463,7 @@ export default function EspeciesPage() {
                                 <button
                                     type="button"
                                     onClick={fecharModal}
-                                    className="px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-50"
+                                    className="px-4 py-2 text-black border rounded-lg hover:bg-gray-50"
                                 >
                                     Cancelar
                                 </button>

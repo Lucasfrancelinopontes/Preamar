@@ -148,20 +148,20 @@ export default function EmbarcacoesPage() {
     )
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 text-black">
             {/* Header */}
             <header className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.push('/')}
-                            className="p-2 text-gray-600 hover:text-gray-800"
+                            className="p-2 text-black hover:text-black/80"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-                        <h1 className="text-2xl font-bold text-gray-800">Gerenciar Embarcações</h1>
+                        <h1 className="text-2xl font-bold text-black">Gerenciar Embarcações</h1>
                     </div>
                     <button
                         onClick={() => abrirModal()}
@@ -192,7 +192,7 @@ export default function EmbarcacoesPage() {
                         value={busca}
                         onChange={(e) => setBusca(e.target.value)}
                         placeholder="Buscar embarcações por nome, código, proprietário ou tipo..."
-                        className="w-full max-w-md p-3 border rounded-lg"
+                        className="w-full max-w-md p-3 border rounded-lg text-black placeholder:text-gray-500"
                     />
                 </div>
 
@@ -200,7 +200,7 @@ export default function EmbarcacoesPage() {
                 {loading ? (
                     <div className="text-center py-8">
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <p className="mt-2 text-gray-600">Carregando embarcações...</p>
+                        <p className="mt-2 text-black">Carregando embarcações...</p>
                     </div>
                 ) : (
                     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -208,25 +208,25 @@ export default function EmbarcacoesPage() {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Nome
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Código
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Proprietário
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Tipo
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Comprimento
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             HP
                                         </th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
                                             Ações
                                         </th>
                                     </tr>
@@ -234,22 +234,22 @@ export default function EmbarcacoesPage() {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {embarcacoesFiltradas.map((embarcacao) => (
                                         <tr key={embarcacao.ID_embarcacao} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
                                                 {embarcacao.nome_embarcacao}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {embarcacao.codigo_embarcacao}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {embarcacao.proprietario}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {embarcacao.tipo}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {embarcacao.comprimento ? `${embarcacao.comprimento}m` : '-'}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {embarcacao.hp || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -273,7 +273,7 @@ export default function EmbarcacoesPage() {
                         </div>
 
                         {embarcacoesFiltradas.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-black">
                                 {busca ? 'Nenhuma embarcação encontrada para a busca.' : 'Nenhuma embarcação cadastrada.'}
                             </div>
                         )}
@@ -284,61 +284,61 @@ export default function EmbarcacoesPage() {
             {/* Modal */}
             {modalAberto && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-xl font-bold mb-4">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto text-black">
+                        <h2 className="text-xl font-bold text-black mb-4">
                             {embarcacaoEditando ? 'Editar Embarcação' : 'Nova Embarcação'}
                         </h2>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Nome da Embarcação *
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.nome_embarcacao}
                                         onChange={(e) => setFormData({...formData, nome_embarcacao: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Código da Embarcação *
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.codigo_embarcacao}
                                         onChange={(e) => setFormData({...formData, codigo_embarcacao: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
                                         placeholder="Ex: JP-001"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Proprietário *
                                     </label>
                                     <input
                                         type="text"
                                         value={formData.proprietario}
                                         onChange={(e) => setFormData({...formData, proprietario: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Tipo *
                                     </label>
                                     <select
                                         value={formData.tipo}
                                         onChange={(e) => setFormData({...formData, tipo: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                         required
                                     >
                                         <option value="">Selecione o tipo</option>
@@ -354,7 +354,7 @@ export default function EmbarcacoesPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Comprimento (metros)
                                     </label>
                                     <input
@@ -362,45 +362,45 @@ export default function EmbarcacoesPage() {
                                         step="0.1"
                                         value={formData.comprimento}
                                         onChange={(e) => setFormData({...formData, comprimento: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
                                         placeholder="Ex: 8.5"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Capacidade de Estocagem (kg)
                                     </label>
                                     <input
                                         type="number"
                                         value={formData.capacidade}
                                         onChange={(e) => setFormData({...formData, capacidade: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
                                         placeholder="Ex: 500"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Força do Motor (HP)
                                     </label>
                                     <input
                                         type="number"
                                         value={formData.hp}
                                         onChange={(e) => setFormData({...formData, hp: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
                                         placeholder="Ex: 40"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-black mb-1">
                                         Armazenamento
                                     </label>
                                     <select
                                         value={formData.possui}
                                         onChange={(e) => setFormData({...formData, possui: e.target.value})}
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value="">Selecione</option>
                                         <option value="caixaTermica">Caixa Térmica</option>
@@ -415,7 +415,7 @@ export default function EmbarcacoesPage() {
                                 <button
                                     type="button"
                                     onClick={fecharModal}
-                                    className="px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-50"
+                                    className="px-4 py-2 text-black border rounded-lg hover:bg-gray-50"
                                 >
                                     Cancelar
                                 </button>
