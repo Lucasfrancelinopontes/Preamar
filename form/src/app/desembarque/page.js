@@ -48,7 +48,6 @@ const createInitialFormData = () => ({
     cpfPescador: "",
     nomeProprietario: "",
     apelidoProprietario: "",
-    apelidoProprietarioEmbarcacao: "",
     municipioEmbarcacao: "",
     municipioEmbarcacaoOutro: "",
     cpfProprietario: "",
@@ -165,8 +164,7 @@ const mapApiToFormData = (data) => {
         apelidoPescador: data?.pescador?.apelido || "",
         cpfPescador: data?.pescador?.cpf || "",
         nomeProprietario: data?.proprietario || data?.embarcacao?.proprietario || "",
-        apelidoProprietario: data?.apelido_proprietario || "",
-        apelidoProprietarioEmbarcacao: data?.embarcacao?.apelido_propietario || "",
+        apelidoProprietario: data?.apelido_proprietario || data?.embarcacao?.apelido_propietario || "",
         municipioEmbarcacao: data?.embarcacao?.municipio || data?.municipio || "",
         municipioEmbarcacaoOutro: "",
         cpfProprietario: data?.embarcacao?.cpf_proprietario || "",
@@ -379,7 +377,7 @@ function DesembarqueContent() {
             conservacao: embarcacao.possui || "",
             municipioEmbarcacao: embarcacao.municipio || prev.municipioEmbarcacao || prev.municipio || "",
             nomeProprietario: prev.nomeProprietario || embarcacao.proprietario || "",
-            apelidoProprietarioEmbarcacao: embarcacao.apelido_propietario || prev.apelidoProprietarioEmbarcacao || "",
+            apelidoProprietario: prev.apelidoProprietario || embarcacao.apelido_propietario || "",
             cpfProprietario: prev.cpfProprietario || embarcacao.cpf_proprietario || "",
             naturalidadeProprietario: prev.naturalidadeProprietario || embarcacao.localidade || ""
         }));
@@ -425,7 +423,7 @@ function DesembarqueContent() {
                     ? ((formData.municipioEmbarcacaoOutro || "").trim() || null)
                     : (formData.municipioEmbarcacao || formData.municipio || null),
                 proprietario: formData.nomeProprietario || null,
-                apelido_propietario: formData.apelidoProprietarioEmbarcacao || null,
+                apelido_propietario: formData.apelidoProprietario || null,
                 cpf_proprietario: (formData.cpfProprietario || "").replace(/\D/g, "") || null,
                 localidade: formData.naturalidadeProprietario || null
             },
@@ -738,7 +736,6 @@ function DesembarqueContent() {
 
                                         <InputGroup label="Nome da embarcacao" name="nomeEmbarcacao" value={formData.nomeEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="Codigo da embarcacao" name="codigoEmbarcacao" value={formData.codigoEmbarcacao} onChange={handleInputChange} />
-                                        <InputGroup label="Apelido do proprietario da embarcacao" name="apelidoProprietarioEmbarcacao" value={formData.apelidoProprietarioEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="N de tripulantes" name="numTripulantes" type="number" value={formData.numTripulantes} onChange={handleInputChange} />
                                         <InputGroup label="N de pesqueiros" name="numPesqueiros" type="number" value={formData.numPesqueiros} onChange={handleInputChange} />
                                         <div className="md:col-span-2">
