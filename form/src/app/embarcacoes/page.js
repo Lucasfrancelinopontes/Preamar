@@ -20,6 +20,8 @@ export default function EmbarcacoesPage() {
         nome_embarcacao: '',
         codigo_embarcacao: '',
         proprietario: '',
+        apelido_propietario: '',
+        municipio: '',
         tipo: '',
         comprimento: '',
         capacidade: '',
@@ -61,6 +63,8 @@ export default function EmbarcacoesPage() {
             nome_embarcacao: '',
             codigo_embarcacao: '',
             proprietario: '',
+            apelido_propietario: '',
+            municipio: '',
             tipo: '',
             comprimento: '',
             capacidade: '',
@@ -76,6 +80,8 @@ export default function EmbarcacoesPage() {
                 nome_embarcacao: embarcacao.nome_embarcacao || '',
                 codigo_embarcacao: embarcacao.codigo_embarcacao || '',
                 proprietario: embarcacao.proprietario || '',
+                apelido_propietario: embarcacao.apelido_propietario || '',
+                municipio: embarcacao.municipio || '',
                 tipo: embarcacao.tipo || '',
                 comprimento: embarcacao.comprimento || '',
                 capacidade: embarcacao.capacidade || '',
@@ -328,6 +334,32 @@ export default function EmbarcacoesPage() {
                                         onChange={(e) => setFormData({...formData, proprietario: e.target.value})}
                                         className="w-full p-2 border rounded-lg text-black"
                                         required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-black mb-1">
+                                        Apelido do Proprietário
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.apelido_propietario}
+                                        onChange={(e) => setFormData({...formData, apelido_propietario: e.target.value})}
+                                        className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
+                                        placeholder="Ex: Zé do Mar"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-black mb-1">
+                                        Município da Embarcação
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.municipio}
+                                        onChange={(e) => setFormData({...formData, municipio: e.target.value})}
+                                        className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
+                                        placeholder="Ex: João Pessoa"
                                     />
                                 </div>
 
