@@ -15,7 +15,7 @@ export default function GerenciarUsuarios() {
         nome: '',
         email: '',
         senha: '',
-        funcao: 'Coletor'
+        funcao: 'Digitador'
     });
 
     const router = useRouter();
@@ -96,7 +96,7 @@ export default function GerenciarUsuarios() {
                     nome: '',
                     email: '',
                     senha: '',
-                    funcao: 'Coletor'
+                    funcao: 'Digitador'
                 });
                 carregarUsuarios();
             } else {
@@ -181,8 +181,6 @@ export default function GerenciarUsuarios() {
     const getFuncaoBadgeColor = (funcao) => {
         const cores = {
             'Administrador': 'bg-purple-100 text-purple-800 border-purple-200',
-            'Coletor': 'bg-blue-100 text-blue-800 border-blue-200',
-            'Revisor': 'bg-green-100 text-green-800 border-green-200',
             'Digitador': 'bg-amber-100 text-amber-800 border-amber-200'
         };
         return cores[funcao] || 'bg-gray-100 text-gray-800 border-gray-200';
@@ -377,10 +375,8 @@ export default function GerenciarUsuarios() {
                                     onChange={(e) => setNovoUsuario({...novoUsuario, funcao: e.target.value})}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option value="Administrador">Administrador</option>
-                                    <option value="Coletor">Coletor</option>
-                                    <option value="Revisor">Revisor</option>
                                     <option value="Digitador">Digitador</option>
+                                    <option value="Administrador">Administrador</option>
                                 </select>
                             </div>
 
@@ -453,10 +449,8 @@ export default function GerenciarUsuarios() {
                                     onChange={(e) => setUsuarioEditando({...usuarioEditando, funcao: e.target.value})}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option value="Administrador">Administrador</option>
-                                    <option value="Coletor">Coletor</option>
-                                    <option value="Revisor">Revisor</option>
                                     <option value="Digitador">Digitador</option>
+                                    <option value="Administrador">Administrador</option>
                                 </select>
                             </div>
 
