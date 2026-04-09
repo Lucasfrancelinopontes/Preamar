@@ -34,6 +34,22 @@ function InputGroup({ label, name, value, onChange, type = "text", placeholder =
     );
 }
 
+const createCapturaItem = () => ({
+    ID_captura: null,
+    especieId: "",
+    pesoTotalEspecie: "",
+    precoKg: "",
+    condicaoPeixe: ""
+});
+
+const createIndividuoItem = () => ({
+    ID_individuo: null,
+    especieId: "",
+    numeroIndividuo: "",
+    comprimentoIndividuo: "",
+    pesoIndividuo: ""
+});
+
 const createInitialFormData = () => ({
     ID_desembarque: null,
     municipio: "",
@@ -78,12 +94,8 @@ const createInitialFormData = () => ({
     quadrante2: "",
     quadrante3: "",
     destino: "",
-    especie: "",
-    pesoTotalEspecie: "",
-    precoKg: "",
-    condicaoPeixe: "",
-    comprimentoIndividuo: "",
-    pesoIndividuo: ""
+    capturas: [createCapturaItem()],
+    individuos: [createIndividuoItem()]
 });
 
 const toDateInput = (value) => {
@@ -144,8 +156,8 @@ const mapToArray = (response) => {
 };
 
 const mapApiToFormData = (data) => {
-    const captura = Array.isArray(data?.capturas) && data.capturas.length > 0 ? data.capturas[0] : null;
-    const individuo = Array.isArray(data?.individuos) && data.individuos.length > 0 ? data.individuos[0] : null;
+    const capturasApi = Array.isArray(data?.capturas) ? data.capturas : [];
+    const individuosApi = Array.isArray(data?.individuos) ? data.individuos : [];
     const arte = Array.isArray(data?.artes) && data.artes.length > 0 ? data.artes[0] : null;
     const arteRaw = arte?.arte || "";
     const arteIsKnown = ARTE_OPTIONS.some((item) => item.value === arteRaw);
@@ -195,16 +207,36 @@ const mapApiToFormData = (data) => {
         quadrante2: data?.quadrante2 || "",
         quadrante3: data?.quadrante3 || "",
         destino: data?.destino_pescado ? String(data.destino_pescado).split(",")[0].trim().toLowerCase() : "",
-        especie: captura?.ID_especie != null ? String(captura.ID_especie) : "",
-        pesoTotalEspecie: captura?.peso_kg != null ? String(captura.peso_kg) : "",
-        precoKg: captura?.preco_kg != null ? String(captura.preco_kg) : "",
-        condicaoPeixe: captura ? (captura.com_tripa === false ? "sem_visceras" : "com_visceras") : "",
-        comprimentoIndividuo: individuo?.comprimento_total_cm != null
-            ? String(individuo.comprimento_total_cm)
-            : individuo?.comprimento_cm != null
-                ? String(individuo.comprimento_cm)
-                : "",
-        pesoIndividuo: individuo?.peso_g != null ? String(individuo.peso_g) : ""
+        capturas: capturasApi.length > 0
+            ? capturasApi.map((captura) => ({
+                ID_captura: captura?.ID_captura || null,
+                especieId: captura?.ID_especie != null ? String(captura.ID_especie) : "",
+                pesoTotalEspecie: captura?.peso_kg != null ? String(captura.peso_kg) : "",
+                precoKg: captura?.preco_kg != null ? String(captura.preco_kg) : "",
+                condicaoPeixe: captura?.com_tripa === true
+                    ? "com_visceras"
+                    : captura?.com_tripa === false
+                        ? "sem_visceras"
+                        : ""
+            }))
+            : [createCapturaItem()],
+        individuos: individuosApi.length > 0
+            ? individuosApi.map((individuo, index) => ({
+                ID_individuo: individuo?.ID_individuo || null,
+                especieId: individuo?.ID_especie != null ? String(individuo.ID_especie) : "",
+                numeroIndividuo: individuo?.numero_individuo != null
+                    ? String(individuo.numero_individuo)
+                    : String(index + 1),
+                comprimentoIndividuo: individuo?.comprimento_total_cm != null
+                    ? String(individuo.comprimento_total_cm)
+                    : individuo?.comprimento_padrao_cm != null
+                        ? String(individuo.comprimento_padrao_cm)
+                        : individuo?.comprimento_cm != null
+                            ? String(individuo.comprimento_cm)
+                            : "",
+                pesoIndividuo: individuo?.peso_g != null ? String(individuo.peso_g) : ""
+            }))
+            : [createIndividuoItem()]
     };
 };
 
@@ -326,6 +358,16 @@ function DesembarqueContent() {
         return `${municipioCode} ${localidadeCode} ${dia} ${mes} ${ano.slice(-2)} ${consecutivo}`;
     }, [municipioSelecionado, localidadeSelecionada, formData.dataColeta, formData.numConsecutivo]);
 
+    const especiesSelecionadasNaCaptura = useMemo(() => {
+        const especiesSelecionadas = new Set(
+            (formData.capturas || [])
+                .map((captura) => String(captura.especieId || "").trim())
+                .filter(Boolean)
+        );
+
+        return especies.filter((esp) => especiesSelecionadas.has(String(esp.ID)));
+    }, [especies, formData.capturas]);
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => {
@@ -383,6 +425,80 @@ function DesembarqueContent() {
         }));
     };
 
+    const handleCapturaChange = (index, field, value) => {
+        setFormData((prev) => {
+            const capturas = Array.isArray(prev.capturas) ? [...prev.capturas] : [createCapturaItem()];
+            capturas[index] = { ...capturas[index], [field]: value };
+            return { ...prev, capturas };
+        });
+    };
+
+    const adicionarCaptura = () => {
+        setFormData((prev) => ({
+            ...prev,
+            capturas: [...(prev.capturas || []), createCapturaItem()]
+        }));
+    };
+
+    const removerCaptura = (index) => {
+        setFormData((prev) => {
+            const capturas = Array.isArray(prev.capturas) ? [...prev.capturas] : [];
+            if (capturas.length <= 1) return prev;
+
+            capturas.splice(index, 1);
+            return { ...prev, capturas };
+        });
+    };
+
+    const handleIndividuoChange = (index, field, value) => {
+        setFormData((prev) => {
+            const individuos = Array.isArray(prev.individuos) ? [...prev.individuos] : [createIndividuoItem()];
+            individuos[index] = { ...individuos[index], [field]: value };
+            return { ...prev, individuos };
+        });
+    };
+
+    const adicionarIndividuo = () => {
+        setFormData((prev) => ({
+            ...prev,
+            individuos: [...(prev.individuos || []), createIndividuoItem()]
+        }));
+    };
+
+    const removerIndividuo = (index) => {
+        setFormData((prev) => {
+            const individuos = Array.isArray(prev.individuos) ? [...prev.individuos] : [];
+            if (individuos.length <= 1) return prev;
+
+            individuos.splice(index, 1);
+            return { ...prev, individuos };
+        });
+    };
+
+    useEffect(() => {
+        setFormData((prev) => {
+            const especiesValidas = new Set(
+                (prev.capturas || [])
+                    .map((captura) => String(captura.especieId || "").trim())
+                    .filter(Boolean)
+            );
+
+            let changed = false;
+            const individuos = (prev.individuos || []).map((individuo) => {
+                if (!individuo.especieId) return individuo;
+
+                if (!especiesValidas.has(String(individuo.especieId))) {
+                    changed = true;
+                    return { ...individuo, especieId: "" };
+                }
+
+                return individuo;
+            });
+
+            return changed ? { ...prev, individuos } : prev;
+        });
+    }, [formData.capturas]);
+
     const proximaEtapa = () => {
         if (etapaAtual < TOTAL_ETAPAS) setEtapaAtual((atual) => atual + 1);
         window.scrollTo(0, 0);
@@ -398,11 +514,49 @@ function DesembarqueContent() {
     };
 
     const montarPayload = () => {
-        const especieId = Number(formData.especie);
         const municipioCode = municipioSelecionado?.municipioCode || null;
         const localidadeCode = localidadeSelecionada?.localidadeCode || null;
         const saida = splitDateTimeLocal(formData.dataSaida);
         const chegada = splitDateTimeLocal(formData.dataChegada);
+
+        const capturasPayload = (formData.capturas || [])
+            .map((captura) => {
+                const especieId = Number(captura.especieId);
+                if (!Number.isInteger(especieId)) return null;
+
+                return {
+                    ...(captura.ID_captura ? { ID_captura: captura.ID_captura } : {}),
+                    ID_especie: especieId,
+                    peso_kg: toNumberOrNull(captura.pesoTotalEspecie),
+                    preco_kg: toNumberOrNull(captura.precoKg),
+                    com_tripa: captura.condicaoPeixe === "com_visceras"
+                        ? true
+                        : captura.condicaoPeixe === "sem_visceras"
+                            ? false
+                            : null
+                };
+            })
+            .filter(Boolean);
+
+        const individuosPayload = (formData.individuos || [])
+            .map((individuo, index) => {
+                const especieId = Number(individuo.especieId);
+                const comprimento = toNumberOrNull(individuo.comprimentoIndividuo);
+                const peso = toNumberOrNull(individuo.pesoIndividuo);
+
+                if (!Number.isInteger(especieId) || (comprimento == null && peso == null)) {
+                    return null;
+                }
+
+                return {
+                    ...(individuo.ID_individuo ? { ID_individuo: individuo.ID_individuo } : {}),
+                    ID_especie: especieId,
+                    numero_individuo: Number(individuo.numeroIndividuo) || index + 1,
+                    comprimento_total_cm: comprimento,
+                    peso_g: peso
+                };
+            })
+            .filter(Boolean);
 
         return {
             pescador: {
@@ -467,22 +621,8 @@ function DesembarqueContent() {
                         unidade: "m"
                     }]
                 : [],
-            capturas: Number.isInteger(especieId)
-                ? [{
-                        ID_especie: especieId,
-                        peso_kg: toNumberOrNull(formData.pesoTotalEspecie),
-                        preco_kg: toNumberOrNull(formData.precoKg),
-                        com_tripa: formData.condicaoPeixe === "com_visceras"
-                    }]
-                : [],
-            individuos: (formData.pesoIndividuo || formData.comprimentoIndividuo) && Number.isInteger(especieId)
-                ? [{
-                        ID_especie: especieId,
-                        numero_individuo: 1,
-                        comprimento_cm: toNumberOrNull(formData.comprimentoIndividuo),
-                        peso_g: toNumberOrNull(formData.pesoIndividuo)
-                    }]
-                : []
+            capturas: capturasPayload,
+            individuos: individuosPayload
         };
     };
 
@@ -865,59 +1005,173 @@ function DesembarqueContent() {
                                     <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Dados de Captura</h2>
 
                                     <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
-                                        <h3 className="mb-4 text-base font-bold text-black">Registro Geral da Especie</h3>
-                                        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-                                            <div>
-                                                <label className="mb-1.5 block text-sm font-semibold text-black">Especie</label>
-                                                <select
-                                                    name="especie"
-                                                    value={formData.especie}
-                                                    onChange={handleInputChange}
-                                                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
-                                                >
-                                                    <option value="">Selecione...</option>
-                                                    {especies.map((esp) => (
-                                                        <option key={esp.ID} value={esp.ID}>
-                                                            {esp.Nome_popular} ({esp.Nome_cientifico})
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <InputGroup label="Peso Total (kg)" name="pesoTotalEspecie" type="number" value={formData.pesoTotalEspecie} onChange={handleInputChange} />
-                                            <InputGroup label="Preco/kg (R$)" name="precoKg" type="number" value={formData.precoKg} onChange={handleInputChange} />
+                                        <div className="mb-4 flex items-center justify-between gap-3">
+                                            <h3 className="text-base font-bold text-black">Registro Geral das Especies</h3>
+                                            <button
+                                                type="button"
+                                                onClick={adicionarCaptura}
+                                                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                                            >
+                                                + Adicionar especie
+                                            </button>
                                         </div>
-                                        <div className="flex gap-4">
-                                            <label className="flex items-center text-black">
-                                                <input
-                                                    type="radio"
-                                                    name="condicaoPeixe"
-                                                    value="com_visceras"
-                                                    onChange={handleInputChange}
-                                                    checked={formData.condicaoPeixe === "com_visceras"}
-                                                    className="mr-2"
-                                                />
-                                                Com visceras
-                                            </label>
-                                            <label className="flex items-center text-black">
-                                                <input
-                                                    type="radio"
-                                                    name="condicaoPeixe"
-                                                    value="sem_visceras"
-                                                    onChange={handleInputChange}
-                                                    checked={formData.condicaoPeixe === "sem_visceras"}
-                                                    className="mr-2"
-                                                />
-                                                Sem visceras
-                                            </label>
+
+                                        <div className="space-y-4">
+                                            {(formData.capturas || []).map((captura, index) => (
+                                                <div key={`captura-${captura.ID_captura || index}`} className="rounded-lg border border-slate-200 bg-white p-4">
+                                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                                        <p className="text-sm font-semibold text-black">Especie {index + 1}</p>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removerCaptura(index)}
+                                                            disabled={(formData.capturas || []).length <= 1}
+                                                            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                                        >
+                                                            Remover
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                                                        <div>
+                                                            <label className="mb-1.5 block text-sm font-semibold text-black">Especie (ID)</label>
+                                                            <select
+                                                                value={captura.especieId}
+                                                                onChange={(e) => handleCapturaChange(index, "especieId", e.target.value)}
+                                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
+                                                            >
+                                                                <option value="">Selecione...</option>
+                                                                {especies.map((esp) => (
+                                                                    <option key={esp.ID} value={esp.ID}>
+                                                                        #{esp.ID} - {esp.Nome_popular} ({esp.Nome_cientifico})
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+
+                                                        <InputGroup
+                                                            label="Peso Total (kg)"
+                                                            name={`pesoTotalEspecie-${index}`}
+                                                            type="number"
+                                                            value={captura.pesoTotalEspecie}
+                                                            onChange={(e) => handleCapturaChange(index, "pesoTotalEspecie", e.target.value)}
+                                                        />
+
+                                                        <InputGroup
+                                                            label="Preco/kg (R$)"
+                                                            name={`precoKg-${index}`}
+                                                            type="number"
+                                                            value={captura.precoKg}
+                                                            onChange={(e) => handleCapturaChange(index, "precoKg", e.target.value)}
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex flex-wrap gap-4">
+                                                        <label className="flex items-center text-black">
+                                                            <input
+                                                                type="radio"
+                                                                name={`condicaoPeixe-${index}`}
+                                                                value="com_visceras"
+                                                                onChange={(e) => handleCapturaChange(index, "condicaoPeixe", e.target.value)}
+                                                                checked={captura.condicaoPeixe === "com_visceras"}
+                                                                className="mr-2"
+                                                            />
+                                                            Com visceras
+                                                        </label>
+                                                        <label className="flex items-center text-black">
+                                                            <input
+                                                                type="radio"
+                                                                name={`condicaoPeixe-${index}`}
+                                                                value="sem_visceras"
+                                                                onChange={(e) => handleCapturaChange(index, "condicaoPeixe", e.target.value)}
+                                                                checked={captura.condicaoPeixe === "sem_visceras"}
+                                                                className="mr-2"
+                                                            />
+                                                            Sem visceras
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
 
                                     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                                        <h3 className="mb-2 text-base font-bold text-black">Biometria (Dados Individuais)</h3>
+                                        <div className="mb-2 flex items-center justify-between gap-3">
+                                            <h3 className="text-base font-bold text-black">Biometria (Dados Individuais)</h3>
+                                            <button
+                                                type="button"
+                                                onClick={adicionarIndividuo}
+                                                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                                            >
+                                                + Adicionar individuo
+                                            </button>
+                                        </div>
                                         <p className="mb-4 text-sm text-black">Adicione peso e comprimento de peixes individuais, se houver.</p>
-                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                            <InputGroup label="Comprimento (cm)" name="comprimentoIndividuo" type="number" value={formData.comprimentoIndividuo} onChange={handleInputChange} />
-                                            <InputGroup label="Peso (g)" name="pesoIndividuo" type="number" value={formData.pesoIndividuo} onChange={handleInputChange} />
+
+                                        {especiesSelecionadasNaCaptura.length === 0 && (
+                                            <div className="mb-4 rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm font-medium text-amber-700">
+                                                Selecione ao menos uma especie em Registro Geral para vincular individuos.
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-4">
+                                            {(formData.individuos || []).map((individuo, index) => (
+                                                <div key={`individuo-${individuo.ID_individuo || index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                                        <p className="text-sm font-semibold text-black">Individuo {index + 1}</p>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removerIndividuo(index)}
+                                                            disabled={(formData.individuos || []).length <= 1}
+                                                            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                                        >
+                                                            Remover
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                                                        <div>
+                                                            <label className="mb-1.5 block text-sm font-semibold text-black">Especie vinculada</label>
+                                                            <select
+                                                                value={individuo.especieId}
+                                                                onChange={(e) => handleIndividuoChange(index, "especieId", e.target.value)}
+                                                                disabled={especiesSelecionadasNaCaptura.length === 0}
+                                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
+                                                            >
+                                                                <option value="">Selecione...</option>
+                                                                {especiesSelecionadasNaCaptura.map((esp) => (
+                                                                    <option key={`ind-esp-${esp.ID}`} value={esp.ID}>
+                                                                        #{esp.ID} - {esp.Nome_popular}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+
+                                                        <InputGroup
+                                                            label="N do individuo"
+                                                            name={`numeroIndividuo-${index}`}
+                                                            type="number"
+                                                            value={individuo.numeroIndividuo}
+                                                            onChange={(e) => handleIndividuoChange(index, "numeroIndividuo", e.target.value)}
+                                                        />
+
+                                                        <InputGroup
+                                                            label="Comprimento (cm)"
+                                                            name={`comprimentoIndividuo-${index}`}
+                                                            type="number"
+                                                            value={individuo.comprimentoIndividuo}
+                                                            onChange={(e) => handleIndividuoChange(index, "comprimentoIndividuo", e.target.value)}
+                                                        />
+
+                                                        <InputGroup
+                                                            label="Peso (g)"
+                                                            name={`pesoIndividuo-${index}`}
+                                                            type="number"
+                                                            value={individuo.pesoIndividuo}
+                                                            onChange={(e) => handleIndividuoChange(index, "pesoIndividuo", e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
@@ -935,7 +1189,8 @@ function DesembarqueContent() {
                                             <p><span className="font-semibold">Localidade:</span> {formData.localidade || "-"}</p>
                                             <p><span className="font-semibold">Pescador:</span> {formData.nomePescador || "-"}</p>
                                             <p><span className="font-semibold">Embarcacao:</span> {formData.nomeEmbarcacao || "-"}</p>
-                                            <p><span className="font-semibold">Especie:</span> {formData.especie || "-"}</p>
+                                            <p><span className="font-semibold">Especies registradas:</span> {(formData.capturas || []).filter((captura) => captura.especieId).length || "-"}</p>
+                                            <p><span className="font-semibold">Individuos registrados:</span> {(formData.individuos || []).filter((individuo) => individuo.especieId && (individuo.pesoIndividuo || individuo.comprimentoIndividuo)).length || "-"}</p>
                                             <p><span className="font-semibold">Destino:</span> {formData.destino || "-"}</p>
                                         </div>
                                     </div>
