@@ -5,7 +5,7 @@ const sanitizeEspeciePayload = (input = {}) => {
   const dados = { ...input };
 
   const decimalFields = ['nivel_trofico', 'comprimento_max_cm', 'inicio_maturacao_cm'];
-  const intFields = ['valor_comercial', 'mercado', 'pesca'];
+  const intFields = ['idd', 'valor_comercial', 'mercado', 'pesca'];
 
   decimalFields.forEach((field) => {
     if (!(field in dados)) return;
@@ -60,6 +60,7 @@ export const listarEspecies = async (req, res) => {
       order: [['nome_popular', 'ASC']],
       attributes: [
         'ID_especie',
+        'idd',
         'familia',
         'nome_cientifico',
         'nome_popular',
@@ -78,6 +79,7 @@ export const listarEspecies = async (req, res) => {
     // Transformar dados para compatibilidade com frontend
     const especiesFormatadas = rows.map(especie => ({
       ID: especie.ID_especie,
+      IDD: especie.idd,
       Familia: especie.familia,
       Nome_cientifico: especie.nome_cientifico,
       Nome_popular: especie.nome_popular,
@@ -136,7 +138,24 @@ export const criarEspecie = async (req, res) => {
       });
     }
 
+    if (dados.idd !== undefined && dados.idd !== null) {
+      const iddExistente = await Especie.findOne({
+        where: { idd: dados.idd }
+      });
+
+      if (iddExistente) {
+        return res.status(400).json({
+          success: false,
+          message: 'Já existe uma espécie cadastrada com este IDD'
+        });
+      }
+    }
+
     const especie = await Especie.create(dados);
+
+    if (dados.idd === undefined || dados.idd === null) {
+      await especie.update({ idd: especie.ID_especie });
+    }
     
     res.status(201).json({
       success: true,
@@ -179,6 +198,22 @@ export const atualizarEspecie = async (req, res) => {
         return res.status(400).json({
           success: false,
           message: 'Já existe uma espécie cadastrada com este nome científico'
+        });
+      }
+    }
+
+    if (dados.idd !== undefined && dados.idd !== null && dados.idd !== especie.idd) {
+      const iddExistente = await Especie.findOne({
+        where: {
+          idd: dados.idd,
+          ID_especie: { [Op.ne]: id }
+        }
+      });
+
+      if (iddExistente) {
+        return res.status(400).json({
+          success: false,
+          message: 'Já existe uma espécie cadastrada com este IDD'
         });
       }
     }

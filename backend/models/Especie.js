@@ -7,6 +7,11 @@ export const Especie = sequelize.define('Especie', {
     primaryKey: true,
     autoIncrement: true
   },
+  idd: {
+    type: DataTypes.INTEGER,
+    unique: true,
+    allowNull: true
+  },
   familia: {
     type: DataTypes.STRING(100)
   },

@@ -17,6 +17,7 @@ export default function EspeciesPage() {
     const [busca, setBusca] = useState('')
 
     const [formData, setFormData] = useState({
+        idd: '',
         familia: '',
         nome_cientifico: '',
         nome_popular: '',
@@ -62,6 +63,7 @@ export default function EspeciesPage() {
 
     const resetForm = () => {
         setFormData({
+            idd: '',
             familia: '',
             nome_cientifico: '',
             nome_popular: '',
@@ -81,6 +83,7 @@ export default function EspeciesPage() {
     const abrirModal = (especie = null) => {
         if (especie) {
             setFormData({
+                idd: especie.IDD ?? especie.ID ?? '',
                 familia: especie.Familia || '',
                 nome_cientifico: especie.Nome_cientifico || '',
                 nome_popular: especie.Nome_popular || '',
@@ -114,6 +117,7 @@ export default function EspeciesPage() {
         try {
             const dadosEnvio = {
                 ...formData,
+                idd: formData.idd === '' ? null : parseInt(formData.idd, 10),
                 nivel_trofico: formData.nivel_trofico === '' ? null : parseFloat(formData.nivel_trofico),
                 valor_comercial: formData.valor_comercial === '' ? null : parseInt(formData.valor_comercial, 10),
                 mercado: formData.mercado === '' ? null : parseInt(formData.mercado, 10),
@@ -299,6 +303,20 @@ export default function EspeciesPage() {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-black mb-1">
+                                        IDD
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={formData.idd}
+                                        onChange={(e) => setFormData({...formData, idd: e.target.value})}
+                                        className="w-full p-2 border rounded-lg text-black"
+                                        placeholder="Ex.: 30002"
+                                    />
+                                </div>
+
                                 <div>
                                     <label className="block text-sm font-medium text-black mb-1">
                                         Nome Popular *
