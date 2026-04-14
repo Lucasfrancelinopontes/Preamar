@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { ThemeProvider } from '@/components/ThemeProvider';
 import ClientProvider from './contexts/ClientProvider';
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
             {children}
           </ClientProvider>
         </ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
