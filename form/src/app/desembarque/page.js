@@ -629,8 +629,8 @@ function DesembarqueContent() {
 
         const capturasPayload = (formData.capturas || [])
             .map((captura) => {
-                const especieId = Number(captura.especieId);
-                if (!Number.isInteger(especieId)) return null;
+                const especieId = Number.parseInt(String(captura.especieId || "").trim(), 10);
+                if (!Number.isInteger(especieId) || especieId <= 0) return null;
 
                 return {
                     ...(captura.ID_captura ? { ID_captura: captura.ID_captura } : {}),
@@ -648,11 +648,11 @@ function DesembarqueContent() {
 
         const individuosPayload = (formData.individuos || [])
             .map((individuo, index) => {
-                const especieId = Number(individuo.especieId);
+                const especieId = Number.parseInt(String(individuo.especieId || "").trim(), 10);
                 const comprimento = toNumberOrNull(individuo.comprimentoIndividuo);
                 const peso = toNumberOrNull(individuo.pesoIndividuo);
 
-                if (!Number.isInteger(especieId) || (comprimento == null && peso == null)) {
+                if (!Number.isInteger(especieId) || especieId <= 0 || (comprimento == null && peso == null)) {
                     return null;
                 }
 

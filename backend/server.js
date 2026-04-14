@@ -30,20 +30,6 @@ app.use((req, res, next) => {
 // Rotas
 app.use('/api', router);
 
-app.get('/', (req, res) => {
-    res.json({
-        message: 'API Preamar - Sistema de Monitoramento de Desembarque',
-        version: '1.0.0',
-        endpoints: {
-            municipios: '/api/municipios',
-            especies: '/api/especies',
-            desembarques: '/api/desembarques',
-            pescadores: '/api/pescadores',
-            embarcacoes: '/api/embarcacoes'
-        }
-    });
-});
-
 // Middleware de erro (deve ser o último)
 app.use(errorHandler);
 

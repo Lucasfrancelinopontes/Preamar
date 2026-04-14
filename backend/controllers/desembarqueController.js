@@ -152,6 +152,12 @@ const toFloatOrNull = (value) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const toPositiveIntOrNull = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
 // Helper para gerar cod_desembarque a partir de município/localidade/data/consecutivo
 const gerarCodigoDesembarque = (municipio, localidade, data_coleta, consecutivo) => {
   if (!municipio || !localidade || !data_coleta || !consecutivo) return null;
@@ -662,6 +668,40 @@ export const atualizarDesembarque = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Desembarque não encontrado' });
     }
 
+    if (Array.isArray(capturas)) {
+      const capturaComEspecieInvalida = capturas.find((captura) => {
+        if (!captura) return false;
+        const raw = captura.ID_especie;
+        if (raw === undefined || raw === null || raw === '') return false;
+        return !toPositiveIntOrNull(raw);
+      });
+
+      if (capturaComEspecieInvalida) {
+        await t.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'ID_especie inválido em capturas. Selecione uma espécie válida antes de salvar.'
+        });
+      }
+    }
+
+    if (Array.isArray(individuos)) {
+      const individuoComEspecieInvalida = individuos.find((individuo) => {
+        if (!individuo) return false;
+        const raw = individuo.ID_especie;
+        if (raw === undefined || raw === null || raw === '') return false;
+        return !toPositiveIntOrNull(raw);
+      });
+
+      if (individuoComEspecieInvalida) {
+        await t.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'ID_especie inválido em indivíduos. Selecione uma espécie válida antes de salvar.'
+        });
+      }
+    }
+
     // Validar CPF do pescador se fornecido
     const cpfNorm = normalizeCpf(pescador?.cpf);
     if (cpfNorm && !validarCPF(cpfNorm)) {
@@ -809,6 +849,7 @@ export const atualizarDesembarque = async (req, res) => {
     if (Array.isArray(capturas)) {
       for (const captura of capturas) {
         const capId = captura.ID_captura || captura.id || null;
+        const especieId = toPositiveIntOrNull(captura?.ID_especie);
         if (capId) {
           const capDb = existingCapturas.find(c => c.ID_captura === capId);
           if (capDb) {
@@ -824,11 +865,12 @@ export const atualizarDesembarque = async (req, res) => {
             const precoTotal = (pesoF != null && precoF != null) ? (pesoF * precoF) : null;
 
             await capDb.update(
-              { ID_especie: captura.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
+              { ID_especie: especieId || capDb.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
               { transaction: t }
             );
             incomingCapturaIds.push(capDb.ID_captura);
           } else {
+            if (!especieId) continue;
             const pesoKg = toNullableDecimal(captura.peso_kg);
             const precoKg = toNullableDecimal(captura.preco_kg);
             const pesoF = toFloatOrNull(pesoKg);
@@ -836,12 +878,13 @@ export const atualizarDesembarque = async (req, res) => {
             const precoTotal = (pesoF != null && precoF != null) ? (pesoF * precoF) : null;
 
             const created = await Captura.create(
-              { ID_desembarque: id, ID_especie: captura.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
+              { ID_desembarque: id, ID_especie: especieId, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
               { transaction: t }
             );
             incomingCapturaIds.push(created.ID_captura);
           }
         } else {
+          if (!especieId) continue;
           const pesoKg = toNullableDecimal(captura.peso_kg);
           const precoKg = toNullableDecimal(captura.preco_kg);
           const pesoF = toFloatOrNull(pesoKg);
@@ -849,7 +892,7 @@ export const atualizarDesembarque = async (req, res) => {
           const precoTotal = (pesoF != null && precoF != null) ? (pesoF * precoF) : null;
 
           const created = await Captura.create(
-            { ID_desembarque: id, ID_especie: captura.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
+            { ID_desembarque: id, ID_especie: especieId, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
             { transaction: t }
           );
           incomingCapturaIds.push(created.ID_captura);
@@ -865,17 +908,20 @@ export const atualizarDesembarque = async (req, res) => {
     if (Array.isArray(individuos)) {
       for (const ind of individuos) {
         const indId = ind.ID_individuo || ind.id || null;
+        const especieId = toPositiveIntOrNull(ind?.ID_especie);
         if (indId) {
           const indDb = existingIndividuos.find(x => x.ID_individuo === indId);
           if (indDb) {
-            await indDb.update({ ID_especie: ind.ID_especie, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
+            await indDb.update({ ID_especie: especieId || indDb.ID_especie, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
             incomingIndividuoIds.push(indDb.ID_individuo);
           } else {
-            const created = await Individuo.create({ ID_desembarque: id, ID_especie: ind.ID_especie, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
+            if (!especieId) continue;
+            const created = await Individuo.create({ ID_desembarque: id, ID_especie: especieId, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
             incomingIndividuoIds.push(created.ID_individuo);
           }
         } else {
-          const created = await Individuo.create({ ID_desembarque: id, ID_especie: ind.ID_especie, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
+          if (!especieId) continue;
+          const created = await Individuo.create({ ID_desembarque: id, ID_especie: especieId, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
           incomingIndividuoIds.push(created.ID_individuo);
         }
       }
