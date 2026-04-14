@@ -876,6 +876,40 @@ function DesembarqueContent() {
                                         <InputGroup label="CPF" name="cpfPescador" placeholder="000.000.000-00" value={formData.cpfPescador} onChange={handleInputChange} />
                                     </div>
 
+                                    <h3 className="mb-4 text-lg font-semibold text-black">Pre-selecao de Embarcacao</h3>
+                                    <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <label className="mb-1.5 block text-sm font-semibold text-black">
+                                            Selecionar embarcacao ja cadastrada
+                                        </label>
+                                        <select
+                                            value={embarcacaoSelecionadaId}
+                                            onChange={handleSelecionarEmbarcacao}
+                                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
+                                            disabled={!formData.municipio || carregandoEmbarcacoes}
+                                        >
+                                            <option value="">
+                                                {!formData.municipio
+                                                    ? "Selecione um municipio na etapa 1"
+                                                    : carregandoEmbarcacoes
+                                                        ? "Carregando embarcacoes..."
+                                                        : "Selecione uma embarcacao (opcional)"}
+                                            </option>
+                                            {embarcacoesDoMunicipio.map((embarcacao) => (
+                                                <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
+                                                    {embarcacao.nome_embarcacao || "Sem nome"}
+                                                    {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
+                                                    {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {erroEmbarcacoes && (
+                                            <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoes}</p>
+                                        )}
+                                        {!carregandoEmbarcacoes && formData.municipio && embarcacoesDoMunicipio.length === 0 && !erroEmbarcacoes && (
+                                            <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para este municipio.</p>
+                                        )}
+                                    </div>
+
                                     <h3 className="mb-4 text-lg font-semibold text-black">Dados do Proprietario</h3>
                                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                                         <InputGroup label="Nome do Proprietario" name="nomeProprietario" colSpan={2} value={formData.nomeProprietario} onChange={handleInputChange} />
@@ -934,40 +968,8 @@ function DesembarqueContent() {
                                 <div className="animate-in fade-in duration-300">
                                     <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Embarcacao e Artes de Pesca</h2>
 
+                                    <h3 className="mb-4 text-lg font-semibold text-black">Dados da Embarcacao</h3>
                                     <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
-                                        <div className="md:col-span-2">
-                                            <label className="mb-1.5 block text-sm font-semibold text-black">
-                                                Selecionar embarcacao ja cadastrada
-                                            </label>
-                                            <select
-                                                value={embarcacaoSelecionadaId}
-                                                onChange={handleSelecionarEmbarcacao}
-                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
-                                                disabled={!formData.municipio || carregandoEmbarcacoes}
-                                            >
-                                                <option value="">
-                                                    {!formData.municipio
-                                                        ? "Selecione um municipio na etapa 1"
-                                                        : carregandoEmbarcacoes
-                                                            ? "Carregando embarcacoes..."
-                                                            : "Selecione uma embarcacao (opcional)"}
-                                                </option>
-                                                {embarcacoesDoMunicipio.map((embarcacao) => (
-                                                    <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
-                                                        {embarcacao.nome_embarcacao || "Sem nome"}
-                                                        {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
-                                                        {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            {erroEmbarcacoes && (
-                                                <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoes}</p>
-                                            )}
-                                            {!carregandoEmbarcacoes && formData.municipio && embarcacoesDoMunicipio.length === 0 && !erroEmbarcacoes && (
-                                                <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para este municipio.</p>
-                                            )}
-                                        </div>
-
                                         <InputGroup label="Nome da embarcacao" name="nomeEmbarcacao" value={formData.nomeEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="Codigo da embarcacao" name="codigoEmbarcacao" value={formData.codigoEmbarcacao} onChange={handleInputChange} />
                                         <InputGroup label="N de tripulantes" name="numTripulantes" type="number" value={formData.numTripulantes} onChange={handleInputChange} />
