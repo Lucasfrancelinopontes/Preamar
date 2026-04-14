@@ -34,6 +34,43 @@ const buildPescadorPayload = (pescador) => {
   };
 };
 
+const POSSUI_PERMITIDOS = new Set(['urna', 'caixaTermica', 'pescadoInNatura']);
+
+const normalizePossui = (value) => {
+  const raw = normalizeTextOrNull(value);
+  if (!raw) return null;
+
+  const aliases = {
+    caixa: 'caixaTermica',
+    in_natura: 'pescadoInNatura'
+  };
+
+  const normalized = aliases[raw] || raw;
+  return POSSUI_PERMITIDOS.has(normalized) ? normalized : null;
+};
+
+const buildEmbarcacaoPayload = (embarcacao) => {
+  if (!embarcacao) return null;
+
+  return {
+    ID_embarcacao: embarcacao.ID_embarcacao || embarcacao.ID || null,
+    nome_embarcacao: normalizeTextOrNull(embarcacao.nome_embarcacao),
+    codigo_embarcacao: normalizeTextOrNull(embarcacao.codigo_embarcacao),
+    tipo: normalizeTextOrNull(embarcacao.tipo),
+    tipo_outro: normalizeTextOrNull(embarcacao.tipo_outro),
+    comprimento: embarcacao.comprimento ?? null,
+    capacidade: embarcacao.capacidade ?? null,
+    hp: embarcacao.hp ?? null,
+    possui: normalizePossui(embarcacao.possui),
+    municipio: normalizeTextOrNull(embarcacao.municipio),
+    proprietario: normalizeTextOrNull(embarcacao.proprietario),
+    apelido_propietario: normalizeTextOrNull(embarcacao.apelido_propietario),
+    cpf_proprietario: normalizeCpf(embarcacao.cpf_proprietario),
+    localidade: normalizeTextOrNull(embarcacao.localidade),
+    rgp: normalizeTextOrNull(embarcacao.rgp)
+  };
+};
+
 const upsertPescador = async (pescador, transaction) => {
   if (!pescador) return null;
 
@@ -181,18 +218,32 @@ export const criarDesembarque = async (req, res) => {
     let pescadorDb = await upsertPescador({ ...pescador, cpf: cpfNorm }, t);
     console.log('✅ Pescador:', pescadorDb?.nome, `(ID: ${pescadorDb?.ID_pescador})`);
 
-    // 2. Criar ou encontrar embarcação (somente se dados mínimos existirem)
+    // 2. Criar, encontrar ou vincular embarcação
     let embarcacaoDb = null;
-    const codigoEmbarcacao = embarcacao?.codigo_embarcacao ? String(embarcacao.codigo_embarcacao).trim() : null;
-    const nomeEmbarcacao = embarcacao?.nome_embarcacao ? String(embarcacao.nome_embarcacao).trim() : null;
-    const tipoEmbarcacao = embarcacao?.tipo ? String(embarcacao.tipo).trim() : null;
+    const embarcacaoPayload = buildEmbarcacaoPayload(embarcacao);
 
-    if (codigoEmbarcacao && nomeEmbarcacao && tipoEmbarcacao) {
-      [embarcacaoDb] = await Embarcacao.findOrCreate({
-        where: { codigo_embarcacao: codigoEmbarcacao },
-        defaults: { ...embarcacao, codigo_embarcacao: codigoEmbarcacao, nome_embarcacao: nomeEmbarcacao, tipo: tipoEmbarcacao },
-        transaction: t
-      });
+    if (embarcacaoPayload?.ID_embarcacao) {
+      embarcacaoDb = await Embarcacao.findByPk(embarcacaoPayload.ID_embarcacao, { transaction: t });
+    }
+
+    if (embarcacaoPayload?.nome_embarcacao && embarcacaoPayload?.tipo) {
+      const { ID_embarcacao: _embId, ...embarcacaoData } = embarcacaoPayload;
+
+      if (embarcacaoData.codigo_embarcacao) {
+        [embarcacaoDb] = await Embarcacao.findOrCreate({
+          where: { codigo_embarcacao: embarcacaoData.codigo_embarcacao },
+          defaults: embarcacaoData,
+          transaction: t
+        });
+        await embarcacaoDb.update(embarcacaoData, { transaction: t });
+      } else if (embarcacaoDb) {
+        await embarcacaoDb.update(embarcacaoData, { transaction: t });
+      } else {
+        embarcacaoDb = await Embarcacao.create(embarcacaoData, { transaction: t });
+      }
+    }
+
+    if (embarcacaoDb) {
       console.log('✅ Embarcação:', embarcacaoDb.nome_embarcacao, `(ID: ${embarcacaoDb.ID_embarcacao})`);
     }
 
@@ -647,29 +698,29 @@ export const atualizarDesembarque = async (req, res) => {
       pescadorDb = await Pescador.create(pescadorPayload, { transaction: t });
     }
 
-    // Atualizar ou criar embarcação (somente se dados mínimos existirem)
+    // Atualizar, criar ou apenas vincular embarcação
     let embarcacaoDb = null;
-    if (embarcacao) {
-      if (embarcacao.codigo_embarcacao) {
-        const codigoEmbarcacao = String(embarcacao.codigo_embarcacao).trim();
-        const nomeEmbarcacao = embarcacao.nome_embarcacao ? String(embarcacao.nome_embarcacao).trim() : null;
-        const tipoEmbarcacao = embarcacao.tipo ? String(embarcacao.tipo).trim() : null;
-        if (codigoEmbarcacao && nomeEmbarcacao && tipoEmbarcacao) {
-          [embarcacaoDb] = await Embarcacao.findOrCreate({
-            where: { codigo_embarcacao: codigoEmbarcacao },
-            defaults: { ...embarcacao, codigo_embarcacao: codigoEmbarcacao, nome_embarcacao: nomeEmbarcacao, tipo: tipoEmbarcacao },
-            transaction: t
-          });
-          await embarcacaoDb.update({ ...embarcacao, codigo_embarcacao: codigoEmbarcacao, nome_embarcacao: nomeEmbarcacao, tipo: tipoEmbarcacao }, { transaction: t });
-        }
-      } else if (embarcacao.ID_embarcacao) {
-        // Se for atualizar por ID, só atualiza quando tipo e nome existirem (colunas NOT NULL)
-        const nomeEmbarcacao = embarcacao.nome_embarcacao ? String(embarcacao.nome_embarcacao).trim() : null;
-        const tipoEmbarcacao = embarcacao.tipo ? String(embarcacao.tipo).trim() : null;
-        if (nomeEmbarcacao && tipoEmbarcacao) {
-          embarcacaoDb = await Embarcacao.findByPk(embarcacao.ID_embarcacao, { transaction: t });
-          if (embarcacaoDb) await embarcacaoDb.update({ ...embarcacao, nome_embarcacao: nomeEmbarcacao, tipo: tipoEmbarcacao }, { transaction: t });
-        }
+    const embarcacaoPayload = buildEmbarcacaoPayload(embarcacao);
+    if (embarcacaoPayload) {
+      const { ID_embarcacao: embarcacaoPayloadId, ...embarcacaoData } = embarcacaoPayload;
+      const embarcacaoIdToUpdate = embarcacaoPayloadId || desembarqueDados?.ID_embarcacao || desembarqueDb.ID_embarcacao || null;
+      const hasRequiredFields = Boolean(embarcacaoData.nome_embarcacao && embarcacaoData.tipo);
+
+      if (embarcacaoIdToUpdate) {
+        embarcacaoDb = await Embarcacao.findByPk(embarcacaoIdToUpdate, { transaction: t });
+      }
+
+      if (hasRequiredFields && embarcacaoData.codigo_embarcacao) {
+        [embarcacaoDb] = await Embarcacao.findOrCreate({
+          where: { codigo_embarcacao: embarcacaoData.codigo_embarcacao },
+          defaults: embarcacaoData,
+          transaction: t
+        });
+        await embarcacaoDb.update(embarcacaoData, { transaction: t });
+      } else if (hasRequiredFields && embarcacaoDb) {
+        await embarcacaoDb.update(embarcacaoData, { transaction: t });
+      } else if (hasRequiredFields) {
+        embarcacaoDb = await Embarcacao.create(embarcacaoData, { transaction: t });
       }
     }
 
@@ -677,7 +728,7 @@ export const atualizarDesembarque = async (req, res) => {
     const updatePayload = {
       ...(desembarqueDados || {}),
       ID_pescador: pescadorDb?.ID_pescador ?? desembarqueDb.ID_pescador,
-      ID_embarcacao: embarcacaoDb?.ID_embarcacao ?? desembarqueDb.ID_embarcacao
+      ID_embarcacao: embarcacaoDb?.ID_embarcacao ?? desembarqueDados?.ID_embarcacao ?? desembarqueDb.ID_embarcacao
     };
 
     // Normalizar campos que agora suportam múltiplos valores

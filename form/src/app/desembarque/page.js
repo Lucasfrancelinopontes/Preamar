@@ -53,6 +53,7 @@ const createIndividuoItem = () => ({
 
 const createInitialFormData = () => ({
     ID_desembarque: null,
+    ID_embarcacao: null,
     municipio: "",
     localidade: "",
     dataColeta: "",
@@ -150,6 +151,16 @@ const parseCoord = (raw, kind) => {
     return null;
 };
 
+const normalizeConservacaoValue = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+
+    if (raw === "caixa") return "caixaTermica";
+    if (raw === "in_natura") return "pescadoInNatura";
+
+    return raw;
+};
+
 const mapToArray = (response) => {
     if (Array.isArray(response)) return response;
     if (Array.isArray(response?.data)) return response.data;
@@ -166,6 +177,7 @@ const mapApiToFormData = (data) => {
     return {
         ...createInitialFormData(),
         ID_desembarque: data?.ID_desembarque || null,
+        ID_embarcacao: data?.embarcacao?.ID_embarcacao || null,
         municipio: data?.municipio || "",
         localidade: data?.localidade || "",
         dataColeta: toDateInput(data?.data_coleta),
@@ -192,7 +204,7 @@ const mapApiToFormData = (data) => {
         comprimento: data?.embarcacao?.comprimento != null ? String(data.embarcacao.comprimento) : "",
         capacidadeEstocagem: data?.embarcacao?.capacidade != null ? String(data.embarcacao.capacidade) : "",
         forcaMotor: data?.embarcacao?.hp != null ? String(data.embarcacao.hp) : "",
-        conservacao: data?.embarcacao?.possui || "",
+        conservacao: normalizeConservacaoValue(data?.embarcacao?.possui),
         artePesca: arteRaw ? (arteIsKnown ? arteRaw : "outras") : "",
         artePescaOutro: arteRaw ? (arteIsKnown ? (arte?.nome || "") : arteRaw) : "",
         tamanhoArte: arte?.tamanho != null ? String(arte.tamanho) : "",
@@ -292,6 +304,7 @@ function DesembarqueContent() {
                 const response = await api.getDesembarque(editId);
                 const data = response?.data || response;
                 setFormData(mapApiToFormData(data));
+                setEmbarcacaoSelecionadaId(data?.embarcacao?.ID_embarcacao ? String(data.embarcacao.ID_embarcacao) : "");
             } catch (error) {
                 setErroEnvio(error?.message || "Nao foi possivel carregar dados para edicao");
             } finally {
@@ -457,6 +470,7 @@ function DesembarqueContent() {
 
         setFormData((prev) => ({
             ...prev,
+            ID_embarcacao: embarcacao.ID_embarcacao || prev.ID_embarcacao || null,
             nomeEmbarcacao: embarcacao.nome_embarcacao || "",
             codigoEmbarcacao: embarcacao.codigo_embarcacao || "",
             tipoEmbarcacao: embarcacao.tipo || "",
@@ -464,7 +478,7 @@ function DesembarqueContent() {
             comprimento: embarcacao.comprimento != null ? String(embarcacao.comprimento) : "",
             capacidadeEstocagem: embarcacao.capacidade != null ? String(embarcacao.capacidade) : "",
             forcaMotor: embarcacao.hp != null ? String(embarcacao.hp) : "",
-            conservacao: embarcacao.possui || "",
+            conservacao: normalizeConservacaoValue(embarcacao.possui),
             municipioEmbarcacao: embarcacao.municipio || prev.municipioEmbarcacao || prev.municipio || "",
             nomeProprietario: prev.nomeProprietario || embarcacao.proprietario || "",
             apelidoProprietario: prev.apelidoProprietario || embarcacao.apelido_propietario || "",
@@ -659,6 +673,7 @@ function DesembarqueContent() {
                 cpf: (formData.cpfPescador || "").replace(/\D/g, "") || null
             },
             embarcacao: {
+                ID_embarcacao: formData.ID_embarcacao ? Number(formData.ID_embarcacao) : null,
                 nome_embarcacao: formData.nomeEmbarcacao || null,
                 codigo_embarcacao: formData.codigoEmbarcacao || null,
                 tipo: formData.tipoEmbarcacao || null,
@@ -666,7 +681,7 @@ function DesembarqueContent() {
                 comprimento: toNumberOrNull(formData.comprimento),
                 capacidade: toNumberOrNull(formData.capacidadeEstocagem),
                 hp: toNumberOrNull(formData.forcaMotor),
-                possui: formData.conservacao || null,
+                possui: normalizeConservacaoValue(formData.conservacao) || null,
                 municipio: formData.municipioEmbarcacao === "outro"
                     ? ((formData.municipioEmbarcacaoOutro || "").trim() || null)
                     : (formData.municipioEmbarcacao || formData.municipio || null),
@@ -1008,8 +1023,8 @@ function DesembarqueContent() {
                                             >
                                                 <option value="">Selecione...</option>
                                                 <option value="urna">Urna</option>
-                                                <option value="caixa">Caixa Termica</option>
-                                                <option value="in_natura">Pescado In Natura</option>
+                                                <option value="caixaTermica">Caixa Termica</option>
+                                                <option value="pescadoInNatura">Pescado In Natura</option>
                                             </select>
                                         </div>
                                     </div>
