@@ -1275,7 +1275,7 @@ function DesembarqueContent() {
                                                                 <option value="">Selecione...</option>
                                                                 {especiesSelecionadasNaCaptura.map((esp) => (
                                                                     <option key={`ind-esp-${esp.ID}`} value={esp.ID}>
-                                                                        #{esp.ID} - {esp.Nome_popular}
+                                                                            #{esp.IDD ?? esp.ID} - {esp.Nome_popular}
                                                                     </option>
                                                                 ))}
                                                             </select>
