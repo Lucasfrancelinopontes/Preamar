@@ -12,6 +12,7 @@ export const gesp = async (req,res) => {
             order: [['nome_popular', 'ASC']],
             attributes: [
                 'ID_especie',
+                'idd',
                 'familia',
                 'nome_cientifico',
                 'nome_popular',
@@ -29,6 +30,7 @@ export const gesp = async (req,res) => {
 
         const especiesFormatadas = especies.map((especie) => ({
             ID: especie.ID_especie,
+            IDD: especie.idd ?? especie.ID_especie,
             Familia: especie.familia,
             Nome_cientifico: especie.nome_cientifico,
             Nome_popular: especie.nome_popular,

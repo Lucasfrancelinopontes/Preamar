@@ -36,6 +36,7 @@ function InputGroup({ label, name, value, onChange, type = "text", placeholder =
 
 const createCapturaItem = () => ({
     ID_captura: null,
+    especieIdd: "",
     especieId: "",
     pesoTotalEspecie: "",
     precoKg: "",
@@ -210,6 +211,7 @@ const mapApiToFormData = (data) => {
         capturas: capturasApi.length > 0
             ? capturasApi.map((captura) => ({
                 ID_captura: captura?.ID_captura || null,
+                especieIdd: captura?.ID_especie != null ? String(captura.ID_especie) : "",
                 especieId: captura?.ID_especie != null ? String(captura.ID_especie) : "",
                 pesoTotalEspecie: captura?.peso_kg != null ? String(captura.peso_kg) : "",
                 precoKg: captura?.preco_kg != null ? String(captura.preco_kg) : "",
@@ -368,6 +370,52 @@ function DesembarqueContent() {
         return especies.filter((esp) => especiesSelecionadas.has(String(esp.ID)));
     }, [especies, formData.capturas]);
 
+    const especiesPorId = useMemo(() => {
+        const map = new Map();
+        especies.forEach((esp) => {
+            const key = String(esp.ID || "").trim();
+            if (key) map.set(key, esp);
+        });
+        return map;
+    }, [especies]);
+
+    const especiesPorIdd = useMemo(() => {
+        const map = new Map();
+        especies.forEach((esp) => {
+            const key = String(esp.IDD ?? esp.ID ?? "").trim();
+            if (key) map.set(key, esp);
+        });
+        return map;
+    }, [especies]);
+
+    useEffect(() => {
+        if (especies.length === 0) return;
+
+        setFormData((prev) => {
+            const capturas = Array.isArray(prev.capturas) ? prev.capturas : [];
+            if (capturas.length === 0) return prev;
+
+            let changed = false;
+            const normalizadas = capturas.map((captura) => {
+                const especieId = String(captura.especieId || "").trim();
+                if (!especieId) return captura;
+
+                const especie = especiesPorId.get(especieId);
+                if (!especie) return captura;
+
+                const iddCorreto = String(especie.IDD ?? especie.ID ?? "").trim();
+                const iddAtual = String(captura.especieIdd || "").trim();
+
+                if (!iddCorreto || iddAtual === iddCorreto) return captura;
+
+                changed = true;
+                return { ...captura, especieIdd: iddCorreto };
+            });
+
+            return changed ? { ...prev, capturas: normalizadas } : prev;
+        });
+    }, [especies, especiesPorId]);
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => {
@@ -428,7 +476,53 @@ function DesembarqueContent() {
     const handleCapturaChange = (index, field, value) => {
         setFormData((prev) => {
             const capturas = Array.isArray(prev.capturas) ? [...prev.capturas] : [createCapturaItem()];
-            capturas[index] = { ...capturas[index], [field]: value };
+            const capturaAtual = { ...(capturas[index] || createCapturaItem()) };
+
+            if (field === "especieIdd") {
+                const iddInformado = String(value || "").trim();
+
+                if (!iddInformado) {
+                    capturas[index] = {
+                        ...capturaAtual,
+                        especieIdd: "",
+                        especieId: ""
+                    };
+                    return { ...prev, capturas };
+                }
+
+                const especieEncontrada = especiesPorIdd.get(iddInformado);
+                capturas[index] = {
+                    ...capturaAtual,
+                    especieIdd: iddInformado,
+                    especieId: especieEncontrada ? String(especieEncontrada.ID) : ""
+                };
+                return { ...prev, capturas };
+            }
+
+            if (field === "especieId") {
+                const especieId = String(value || "").trim();
+
+                if (!especieId) {
+                    capturas[index] = {
+                        ...capturaAtual,
+                        especieId: "",
+                        especieIdd: ""
+                    };
+                    return { ...prev, capturas };
+                }
+
+                const especieEncontrada = especiesPorId.get(especieId);
+                capturas[index] = {
+                    ...capturaAtual,
+                    especieId,
+                    especieIdd: especieEncontrada
+                        ? String(especieEncontrada.IDD ?? especieEncontrada.ID ?? "")
+                        : ""
+                };
+                return { ...prev, capturas };
+            }
+
+            capturas[index] = { ...capturaAtual, [field]: value };
             return { ...prev, capturas };
         });
     };
@@ -1017,6 +1111,17 @@ function DesembarqueContent() {
                                         </div>
 
                                         <div className="space-y-4">
+                                            <datalist id="captura-especies-idd-options">
+                                                {especies.map((esp) => (
+                                                    <option
+                                                        key={`idd-option-${esp.ID}`}
+                                                        value={String(esp.IDD ?? esp.ID ?? "")}
+                                                    >
+                                                        {esp.Nome_popular} ({esp.Nome_cientifico})
+                                                    </option>
+                                                ))}
+                                            </datalist>
+
                                             {(formData.capturas || []).map((captura, index) => (
                                                 <div key={`captura-${captura.ID_captura || index}`} className="rounded-lg border border-slate-200 bg-white p-4">
                                                     <div className="mb-3 flex items-center justify-between gap-3">
@@ -1031,9 +1136,22 @@ function DesembarqueContent() {
                                                         </button>
                                                     </div>
 
-                                                    <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                                                    <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
                                                         <div>
-                                                            <label className="mb-1.5 block text-sm font-semibold text-black">Especie (ID)</label>
+                                                            <label className="mb-1.5 block text-sm font-semibold text-black">IDD da especie</label>
+                                                            <input
+                                                                type="text"
+                                                                inputMode="numeric"
+                                                                value={captura.especieIdd || ""}
+                                                                onChange={(e) => handleCapturaChange(index, "especieIdd", e.target.value)}
+                                                                list="captura-especies-idd-options"
+                                                                placeholder="Digite ou selecione IDD"
+                                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
+                                                            />
+                                                        </div>
+
+                                                        <div>
+                                                            <label className="mb-1.5 block text-sm font-semibold text-black">Nome da especie</label>
                                                             <select
                                                                 value={captura.especieId}
                                                                 onChange={(e) => handleCapturaChange(index, "especieId", e.target.value)}
@@ -1042,7 +1160,7 @@ function DesembarqueContent() {
                                                                 <option value="">Selecione...</option>
                                                                 {especies.map((esp) => (
                                                                     <option key={esp.ID} value={esp.ID}>
-                                                                        #{esp.ID} - {esp.Nome_popular} ({esp.Nome_cientifico})
+                                                                        {esp.Nome_popular} ({esp.Nome_cientifico})
                                                                     </option>
                                                                 ))}
                                                             </select>
