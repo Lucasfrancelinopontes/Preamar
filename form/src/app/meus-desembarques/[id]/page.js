@@ -65,8 +65,8 @@ export default function DetalhesDesembarque() {
     return formatDatePtBr(data);
   };
 
-  const formatarDataHora = (data) => {
-    return formatDateTimePtBr(data);
+  const formatarDataHora = (data, time = null) => {
+    return formatDateTimePtBr(data, time);
   };
 
   const formatarMoeda = (valor) => {

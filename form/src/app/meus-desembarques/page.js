@@ -84,8 +84,8 @@ function MeusDesembarquesContent() {
         return formatDatePtBr(dataString);
     };
 
-    const formatarDataHora = (dataString) => {
-        return formatDateTimePtBr(dataString);
+    const formatarDataHora = (dataString, timeString = null) => {
+        return formatDateTimePtBr(dataString, timeString);
     };
 
     const formatarValor = (valor) => {
@@ -474,13 +474,13 @@ function MeusDesembarquesContent() {
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Data de Saída</p>
                                         <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                            {formatarDataHora(desembarqueSelecionado.data_saida)}
+                                            {formatarDataHora(desembarqueSelecionado.data_saida, desembarqueSelecionado.hora_saida)}
                                         </p>
                                     </div>
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Data de Chegada</p>
                                         <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                            {formatarDataHora(desembarqueSelecionado.data_chegada)}
+                                            {formatarDataHora(desembarqueSelecionado.data_chegada, desembarqueSelecionado.hora_desembarque)}
                                         </p>
                                     </div>
                                 </div>
