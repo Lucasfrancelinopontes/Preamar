@@ -369,11 +369,11 @@ export default function DetalhesDesembarque() {
               </div>
               <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
                 <span className="text-gray-600 dark:text-gray-300">Data/Hora Saída:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatarDataHora(desembarque.data_saida)}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatarDataHora(desembarque.data_saida, desembarque.hora_saida)}</span>
               </div>
               <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
                 <span className="text-gray-600 dark:text-gray-300">Data/Hora Chegada:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatarDataHora(desembarque.data_chegada)}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatarDataHora(desembarque.data_chegada, desembarque.hora_desembarque)}</span>
               </div>
               <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
                 <span className="text-gray-600 dark:text-gray-300">Tripulantes:</span>
