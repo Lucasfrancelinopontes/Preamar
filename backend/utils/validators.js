@@ -29,10 +29,11 @@ export const validarCPF = (cpf) => {
 };
 
 export const gerarCodigoDesembarque = (municipio, localidade, data, consecutivo) => {
-  const dataObj = new Date(data);
-  const dia = String(dataObj.getDate()).padStart(2, '0');
-  const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-  const ano = String(dataObj.getFullYear()).slice(-2);
+  const raw = String(data).trim();
+  const [dateOnly] = raw.split('T');
+  const [anoCompleto, mes, dia] = dateOnly.split('-');
+  if (!anoCompleto || !mes || !dia) return '';
+  const ano = anoCompleto.slice(-2);
   const consec = String(consecutivo).padStart(2, '0');
   
   return `${municipio}-${localidade}-${dia}-${mes}-${ano}-${consec}`;
@@ -48,8 +49,8 @@ export const validarDesembarque = (dados) => {
   
   // Validar datas
   if (dados.data_saida && dados.data_chegada) {
-    const saida = new Date(dados.data_saida);
-    const chegada = new Date(dados.data_chegada);
+    const saida = String(dados.data_saida).split('T')[0];
+    const chegada = String(dados.data_chegada).split('T')[0];
     if (chegada < saida) {
       erros.push('Data de chegada não pode ser anterior à data de saída');
     }

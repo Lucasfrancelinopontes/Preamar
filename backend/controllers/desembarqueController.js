@@ -161,11 +161,11 @@ const toPositiveIntOrNull = (value) => {
 // Helper para gerar cod_desembarque a partir de município/localidade/data/consecutivo
 const gerarCodigoDesembarque = (municipio, localidade, data_coleta, consecutivo) => {
   if (!municipio || !localidade || !data_coleta || !consecutivo) return null;
-  const dataObj = new Date(data_coleta);
-  if (isNaN(dataObj)) return null;
-  const dia = String(dataObj.getDate()).padStart(2, '0');
-  const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-  const ano = String(dataObj.getFullYear()).slice(-2);
+  const raw = String(data_coleta).trim();
+  const [dateOnly] = raw.split('T');
+  const [anoCompleto, mes, dia] = dateOnly.split('-');
+  if (!anoCompleto || !mes || !dia) return null;
+  const ano = anoCompleto.slice(-2);
   const consec = String(consecutivo).padStart(2, '0');
   return `${municipio}-${localidade}-${dia}-${mes}-${ano}-${consec}`;
 };

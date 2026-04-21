@@ -54,14 +54,14 @@ export const Desembarque = sequelize.define('Desembarque', {
     }
   },
   data_saida: {
-    type: DataTypes.DATE,
+    type: DataTypes.DATEONLY,
     comment: 'Data e hora de saída da embarcação'
   },
   hora_saida: {
     type: DataTypes.TIME
   },
   data_chegada: {
-    type: DataTypes.DATE,
+    type: DataTypes.DATEONLY,
     comment: 'Data e hora de chegada da embarcação'
   },
   hora_desembarque: {

@@ -86,11 +86,12 @@ export const validarDataSaidaChegada = (dataSaida, dataChegada) => {
 
 export const gerarCodigoDesembarque = (municipio, localidade, data, consecutivo) => {
   if (!municipio || !localidade || !data || !consecutivo) return '';
-  
-  const dataObj = new Date(data + 'T00:00:00');
-  const dia = String(dataObj.getDate()).padStart(2, '0');
-  const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-  const ano = String(dataObj.getFullYear()).slice(-2);
+
+  const raw = String(data).trim();
+  const [dateOnly] = raw.split('T');
+  const [anoCompleto, mes, dia] = dateOnly.split('-');
+  if (!anoCompleto || !mes || !dia) return '';
+  const ano = anoCompleto.slice(-2);
   const consec = String(consecutivo).padStart(2, '0');
   
   return `${municipio}-${localidade}-${dia}-${mes}-${ano}-${consec}`;
