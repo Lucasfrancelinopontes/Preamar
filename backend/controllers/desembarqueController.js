@@ -120,6 +120,26 @@ const normalizeDestinoApelido = (value) => {
   return str || null;
 };
 
+const normalizeDateOnly = (value) => {
+  if (value === undefined || value === null || value === '') return value;
+  const raw = String(value).trim();
+  if (!raw) return value;
+  return raw.includes('T') ? raw.split('T')[0] : raw;
+};
+
+const serializeDesembarque = (desembarque) => {
+  if (!desembarque) return desembarque;
+
+  const plain = typeof desembarque.toJSON === 'function' ? desembarque.toJSON() : { ...desembarque };
+
+  return {
+    ...plain,
+    data_coleta: normalizeDateOnly(plain.data_coleta),
+    data_saida: normalizeDateOnly(plain.data_saida),
+    data_chegada: normalizeDateOnly(plain.data_chegada)
+  };
+};
+
 let hasArteNomeColumnPromise = null;
 const hasArteNomeColumn = async () => {
   if (hasArteNomeColumnPromise) return hasArteNomeColumnPromise;
@@ -472,7 +492,7 @@ export const listarDesembarques = async (req, res) => {
 
     res.json({
       success: true,
-      data: rows,
+      data: rows.map(serializeDesembarque),
       pagination: {
         total: count,
         page: parseInt(page),
@@ -628,7 +648,7 @@ export const buscarDesembarque = async (req, res) => {
     res.json({
       success: true,
       data: {
-        ...desembarque.toJSON(),
+        ...serializeDesembarque(desembarque),
         estatisticas
       }
     });
