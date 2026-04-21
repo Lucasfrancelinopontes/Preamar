@@ -304,7 +304,6 @@ function DesembarqueContent() {
                 const response = await api.getDesembarque(editId);
                 const data = response?.data || response;
                 setFormData(mapApiToFormData(data));
-                setEmbarcacaoSelecionadaId(data?.embarcacao?.ID_embarcacao ? String(data.embarcacao.ID_embarcacao) : "");
             } catch (error) {
                 setErroEnvio(error?.message || "Nao foi possivel carregar dados para edicao");
             } finally {
@@ -316,6 +315,14 @@ function DesembarqueContent() {
     }, [editId]);
 
     useEffect(() => {
+        if (editId) {
+            setEmbarcacoesDoMunicipio([]);
+            setEmbarcacaoSelecionadaId("");
+            setErroEmbarcacoes("");
+            setCarregandoEmbarcacoes(false);
+            return;
+        }
+
         const carregarEmbarcacoesPorMunicipio = async () => {
             const municipio = (formData.municipio || "").trim();
 
@@ -340,7 +347,7 @@ function DesembarqueContent() {
         };
 
         carregarEmbarcacoesPorMunicipio();
-    }, [formData.municipio]);
+    }, [editId, formData.municipio]);
 
     const municipioSelecionado = useMemo(
         () => municipios.find((m) => m.municipio === formData.municipio) || null,
@@ -891,39 +898,43 @@ function DesembarqueContent() {
                                         <InputGroup label="CPF" name="cpfPescador" placeholder="000.000.000-00" value={formData.cpfPescador} onChange={handleInputChange} />
                                     </div>
 
-                                    <h3 className="mb-4 text-lg font-semibold text-black">Pre-selecao de Embarcacao</h3>
-                                    <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                        <label className="mb-1.5 block text-sm font-semibold text-black">
-                                            Selecionar embarcacao ja cadastrada
-                                        </label>
-                                        <select
-                                            value={embarcacaoSelecionadaId}
-                                            onChange={handleSelecionarEmbarcacao}
-                                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
-                                            disabled={!formData.municipio || carregandoEmbarcacoes}
-                                        >
-                                            <option value="">
-                                                {!formData.municipio
-                                                    ? "Selecione um municipio na etapa 1"
-                                                    : carregandoEmbarcacoes
-                                                        ? "Carregando embarcacoes..."
-                                                        : "Selecione uma embarcacao (opcional)"}
-                                            </option>
-                                            {embarcacoesDoMunicipio.map((embarcacao) => (
-                                                <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
-                                                    {embarcacao.nome_embarcacao || "Sem nome"}
-                                                    {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
-                                                    {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {erroEmbarcacoes && (
-                                            <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoes}</p>
-                                        )}
-                                        {!carregandoEmbarcacoes && formData.municipio && embarcacoesDoMunicipio.length === 0 && !erroEmbarcacoes && (
-                                            <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para este municipio.</p>
-                                        )}
-                                    </div>
+                                    {!editId && (
+                                        <>
+                                            <h3 className="mb-4 text-lg font-semibold text-black">Pre-selecao de Embarcacao</h3>
+                                            <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                                <label className="mb-1.5 block text-sm font-semibold text-black">
+                                                    Selecionar embarcacao ja cadastrada
+                                                </label>
+                                                <select
+                                                    value={embarcacaoSelecionadaId}
+                                                    onChange={handleSelecionarEmbarcacao}
+                                                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
+                                                    disabled={!formData.municipio || carregandoEmbarcacoes}
+                                                >
+                                                    <option value="">
+                                                        {!formData.municipio
+                                                            ? "Selecione um municipio na etapa 1"
+                                                            : carregandoEmbarcacoes
+                                                                ? "Carregando embarcacoes..."
+                                                                : "Selecione uma embarcacao (opcional)"}
+                                                    </option>
+                                                    {embarcacoesDoMunicipio.map((embarcacao) => (
+                                                        <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
+                                                            {embarcacao.nome_embarcacao || "Sem nome"}
+                                                            {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
+                                                            {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {erroEmbarcacoes && (
+                                                    <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoes}</p>
+                                                )}
+                                                {!carregandoEmbarcacoes && formData.municipio && embarcacoesDoMunicipio.length === 0 && !erroEmbarcacoes && (
+                                                    <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para este municipio.</p>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
 
                                     <h3 className="mb-4 text-lg font-semibold text-black">Dados do Proprietario</h3>
                                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
