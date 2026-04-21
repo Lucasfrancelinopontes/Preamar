@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import api from '@/services/api';
+import { formatDatePtBr, formatDateTimePtBr, parseApiDate } from '@/utils/date';
 
 function MeusDesembarquesContent() {
     const router = useRouter();
@@ -25,7 +26,7 @@ function MeusDesembarquesContent() {
         const passouFiltroCodigo = !termo || codigo.includes(termo);
 
         const dataColetaRaw = desembarque?.data_coleta;
-        const dataColeta = dataColetaRaw ? new Date(dataColetaRaw) : null;
+        const dataColeta = parseApiDate(dataColetaRaw);
         const dataColetaValida = dataColeta instanceof Date && !Number.isNaN(dataColeta?.getTime());
 
         let passouFiltroData = true;
@@ -35,13 +36,19 @@ function MeusDesembarquesContent() {
         }
 
         if (dataInicio && dataColetaValida) {
-            const inicio = new Date(`${dataInicio}T00:00:00`);
-            passouFiltroData = passouFiltroData && dataColeta >= inicio;
+            const inicio = parseApiDate(dataInicio);
+            if (inicio) {
+                inicio.setHours(0, 0, 0, 0);
+                passouFiltroData = passouFiltroData && dataColeta >= inicio;
+            }
         }
 
         if (dataFim && dataColetaValida) {
-            const fim = new Date(`${dataFim}T23:59:59.999`);
-            passouFiltroData = passouFiltroData && dataColeta <= fim;
+            const fim = parseApiDate(dataFim);
+            if (fim) {
+                fim.setHours(23, 59, 59, 999);
+                passouFiltroData = passouFiltroData && dataColeta <= fim;
+            }
         }
 
         return passouFiltroCodigo && passouFiltroData;
@@ -58,7 +65,7 @@ function MeusDesembarquesContent() {
             if (data.data && data.data.length > 0) {
                 // Ordenar por data mais recente
                 const desembarquesOrdenados = [...data.data].sort((a, b) => 
-                    new Date(b.data_coleta) - new Date(a.data_coleta)
+                    (parseApiDate(b.data_coleta)?.getTime() || 0) - (parseApiDate(a.data_coleta)?.getTime() || 0)
                 );
                 setDesembarques(desembarquesOrdenados);
             } else {
@@ -74,15 +81,11 @@ function MeusDesembarquesContent() {
     };
 
     const formatarData = (dataString) => {
-        if (!dataString) return '-';
-        const data = new Date(dataString);
-        return data.toLocaleDateString('pt-BR');
+        return formatDatePtBr(dataString);
     };
 
     const formatarDataHora = (dataString) => {
-        if (!dataString) return '-';
-        const data = new Date(dataString);
-        return data.toLocaleString('pt-BR');
+        return formatDateTimePtBr(dataString);
     };
 
     const formatarValor = (valor) => {

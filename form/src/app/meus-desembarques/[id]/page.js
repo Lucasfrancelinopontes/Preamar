@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/app/contexts/AuthContext';
 import api from '@/services/api';
+import { formatDatePtBr, formatDateTimePtBr } from '@/utils/date';
 
 export default function DetalhesDesembarque() {
   const params = useParams();
@@ -61,13 +62,11 @@ export default function DetalhesDesembarque() {
   };
 
   const formatarData = (data) => {
-    if (!data) return '-';
-    return new Date(data).toLocaleDateString('pt-BR');
+    return formatDatePtBr(data);
   };
 
   const formatarDataHora = (data) => {
-    if (!data) return '-';
-    return new Date(data).toLocaleString('pt-BR');
+    return formatDateTimePtBr(data);
   };
 
   const formatarMoeda = (valor) => {
@@ -109,7 +108,7 @@ export default function DetalhesDesembarque() {
     const localidade = (d.localidade || '').replace(/;/g, ',');
     
     // Formatar data para dd/mm/yyyy
-    const dataFormatada = d.data_coleta ? new Date(d.data_coleta).toLocaleDateString('pt-BR') : '';
+    const dataFormatada = formatDatePtBr(d.data_coleta);
     
     // Preparar dados de despesas
     const combustivel = d.litros || '0';

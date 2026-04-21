@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import api from '@/services/api';
+import { formatDatePtBr, parseApiDate } from '@/utils/date';
 
 function AnalyticsContent() {
     const router = useRouter();
@@ -85,7 +86,8 @@ function AnalyticsContent() {
         const meses = {};
         desembarques.forEach(d => {
             if (d.data_coleta && d.total_desembarque) {
-                const data = new Date(d.data_coleta);
+                const data = parseApiDate(d.data_coleta);
+                if (!data) return;
                 const mesAno = `${String(data.getMonth() + 1).padStart(2, '0')}/${data.getFullYear()}`;
                 meses[mesAno] = (meses[mesAno] || 0) + parseFloat(d.total_desembarque);
             }
@@ -187,7 +189,7 @@ function AnalyticsContent() {
                 const localidade = (d.localidade || '').replace(/;/g, ',');
                 
                 // Formatar data para dd/mm/yyyy
-                const dataFormatada = d.data_coleta ? new Date(d.data_coleta).toLocaleDateString('pt-BR') : '';
+                const dataFormatada = formatDatePtBr(d.data_coleta);
                 
                 // Preparar dados de despesas
                 const combustivel = d.litros || '0';
