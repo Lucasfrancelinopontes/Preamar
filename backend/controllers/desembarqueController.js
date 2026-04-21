@@ -123,8 +123,15 @@ const normalizeDestinoApelido = (value) => {
 const normalizeDateOnly = (value) => {
   if (value === undefined || value === null || value === '') return value;
   const raw = String(value).trim();
-  if (!raw) return value;
+  if (!raw) return null;
   return raw.includes('T') ? raw.split('T')[0] : raw;
+};
+
+const fillDateFromFallback = (dateValue, fallbackDate, timeValue) => {
+  const normalized = normalizeDateOnly(dateValue);
+  if (normalized) return normalized;
+  if (timeValue && fallbackDate) return normalizeDateOnly(fallbackDate);
+  return normalized;
 };
 
 const serializeDesembarque = (desembarque) => {
@@ -132,11 +139,13 @@ const serializeDesembarque = (desembarque) => {
 
   const plain = typeof desembarque.toJSON === 'function' ? desembarque.toJSON() : { ...desembarque };
 
+  const dataColeta = normalizeDateOnly(plain.data_coleta);
+
   return {
     ...plain,
-    data_coleta: normalizeDateOnly(plain.data_coleta),
-    data_saida: normalizeDateOnly(plain.data_saida),
-    data_chegada: normalizeDateOnly(plain.data_chegada)
+    data_coleta: dataColeta,
+    data_saida: fillDateFromFallback(plain.data_saida, dataColeta, plain.hora_saida),
+    data_chegada: fillDateFromFallback(plain.data_chegada, dataColeta, plain.hora_desembarque)
   };
 };
 
