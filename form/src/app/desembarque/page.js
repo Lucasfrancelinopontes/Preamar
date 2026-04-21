@@ -96,6 +96,7 @@ const createInitialFormData = () => ({
     quadrante2: "",
     quadrante3: "",
     destino: "",
+    destinoApelido: "",
     capturas: [createCapturaItem()],
     individuos: [createIndividuoItem()]
 });
@@ -167,12 +168,35 @@ const mapToArray = (response) => {
     return [];
 };
 
+const extractDestinoApelido = (raw, destino) => {
+    if (!raw) return "";
+    const texto = String(raw).trim();
+    if (!texto) return "";
+
+    if (!texto.includes(":")) return texto;
+
+    const destinoKey = String(destino || "").trim().toLowerCase();
+    if (!destinoKey) return texto;
+
+    const entries = texto.split(",").map((item) => item.trim()).filter(Boolean);
+    const match = entries.find((item) => item.toLowerCase().startsWith(`${destinoKey}:`));
+    if (!match) return texto;
+
+    const [, ...rest] = match.split(":");
+    return rest.join(":").trim();
+};
+
 const mapApiToFormData = (data) => {
     const capturasApi = Array.isArray(data?.capturas) ? data.capturas : [];
     const individuosApi = Array.isArray(data?.individuos) ? data.individuos : [];
     const arte = Array.isArray(data?.artes) && data.artes.length > 0 ? data.artes[0] : null;
     const arteRaw = arte?.arte || "";
     const arteIsKnown = ARTE_OPTIONS.some((item) => item.value === arteRaw);
+
+    const destino = data?.destino_pescado
+        ? String(data.destino_pescado).split(",")[0].trim().toLowerCase()
+        : "";
+    const destinoApelido = extractDestinoApelido(data?.destino_apelido, destino);
 
     return {
         ...createInitialFormData(),
@@ -219,7 +243,8 @@ const mapApiToFormData = (data) => {
         quadrante1: data?.quadrante1 || "",
         quadrante2: data?.quadrante2 || "",
         quadrante3: data?.quadrante3 || "",
-        destino: data?.destino_pescado ? String(data.destino_pescado).split(",")[0].trim().toLowerCase() : "",
+        destino,
+        destinoApelido,
         capturas: capturasApi.length > 0
             ? capturasApi.map((captura) => ({
                 ID_captura: captura?.ID_captura || null,
@@ -458,6 +483,9 @@ function DesembarqueContent() {
             }
             if (name === "artePesca") {
                 return { ...prev, artePesca: value, artePescaOutro: value === "outras" ? prev.artePescaOutro : "" };
+            }
+            if (name === "destino") {
+                return { ...prev, destino: value, destinoApelido: value ? prev.destinoApelido : "" };
             }
             return { ...prev, [name]: value };
         });
@@ -725,6 +753,7 @@ function DesembarqueContent() {
                 desp_diesel: formData.tipoCombustivel === "Diesel",
                 desp_gasolina: formData.tipoCombustivel === "Gasolina",
                 destino_pescado: formData.destino || null,
+                destino_apelido: (formData.destinoApelido || "").trim() || null,
                 proprietario: formData.nomeProprietario || null,
                 apelido_proprietario: formData.apelidoProprietario || null,
                 atuou_pesca: formData.atuouNaPesca === "sim" ? "S" : formData.atuouNaPesca === "nao" ? "N" : null
@@ -1118,6 +1147,16 @@ function DesembarqueContent() {
                                                 </label>
                                             );
                                         })}
+                                        {formData.destino && (
+                                            <InputGroup
+                                                label="Nome do individuo"
+                                                name="destinoApelido"
+                                                placeholder="Digite o nome do individuo"
+                                                colSpan={2}
+                                                value={formData.destinoApelido}
+                                                onChange={handleInputChange}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -1338,6 +1377,7 @@ function DesembarqueContent() {
                                             <p><span className="font-semibold">Especies registradas:</span> {(formData.capturas || []).filter((captura) => captura.especieId).length || "-"}</p>
                                             <p><span className="font-semibold">Individuos registrados:</span> {(formData.individuos || []).filter((individuo) => individuo.especieId && (individuo.pesoIndividuo || individuo.comprimentoIndividuo)).length || "-"}</p>
                                             <p><span className="font-semibold">Destino:</span> {formData.destino || "-"}</p>
+                                            <p><span className="font-semibold">Nome do individuo:</span> {formData.destinoApelido || "-"}</p>
                                         </div>
                                     </div>
                                 </div>
