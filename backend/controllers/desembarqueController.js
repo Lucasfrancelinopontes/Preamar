@@ -120,11 +120,31 @@ const normalizeDestinoApelido = (value) => {
   return str || null;
 };
 
+const pad2 = (value) => String(value).padStart(2, '0');
+
+const formatDateOnly = (value) => {
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) return null;
+  return `${value.getFullYear()}-${pad2(value.getMonth() + 1)}-${pad2(value.getDate())}`;
+};
+
 const normalizeDateOnly = (value) => {
   if (value === undefined || value === null || value === '') return value;
+
+  if (value instanceof Date) return formatDateOnly(value);
+
   const raw = String(value).trim();
   if (!raw) return null;
-  return raw.includes('T') ? raw.split('T')[0] : raw;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  if (/^\d{4}-\d{2}-\d{2}[ T]/.test(raw)) return raw.slice(0, 10);
+
+  if (raw.includes('T')) {
+    const datePart = raw.split('T')[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return datePart;
+  }
+
+  const parsed = new Date(raw);
+  return formatDateOnly(parsed);
 };
 
 const fillDateFromFallback = (dateValue, fallbackDate, timeValue) => {

@@ -101,29 +101,72 @@ const createInitialFormData = () => ({
     individuos: [createIndividuoItem()]
 });
 
+const pad2 = (value) => String(value).padStart(2, "0");
+
+const formatDateForInput = (value) => {
+    if (!(value instanceof Date) || Number.isNaN(value.getTime())) return "";
+    return `${value.getFullYear()}-${pad2(value.getMonth() + 1)}-${pad2(value.getDate())}`;
+};
+
+const formatTimeForInput = (value) => {
+    if (!(value instanceof Date) || Number.isNaN(value.getTime())) return "";
+    return `${pad2(value.getHours())}:${pad2(value.getMinutes())}`;
+};
+
 const toDateInput = (value) => {
     if (!value) return "";
-    const raw = String(value);
-    if (raw.includes("T")) return raw.split("T")[0];
-    return raw;
+
+    if (value instanceof Date) return formatDateForInput(value);
+
+    const raw = String(value).trim();
+    if (!raw) return "";
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    if (/^\d{4}-\d{2}-\d{2}[ T]/.test(raw)) return raw.slice(0, 10);
+
+    if (raw.includes("T")) {
+        const datePart = raw.split("T")[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return datePart;
+    }
+
+    const parsed = new Date(raw);
+    return formatDateForInput(parsed);
 };
 
 const toTimeInput = (value) => {
     if (!value) return "";
-    const raw = String(value).replace("Z", "");
+
+    if (value instanceof Date) return formatTimeForInput(value);
+
+    const raw = String(value).trim().replace(/Z$/, "");
+    if (!raw) return "";
+
     if (raw.includes("T")) {
         const t = raw.split("T")[1] || "";
         return t.slice(0, 5);
     }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return "";
     if (/^\d{2}:\d{2}/.test(raw)) return raw.slice(0, 5);
-    return "";
+
+    const dateTimeWithSpace = raw.match(/\s(\d{2}:\d{2})(?::\d{2})?/);
+    if (dateTimeWithSpace) return dateTimeWithSpace[1];
+
+    const parsed = new Date(raw);
+    return formatTimeForInput(parsed);
 };
+
+const isValidDateInput = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+const isValidTimeInput = (value) => /^\d{2}:\d{2}$/.test(value);
 
 const toDatetimeLocal = (dateValue, timeValue) => {
     const date = toDateInput(dateValue);
-    if (!date) return "";
+    if (!isValidDateInput(date)) return "";
+
     const time = toTimeInput(timeValue || dateValue);
-    return time ? `${date}T${time}` : "";
+    if (!isValidTimeInput(time)) return "";
+
+    return `${date}T${time}`;
 };
 
 const splitDateTimeLocal = (value) => {
