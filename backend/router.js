@@ -40,6 +40,7 @@ import {
 } from './controllers/authController.js';
 import {
   listarUsuarios,
+  rankingGamificacaoUsuarios,
   criarUsuario,
   buscarUsuario,
   atualizarUsuario,
@@ -104,6 +105,7 @@ router.delete('/embarcacoes/:id', verificarAutenticacao, deletarEmbarcacao);
 
 // Gestão de Usuários
 router.get('/usuarios', verificarAutenticacao, verificarAdmin, listarUsuarios);
+router.get('/usuarios/ranking/gamificacao', verificarAutenticacao, verificarAdmin, rankingGamificacaoUsuarios);
 router.post('/usuarios', verificarAutenticacao, verificarAdmin, criarUsuario);
 router.get('/usuarios/:id', verificarAutenticacao, verificarAdmin, buscarUsuario);
 router.put('/usuarios/:id', verificarAutenticacao, verificarAdmin, atualizarUsuario);

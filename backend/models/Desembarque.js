@@ -53,6 +53,14 @@ export const Desembarque = sequelize.define('Desembarque', {
       key: 'ID_embarcacao'
     }
   },
+  ID_usuario: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'usuarios',
+      key: 'ID_usuario'
+    }
+  },
   data_saida: {
     type: DataTypes.DATEONLY,
     comment: 'Data e hora de saída da embarcação'

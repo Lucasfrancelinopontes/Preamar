@@ -7,6 +7,15 @@ import { useAuth } from './contexts/AuthContext';
 export default function Home() {
     const router = useRouter();
     const { usuario, carregando, estaAutenticado, ehAdmin, logout } = useAuth();
+    const gamificacao = usuario?.gamificacao || {
+        total_envios: 0,
+        nivel_atual: 1,
+        badge_atual: null,
+        progresso_percentual: 0,
+        proximo_marco: null
+    };
+
+    const progressoPercentual = Math.max(0, Math.min(100, Number(gamificacao.progresso_percentual) || 0));
 
     if (carregando) {
         return (
@@ -67,6 +76,43 @@ export default function Home() {
 
                 {estaAutenticado() ? (
                     <>
+                        <div className="mb-8 rounded-2xl bg-white p-6 shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-gray-100">
+                            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Perfil Gamificado</p>
+                                    <h3 className="mt-1 text-xl font-bold text-slate-800">
+                                        Nivel {gamificacao.nivel_atual}
+                                        {gamificacao.badge_atual ? ` • ${gamificacao.badge_atual}` : ''}
+                                    </h3>
+                                    <p className="mt-1 text-sm text-slate-600">
+                                        Formularios enviados: {gamificacao.total_envios}
+                                    </p>
+                                    {gamificacao.proximo_marco ? (
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            Faltam {gamificacao.proximo_marco.faltam} envio(s) para desbloquear {gamificacao.proximo_marco.badge}.
+                                        </p>
+                                    ) : (
+                                        <p className="mt-1 text-sm font-medium text-emerald-700">
+                                            Todos os marcos de gamificacao foram concluidos.
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="w-full lg:w-80">
+                                    <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-500">
+                                        <span>Progresso para o proximo marco</span>
+                                        <span>{progressoPercentual.toFixed(0)}%</span>
+                                    </div>
+                                    <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+                                        <div
+                                            className="h-full bg-emerald-500 transition-all duration-300"
+                                            style={{ width: `${progressoPercentual}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Area Operacional</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
                             <Link href="/desembarque" className="block group">

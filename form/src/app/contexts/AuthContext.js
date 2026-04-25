@@ -5,6 +5,33 @@ import api from '@/services/api';
 
 const AuthContext = createContext();
 
+const GAMIFICACAO_INICIAL = {
+    total_envios: 0,
+    nivel_atual: 1,
+    badge_atual: null,
+    marcos_conquistados: [],
+    total_marcos: 0,
+    progresso_percentual: 0,
+    proximo_marco: null
+};
+
+const normalizarUsuario = (usuario) => {
+    if (!usuario) return null;
+
+    const gamificacao = usuario.gamificacao || {};
+
+    return {
+        ...usuario,
+        gamificacao: {
+            ...GAMIFICACAO_INICIAL,
+            ...gamificacao,
+            marcos_conquistados: Array.isArray(gamificacao.marcos_conquistados)
+                ? gamificacao.marcos_conquistados
+                : []
+        }
+    };
+};
+
 export function AuthProvider({ children }) {
     const [usuario, setUsuario] = useState(null);
     const [token, setToken] = useState(null);
@@ -23,7 +50,7 @@ export function AuthProvider({ children }) {
 
             if (tokenSalvo && usuarioSalvo) {
                 setToken(tokenSalvo);
-                setUsuario(JSON.parse(usuarioSalvo));
+                setUsuario(normalizarUsuario(JSON.parse(usuarioSalvo)));
             }
         } catch (error) {
             console.error('Erro ao carregar usuário:', error);
@@ -38,10 +65,12 @@ export function AuthProvider({ children }) {
 
             // Salvar token e usuário
             localStorage.setItem('token', data.data.token);
-            localStorage.setItem('usuario', JSON.stringify(data.data.usuario));
+            const usuarioNormalizado = normalizarUsuario(data.data.usuario);
+
+            localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado));
 
             setToken(data.data.token);
-            setUsuario(data.data.usuario);
+            setUsuario(usuarioNormalizado);
 
             return { success: true };
         } catch (error) {
@@ -64,8 +93,9 @@ export function AuthProvider({ children }) {
     const atualizarPerfil = async () => {
         try {
             const data = await api.obterPerfil();
-            setUsuario(data.data);
-            localStorage.setItem('usuario', JSON.stringify(data.data));
+            const usuarioNormalizado = normalizarUsuario(data.data);
+            setUsuario(usuarioNormalizado);
+            localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado));
         } catch (error) {
             console.error('Erro ao atualizar perfil:', error);
         }

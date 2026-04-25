@@ -31,6 +31,16 @@ export const defineAssociations = () => {
     as: 'desembarques'
   });
 
+  // Desembarque pertence a Usuario (autor do envio)
+  Desembarque.belongsTo(Usuario, {
+    foreignKey: 'ID_usuario',
+    as: 'usuario'
+  });
+  Usuario.hasMany(Desembarque, {
+    foreignKey: 'ID_usuario',
+    as: 'desembarques'
+  });
+
   // Desembarque tem muitas Artes
   Desembarque.hasMany(DesembarqueArte, {
     foreignKey: 'ID_desembarque',

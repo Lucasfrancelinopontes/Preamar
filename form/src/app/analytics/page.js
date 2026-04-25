@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/app/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import api from '@/services/api';
 import { formatDatePtBr, parseApiDate } from '@/utils/date';
@@ -14,9 +13,14 @@ function AnalyticsContent() {
     const [error, setError] = useState(null);
     const [exportando, setExportando] = useState(false);
     const [temaEscuro, setTemaEscuro] = useState(false);
+    const [rankingUsuarios, setRankingUsuarios] = useState([]);
+    const [rankingPagination, setRankingPagination] = useState({ total: 0, page: 1, limit: 10, pages: 1 });
+    const [loadingRanking, setLoadingRanking] = useState(false);
+    const [erroRanking, setErroRanking] = useState(null);
 
     useEffect(() => {
         carregarDados();
+        carregarRanking(1);
     }, []);
 
     const carregarDados = async () => {
@@ -30,6 +34,21 @@ function AnalyticsContent() {
             console.error('Erro ao carregar dados:', err);
             setError(err.message || 'Erro ao carregar dados para análise');
             setLoading(false);
+        }
+    };
+
+    const carregarRanking = async (page = 1) => {
+        try {
+            setLoadingRanking(true);
+            setErroRanking(null);
+            const response = await api.rankingGamificacaoUsuarios({ page, limit: 10 });
+            setRankingUsuarios(response?.data || []);
+            setRankingPagination(response?.pagination || { total: 0, page: 1, limit: 10, pages: 1 });
+        } catch (err) {
+            console.error('Erro ao carregar ranking gamificado:', err);
+            setErroRanking(err.message || 'Erro ao carregar ranking gamificado de usuários');
+        } finally {
+            setLoadingRanking(false);
         }
     };
 
@@ -454,6 +473,103 @@ function AnalyticsContent() {
                             </div>
                         </div>
 
+                        <div className="card">
+                            <div className="mb-4 flex items-center justify-between gap-4">
+                                <div>
+                                    <h2 className="heading-secondary mb-1">
+                                        🏆 Ranking Gamificado de Usuários
+                                    </h2>
+                                    <p className="helper-text">
+                                        Tabela completa paginada por quantidade de formulários enviados.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => carregarRanking(rankingPagination.page)}
+                                    className="btn-secondary"
+                                    disabled={loadingRanking}
+                                >
+                                    {loadingRanking ? 'Atualizando...' : 'Atualizar ranking'}
+                                </button>
+                            </div>
+
+                            {erroRanking ? (
+                                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                                    {erroRanking}
+                                </div>
+                            ) : loadingRanking && rankingUsuarios.length === 0 ? (
+                                <div className="py-6 text-sm text-gray-500">Carregando ranking...</div>
+                            ) : (
+                                <>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[820px]">
+                                            <thead>
+                                                <tr className={`border-b ${temaEscuro ? 'border-gray-700' : 'border-gray-200'}`}>
+                                                    <th className={`text-left py-2 px-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Posição</th>
+                                                    <th className={`text-left py-2 px-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Usuário</th>
+                                                    <th className={`text-left py-2 px-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Função</th>
+                                                    <th className={`text-right py-2 px-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Envios</th>
+                                                    <th className={`text-right py-2 px-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Nível</th>
+                                                    <th className={`text-left py-2 px-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Badge atual</th>
+                                                    <th className={`text-left py-2 px-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>Próximo marco</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {rankingUsuarios.map((usuario) => {
+                                                    const gamificacao = usuario.gamificacao || {};
+                                                    return (
+                                                        <tr key={usuario.ID_usuario} className={`border-b ${temaEscuro ? 'border-gray-800' : 'border-gray-100'}`}>
+                                                            <td className={`py-2 px-2 font-semibold ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>#{usuario.posicao}</td>
+                                                            <td className={`py-2 px-2 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                                                <div className="font-medium">{usuario.nome}</div>
+                                                                <div className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>{usuario.email}</div>
+                                                            </td>
+                                                            <td className={`py-2 px-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>{usuario.funcao}</td>
+                                                            <td className={`py-2 px-2 text-right font-semibold ${temaEscuro ? 'text-teal-300' : 'text-teal-700'}`}>
+                                                                {gamificacao.total_envios || 0}
+                                                            </td>
+                                                            <td className={`py-2 px-2 text-right ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                                {gamificacao.nivel_atual || 1}
+                                                            </td>
+                                                            <td className={`py-2 px-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                                {gamificacao.badge_atual || 'Sem badge'}
+                                                            </td>
+                                                            <td className={`py-2 px-2 ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                                {gamificacao.proximo_marco
+                                                                    ? `${gamificacao.proximo_marco.faltam} envio(s) para ${gamificacao.proximo_marco.badge}`
+                                                                    : 'Todos os marcos concluídos'}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="mt-4 flex items-center justify-between">
+                                        <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-600'}`}>
+                                            Página {rankingPagination.page} de {Math.max(1, rankingPagination.pages)}
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => carregarRanking(Math.max(1, rankingPagination.page - 1))}
+                                                disabled={rankingPagination.page <= 1 || loadingRanking}
+                                                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Anterior
+                                            </button>
+                                            <button
+                                                onClick={() => carregarRanking(Math.min(rankingPagination.pages || 1, rankingPagination.page + 1))}
+                                                disabled={rankingPagination.page >= (rankingPagination.pages || 1) || loadingRanking}
+                                                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Próxima
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
                         {/* 1. Desembarques por Município */}
                         <div className="card">
                             <h2 className="heading-secondary">
@@ -684,7 +800,7 @@ function AnalyticsContent() {
 
 export default function Analytics() {
     return (
-        <ProtectedRoute>
+        <ProtectedRoute requiredRole="Administrador">
             <AnalyticsContent />
         </ProtectedRoute>
     );

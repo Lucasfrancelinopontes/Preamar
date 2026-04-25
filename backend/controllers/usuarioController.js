@@ -1,5 +1,12 @@
 import { Usuario } from '../models/Usuario.js';
-import { Op } from 'sequelize';
+import { sequelize } from '../models/index.js';
+import { Op, QueryTypes } from 'sequelize';
+import { calcularGamificacaoPorEnvios } from '../utils/gamificacao.js';
+
+const parsePositiveInt = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
 
 // Listar todos os usuários (apenas para Administradores)
 export const listarUsuarios = async (req, res) => {
@@ -218,6 +225,105 @@ export const deletarUsuario = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erro ao deletar usuário',
+      error: error.message
+    });
+  }
+};
+
+// Ranking gamificado de usuários (apenas Administradores)
+export const rankingGamificacaoUsuarios = async (req, res) => {
+  try {
+    const { nome, funcao } = req.query;
+    const page = parsePositiveInt(req.query.page, 1);
+    const limit = Math.min(parsePositiveInt(req.query.limit, 20), 100);
+    const offset = (page - 1) * limit;
+
+    const whereParts = [];
+    const replacements = { limit, offset };
+
+    if (nome) {
+      whereParts.push('u.nome LIKE :nome');
+      replacements.nome = `%${nome}%`;
+    }
+
+    if (funcao) {
+      whereParts.push('u.funcao = :funcao');
+      replacements.funcao = funcao;
+    }
+
+    const whereSql = whereParts.length > 0
+      ? `WHERE ${whereParts.join(' AND ')}`
+      : '';
+
+    const totalRows = await sequelize.query(
+      `
+        SELECT COUNT(*) AS total
+        FROM usuarios u
+        ${whereSql}
+      `,
+      {
+        replacements,
+        type: QueryTypes.SELECT
+      }
+    );
+
+    const rankingRows = await sequelize.query(
+      `
+        SELECT
+          u.ID_usuario,
+          u.nome,
+          u.email,
+          u.funcao,
+          u.ativo,
+          u.ultimo_login,
+          u.createdAt,
+          COALESCE(COUNT(d.ID_desembarque), 0) AS total_envios
+        FROM usuarios u
+        LEFT JOIN desembarques d
+          ON d.ID_usuario = u.ID_usuario
+        ${whereSql}
+        GROUP BY u.ID_usuario, u.nome, u.email, u.funcao, u.ativo, u.ultimo_login, u.createdAt
+        ORDER BY total_envios DESC, u.nome ASC
+        LIMIT :limit OFFSET :offset
+      `,
+      {
+        replacements,
+        type: QueryTypes.SELECT
+      }
+    );
+
+    const total = Number(totalRows?.[0]?.total) || 0;
+
+    const data = rankingRows.map((row, index) => {
+      const totalEnvios = Number(row.total_envios) || 0;
+      return {
+        ID_usuario: row.ID_usuario,
+        nome: row.nome,
+        email: row.email,
+        funcao: row.funcao,
+        ativo: Boolean(row.ativo),
+        ultimo_login: row.ultimo_login,
+        createdAt: row.createdAt,
+        posicao: offset + index + 1,
+        gamificacao: calcularGamificacaoPorEnvios(totalEnvios)
+      };
+    });
+
+    res.json({
+      success: true,
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao gerar ranking gamificado de usuários:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar ranking gamificado de usuários',
       error: error.message
     });
   }

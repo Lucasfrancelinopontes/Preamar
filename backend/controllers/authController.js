@@ -1,5 +1,18 @@
 import { Usuario } from '../models/Usuario.js';
 import { gerarToken } from '../middleware/authMiddleware.js';
+import { Desembarque } from '../models/Desembarque.js';
+import { calcularGamificacaoPorEnvios } from '../utils/gamificacao.js';
+
+const montarPerfilComGamificacao = async (usuario) => {
+  const totalEnvios = await Desembarque.count({
+    where: { ID_usuario: usuario.ID_usuario }
+  });
+
+  return {
+    ...usuario.toSafeObject(),
+    gamificacao: calcularGamificacaoPorEnvios(totalEnvios)
+  };
+};
 
 // Registro de novo usuário (público)
 export const register = async (req, res) => {
@@ -107,12 +120,14 @@ export const login = async (req, res) => {
     const token = gerarToken(usuario);
 
     // Retornar dados do usuário e token
+    const perfilComGamificacao = await montarPerfilComGamificacao(usuario);
+
     res.json({
       success: true,
       message: 'Login realizado com sucesso',
       data: {
         token,
-        usuario: usuario.toSafeObject()
+        usuario: perfilComGamificacao
       }
     });
 
@@ -139,9 +154,11 @@ export const obterPerfil = async (req, res) => {
       });
     }
 
+    const perfilComGamificacao = await montarPerfilComGamificacao(usuario);
+
     res.json({
       success: true,
-      data: usuario.toSafeObject()
+      data: perfilComGamificacao
     });
 
   } catch (error) {

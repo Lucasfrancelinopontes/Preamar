@@ -19,6 +19,7 @@
     "db:update-schema": "node scripts/atualizarSchemaNativo.js",
     "db:migrate-coords": "node scripts/migrarCoordenadasNativo.js",
     "db:migrate-codigo-embarcacao-optional": "node scripts/migrarCodigoEmbarcacaoOpcional.js",
+    "db:migrate-desembarque-usuario": "node scripts/migrarDesembarqueUsuarioGamificacao.js",
     "db:populate-especies": "node scripts/popularEspecies.js",
     "db:fix-enum": "node scripts/corrigirEnumDestino.js",
     "db:migrate-destino-captura-null": "node scripts/migrarDestinoMultiploECapturaNula.js",

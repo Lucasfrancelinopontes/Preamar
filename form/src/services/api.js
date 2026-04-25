@@ -222,6 +222,19 @@ const api = {
     }
   },
 
+  rankingGamificacaoUsuarios: async (filtros = {}) => {
+    try {
+      const params = new URLSearchParams(filtros);
+      const response = await fetch(`${API_URL}/usuarios/ranking/gamificacao?${params}`, {
+        headers: getAuthHeaders()
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao buscar ranking gamificado de usuários:', error);
+      throw error;
+    }
+  },
+
   criarUsuario: async (dados) => {
     try {
       const response = await fetch(`${API_URL}/usuarios`, {

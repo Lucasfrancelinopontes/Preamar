@@ -3,6 +3,7 @@
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/services/api";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 const TOTAL_ETAPAS = 6;
 
@@ -325,6 +326,7 @@ const mapApiToFormData = (data) => {
 function DesembarqueContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { atualizarPerfil } = useAuth();
     const editId = searchParams.get("edit");
 
     const [etapaAtual, setEtapaAtual] = useState(1);
@@ -828,6 +830,7 @@ function DesembarqueContent() {
                 setSucessoEnvio("Desembarque atualizado com sucesso!");
             } else {
                 const response = await api.criarDesembarque(payload);
+                await atualizarPerfil();
                 const codigo = response?.data?.cod_desembarque || codigoDesembarqueGerado;
                 setSucessoEnvio(codigo ? `Desembarque ${codigo} salvo com sucesso!` : "Desembarque salvo com sucesso!");
                 setFormData(createInitialFormData());

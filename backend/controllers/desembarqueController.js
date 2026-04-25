@@ -234,6 +234,7 @@ export const criarDesembarque = async (req, res) => {
     } = req.body;
 
     console.log('📦 Criando desembarque:', {
+      usuario: req.usuario?.ID_usuario,
       pescador: pescador?.nome,
       embarcacao: embarcacao?.nome_embarcacao,
       cod_desembarque: desembarque?.cod_desembarque,
@@ -318,7 +319,8 @@ export const criarDesembarque = async (req, res) => {
     const desembarqueDb = await Desembarque.create({
       ...desembarque,
       ID_pescador: pescadorDb?.ID_pescador || null,
-      ID_embarcacao: embarcacaoDb?.ID_embarcacao || null
+      ID_embarcacao: embarcacaoDb?.ID_embarcacao || null,
+      ID_usuario: req.usuario?.ID_usuario || null
     }, { transaction: t });
 
     console.log('✅ Desembarque criado:', desembarqueDb.cod_desembarque, `(ID: ${desembarqueDb.ID_desembarque})`);
@@ -819,6 +821,9 @@ export const atualizarDesembarque = async (req, res) => {
       ID_pescador: pescadorDb?.ID_pescador ?? desembarqueDb.ID_pescador,
       ID_embarcacao: embarcacaoDb?.ID_embarcacao ?? desembarqueDados?.ID_embarcacao ?? desembarqueDb.ID_embarcacao
     };
+
+    // A autoria do envio nao deve ser alterada via endpoint de edicao.
+    delete updatePayload.ID_usuario;
 
     // Normalizar campos que agora suportam múltiplos valores
     if ('destino_pescado' in updatePayload) {

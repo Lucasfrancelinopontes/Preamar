@@ -2,10 +2,19 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useAuth } from '@/app/contexts/AuthContext';
 
 export default function Sucesso() {
     const router = useRouter();
     const [temaEscuro, setTemaEscuro] = useState(false);
+    const { usuario } = useAuth();
+
+    const gamificacao = usuario?.gamificacao || {
+        total_envios: 0,
+        nivel_atual: 1,
+        badge_atual: null,
+        proximo_marco: null
+    };
 
     return (
         <div className={`min-h-screen flex items-center justify-center p-4 ${temaEscuro ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -39,6 +48,30 @@ export default function Sucesso() {
                 <p className={`text-lg mb-8 ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>
                     Seus dados foram registrados com sucesso!
                 </p>
+
+                <div className={`mb-8 rounded-xl border p-4 text-left ${
+                    temaEscuro ? 'border-emerald-700 bg-emerald-900/20' : 'border-emerald-200 bg-emerald-50'
+                }`}>
+                    <p className={`text-xs font-bold uppercase tracking-wider ${temaEscuro ? 'text-emerald-300' : 'text-emerald-700'}`}>
+                        Progresso de Perfil
+                    </p>
+                    <p className={`mt-1 text-lg font-semibold ${temaEscuro ? 'text-white' : 'text-slate-900'}`}>
+                        Nivel {gamificacao.nivel_atual}
+                        {gamificacao.badge_atual ? ` • ${gamificacao.badge_atual}` : ''}
+                    </p>
+                    <p className={`text-sm mt-1 ${temaEscuro ? 'text-gray-300' : 'text-slate-600'}`}>
+                        Formularios enviados: {gamificacao.total_envios}
+                    </p>
+                    {gamificacao.proximo_marco ? (
+                        <p className={`text-sm mt-1 ${temaEscuro ? 'text-emerald-200' : 'text-emerald-700'}`}>
+                            Faltam {gamificacao.proximo_marco.faltam} envio(s) para desbloquear {gamificacao.proximo_marco.badge}.
+                        </p>
+                    ) : (
+                        <p className={`text-sm mt-1 font-medium ${temaEscuro ? 'text-emerald-200' : 'text-emerald-700'}`}>
+                            Todos os marcos de gamificacao foram concluidos.
+                        </p>
+                    )}
+                </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
