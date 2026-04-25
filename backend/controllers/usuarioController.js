@@ -8,6 +8,78 @@ const parsePositiveInt = (value, fallback) => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 };
 
+let hasColunaUsuarioDesembarqueCache = null;
+
+const hasUnknownIdUsuarioColumnError = (error) => {
+  const sqlMessage = error?.original?.sqlMessage || '';
+  const message = error?.message || '';
+  const normalized = `${sqlMessage} ${message}`.toLowerCase();
+
+  return error?.name === 'SequelizeDatabaseError'
+    && normalized.includes('unknown column')
+    && normalized.includes('id_usuario');
+};
+
+const hasColunaUsuarioDesembarque = async () => {
+  if (hasColunaUsuarioDesembarqueCache !== null) {
+    return hasColunaUsuarioDesembarqueCache;
+  }
+
+  try {
+    const qi = sequelize.getQueryInterface();
+    const table = await qi.describeTable('desembarques');
+    hasColunaUsuarioDesembarqueCache = Boolean(table?.ID_usuario);
+    return hasColunaUsuarioDesembarqueCache;
+  } catch (error) {
+    console.warn('Nao foi possivel verificar coluna desembarques.ID_usuario para ranking gamificado:', error?.message || error);
+    hasColunaUsuarioDesembarqueCache = false;
+    return false;
+  }
+};
+
+const montarPaginacao = (total, page, limit) => ({
+  total,
+  page,
+  limit,
+  pages: Math.ceil(total / limit)
+});
+
+const responderRankingSemColuna = async (res, { nome, funcao, page, limit, offset }) => {
+  const where = {};
+  if (nome) where.nome = { [Op.like]: `%${nome}%` };
+  if (funcao) where.funcao = funcao;
+
+  const { count, rows } = await Usuario.findAndCountAll({
+    where,
+    attributes: ['ID_usuario', 'nome', 'email', 'funcao', 'ativo', 'ultimo_login', 'createdAt'],
+    limit,
+    offset,
+    order: [['nome', 'ASC']]
+  });
+
+  const data = rows.map((usuario, index) => ({
+    ID_usuario: usuario.ID_usuario,
+    nome: usuario.nome,
+    email: usuario.email,
+    funcao: usuario.funcao,
+    ativo: Boolean(usuario.ativo),
+    ultimo_login: usuario.ultimo_login,
+    createdAt: usuario.createdAt,
+    posicao: offset + index + 1,
+    gamificacao: calcularGamificacaoPorEnvios(0)
+  }));
+
+  return res.json({
+    success: true,
+    data,
+    pagination: montarPaginacao(count, page, limit),
+    meta: {
+      gamificacao_disponivel: false,
+      motivo: 'coluna_desembarques_id_usuario_ausente'
+    }
+  });
+};
+
 // Listar todos os usuários (apenas para Administradores)
 export const listarUsuarios = async (req, res) => {
   try {
@@ -238,6 +310,10 @@ export const rankingGamificacaoUsuarios = async (req, res) => {
     const limit = Math.min(parsePositiveInt(req.query.limit, 20), 100);
     const offset = (page - 1) * limit;
 
+    if (!(await hasColunaUsuarioDesembarque())) {
+      return await responderRankingSemColuna(res, { nome, funcao, page, limit, offset });
+    }
+
     const whereParts = [];
     const replacements = { limit, offset };
 
@@ -255,42 +331,54 @@ export const rankingGamificacaoUsuarios = async (req, res) => {
       ? `WHERE ${whereParts.join(' AND ')}`
       : '';
 
-    const totalRows = await sequelize.query(
-      `
-        SELECT COUNT(*) AS total
-        FROM usuarios u
-        ${whereSql}
-      `,
-      {
-        replacements,
-        type: QueryTypes.SELECT
-      }
-    );
+    let totalRows;
+    let rankingRows;
 
-    const rankingRows = await sequelize.query(
-      `
-        SELECT
-          u.ID_usuario,
-          u.nome,
-          u.email,
-          u.funcao,
-          u.ativo,
-          u.ultimo_login,
-          u.createdAt,
-          COALESCE(COUNT(d.ID_desembarque), 0) AS total_envios
-        FROM usuarios u
-        LEFT JOIN desembarques d
-          ON d.ID_usuario = u.ID_usuario
-        ${whereSql}
-        GROUP BY u.ID_usuario, u.nome, u.email, u.funcao, u.ativo, u.ultimo_login, u.createdAt
-        ORDER BY total_envios DESC, u.nome ASC
-        LIMIT :limit OFFSET :offset
-      `,
-      {
-        replacements,
-        type: QueryTypes.SELECT
+    try {
+      totalRows = await sequelize.query(
+        `
+          SELECT COUNT(*) AS total
+          FROM usuarios u
+          ${whereSql}
+        `,
+        {
+          replacements,
+          type: QueryTypes.SELECT
+        }
+      );
+
+      rankingRows = await sequelize.query(
+        `
+          SELECT
+            u.ID_usuario,
+            u.nome,
+            u.email,
+            u.funcao,
+            u.ativo,
+            u.ultimo_login,
+            u.createdAt,
+            COALESCE(COUNT(d.ID_desembarque), 0) AS total_envios
+          FROM usuarios u
+          LEFT JOIN desembarques d
+            ON d.ID_usuario = u.ID_usuario
+          ${whereSql}
+          GROUP BY u.ID_usuario, u.nome, u.email, u.funcao, u.ativo, u.ultimo_login, u.createdAt
+          ORDER BY total_envios DESC, u.nome ASC
+          LIMIT :limit OFFSET :offset
+        `,
+        {
+          replacements,
+          type: QueryTypes.SELECT
+        }
+      );
+    } catch (error) {
+      if (hasUnknownIdUsuarioColumnError(error)) {
+        hasColunaUsuarioDesembarqueCache = false;
+        return await responderRankingSemColuna(res, { nome, funcao, page, limit, offset });
       }
-    );
+
+      throw error;
+    }
 
     const total = Number(totalRows?.[0]?.total) || 0;
 
@@ -312,11 +400,9 @@ export const rankingGamificacaoUsuarios = async (req, res) => {
     res.json({
       success: true,
       data,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit)
+      pagination: montarPaginacao(total, page, limit),
+      meta: {
+        gamificacao_disponivel: true
       }
     });
   } catch (error) {

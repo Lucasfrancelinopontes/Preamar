@@ -3,10 +3,38 @@ import { gerarToken } from '../middleware/authMiddleware.js';
 import { Desembarque } from '../models/Desembarque.js';
 import { calcularGamificacaoPorEnvios } from '../utils/gamificacao.js';
 
+let gamificacaoPorEnvioDisponivel = true;
+
+const hasUnknownIdUsuarioColumnError = (error) => {
+  const sqlMessage = error?.original?.sqlMessage || '';
+  const message = error?.message || '';
+  const normalized = `${sqlMessage} ${message}`.toLowerCase();
+
+  return error?.name === 'SequelizeDatabaseError'
+    && normalized.includes('unknown column')
+    && normalized.includes('id_usuario');
+};
+
+const obterTotalEnviosUsuario = async (idUsuario) => {
+  if (!gamificacaoPorEnvioDisponivel) return 0;
+
+  try {
+    return await Desembarque.count({
+      where: { ID_usuario: idUsuario }
+    });
+  } catch (error) {
+    if (hasUnknownIdUsuarioColumnError(error)) {
+      gamificacaoPorEnvioDisponivel = false;
+      console.warn('Gamificacao por envios desativada temporariamente: coluna desembarques.ID_usuario nao encontrada.');
+      return 0;
+    }
+
+    throw error;
+  }
+};
+
 const montarPerfilComGamificacao = async (usuario) => {
-  const totalEnvios = await Desembarque.count({
-    where: { ID_usuario: usuario.ID_usuario }
-  });
+  const totalEnvios = await obterTotalEnviosUsuario(usuario.ID_usuario);
 
   return {
     ...usuario.toSafeObject(),
