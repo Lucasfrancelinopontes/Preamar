@@ -6,16 +6,7 @@ import { useAuth } from './contexts/AuthContext';
 
 export default function Home() {
     const router = useRouter();
-    const { usuario, carregando, estaAutenticado, ehAdmin, logout } = useAuth();
-    const gamificacao = usuario?.gamificacao || {
-        total_envios: 0,
-        nivel_atual: 1,
-        badge_atual: null,
-        progresso_percentual: 0,
-        proximo_marco: null
-    };
-
-    const progressoPercentual = Math.max(0, Math.min(100, Number(gamificacao.progresso_percentual) || 0));
+    const { carregando, estaAutenticado, ehAdmin, logout } = useAuth();
 
     if (carregando) {
         return (
@@ -37,7 +28,7 @@ export default function Home() {
                         </div>
                         <div>
                             <h1 className="text-lg font-bold text-gray-900 leading-tight">Sistema Preamar</h1>
-                            <p className="text-xs text-blue-600 font-semibold">{usuario?.funcao || 'Visitante'}</p>
+                            <p className="text-xs text-blue-600 font-semibold">Painel principal</p>
                         </div>
                     </div>
                 </div>
@@ -65,56 +56,33 @@ export default function Home() {
             <main className="flex-grow p-6 md:p-10 max-w-6xl mx-auto w-full">
                 <div className="mb-8">
                     <h2 className="text-2xl md:text-3xl font-bold text-[#1e293b] mb-2">
-                        {estaAutenticado() ? `Olá, ${usuario?.nome}!` : 'Bem-vindo ao Sistema Preamar'}
+                        {estaAutenticado() ? 'Sistema Preamar' : 'Bem-vindo ao Sistema Preamar'}
                     </h2>
                     <p className="text-gray-600 text-base">
                         {estaAutenticado()
-                            ? 'Escolha uma das funcionalidades abaixo para começar.'
+                            ? 'Escolha uma funcionalidade para continuar.'
                             : 'Faça login para acessar as funcionalidades do sistema.'}
                     </p>
                 </div>
 
                 {estaAutenticado() ? (
                     <>
-                        <div className="mb-8 rounded-2xl bg-white p-6 shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-gray-100">
-                            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                                <div>
-                                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Perfil Gamificado</p>
-                                    <h3 className="mt-1 text-xl font-bold text-slate-800">
-                                        Nivel {gamificacao.nivel_atual}
-                                        {gamificacao.badge_atual ? ` • ${gamificacao.badge_atual}` : ''}
-                                    </h3>
-                                    <p className="mt-1 text-sm text-slate-600">
-                                        Formularios enviados: {gamificacao.total_envios}
-                                    </p>
-                                    {gamificacao.proximo_marco ? (
-                                        <p className="mt-1 text-sm text-slate-500">
-                                            Faltam {gamificacao.proximo_marco.faltam} envio(s) para desbloquear {gamificacao.proximo_marco.badge}.
-                                        </p>
-                                    ) : (
-                                        <p className="mt-1 text-sm font-medium text-emerald-700">
-                                            Todos os marcos de gamificacao foram concluidos.
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="w-full lg:w-80">
-                                    <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-500">
-                                        <span>Progresso para o proximo marco</span>
-                                        <span>{progressoPercentual.toFixed(0)}%</span>
-                                    </div>
-                                    <div className="h-3 overflow-hidden rounded-full bg-slate-200">
-                                        <div
-                                            className="h-full bg-emerald-500 transition-all duration-300"
-                                            style={{ width: `${progressoPercentual}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Area Operacional</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                            <Link href="/perfil" className="block group">
+                                <div className="bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-transparent hover:border-blue-400 transition-all cursor-pointer flex items-center gap-4 h-full">
+                                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A3 3 0 016.98 16.5h10.04a3 3 0 011.86 1.304M15 11a3 3 0 11-6 0 3 3 0 016 0zm6 1a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-[#1e293b] group-hover:text-blue-600 leading-tight">Meu Perfil</h3>
+                                        <p className="text-gray-500 text-xs mt-1">Dados da conta e progresso</p>
+                                    </div>
+                                </div>
+                            </Link>
+
                             <Link href="/desembarque" className="block group">
                                 <div className="bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-transparent hover:border-blue-400 transition-all cursor-pointer flex items-center gap-4 h-full">
                                     <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
