@@ -17,7 +17,7 @@ const ARTE_OPTIONS = [
     { value: "outras", label: "Outras" }
 ];
 
-function InputGroup({ label, name, value, onChange, type = "text", placeholder = "", colSpan = 1 }) {
+function InputGroup({ label, name, value, onChange, type = "text", placeholder = "", colSpan = 1, step }) {
     const isCalendarInput = type === "date" || type === "datetime-local";
     const isNumberInput = type === "number";
 
@@ -36,6 +36,7 @@ function InputGroup({ label, name, value, onChange, type = "text", placeholder =
                 value={value ?? ""}
                 onChange={onChange}
                 onWheel={handleNumberWheel}
+                step={step}
                 placeholder={placeholder}
                 className={`w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-blue-600 ${isCalendarInput ? "calendar-input-visible" : ""}`}
             />
@@ -1227,7 +1228,7 @@ function DesembarqueContent() {
                                         )}
                                         <InputGroup label="Comprimento (m)" name="comprimento" type="number" value={formData.comprimento} onChange={handleInputChange} />
                                         <InputGroup label="Capacidade (kg)" name="capacidadeEstocagem" type="number" value={formData.capacidadeEstocagem} onChange={handleInputChange} />
-                                        <InputGroup label="Forca do motor (HP)" name="forcaMotor" type="number" value={formData.forcaMotor} onChange={handleInputChange} />
+                                        <InputGroup label="Forca do motor (HP)" name="forcaMotor" type="number" step="any" value={formData.forcaMotor} onChange={handleInputChange} />
                                         <div>
                                             <label className="mb-1.5 block text-sm font-semibold text-black">Conservacao (possui)</label>
                                             <select
