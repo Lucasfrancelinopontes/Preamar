@@ -30,6 +30,15 @@ const normalizarPossui = (possui) => {
     return map[valor] ?? valor
 }
 
+const parseNumeroDecimal = (valor) => {
+    if (valor === null || valor === undefined || valor === '') {
+        return null
+    }
+
+    const numero = Number(String(valor).replace(',', '.'))
+    return Number.isNaN(numero) ? null : numero
+}
+
 export default function EmbarcacoesPage() {
     const { estaAutenticado, ehAdmin } = useAuth()
     const router = useRouter()
@@ -152,7 +161,7 @@ export default function EmbarcacoesPage() {
                 possui: possuiNormalizado || null,
                 comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
                 capacidade: formData.capacidade ? parseFloat(formData.capacidade) : null,
-                hp: formData.hp ? parseInt(formData.hp, 10) : null
+                hp: parseNumeroDecimal(formData.hp)
             }
 
             if (embarcacaoEditando) {
@@ -457,6 +466,7 @@ export default function EmbarcacoesPage() {
                                     </label>
                                     <input
                                         type="number"
+                                        step="0.1"
                                         value={formData.hp}
                                         onChange={(e) => setFormData({...formData, hp: e.target.value})}
                                         className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
