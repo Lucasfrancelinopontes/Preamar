@@ -19,6 +19,13 @@ const ARTE_OPTIONS = [
 
 function InputGroup({ label, name, value, onChange, type = "text", placeholder = "", colSpan = 1 }) {
     const isCalendarInput = type === "date" || type === "datetime-local";
+    const isNumberInput = type === "number";
+
+    const handleNumberWheel = (event) => {
+        if (!isNumberInput) return;
+        // Evita que o scroll altere valores (ex.: 400 virar 399)
+        event.currentTarget.blur();
+    };
 
     return (
         <div className={colSpan === 2 ? "md:col-span-2" : ""}>
@@ -28,6 +35,7 @@ function InputGroup({ label, name, value, onChange, type = "text", placeholder =
                 name={name}
                 value={value ?? ""}
                 onChange={onChange}
+                onWheel={handleNumberWheel}
                 placeholder={placeholder}
                 className={`w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-blue-600 ${isCalendarInput ? "calendar-input-visible" : ""}`}
             />
