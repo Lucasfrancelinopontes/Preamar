@@ -818,6 +818,11 @@ function DesembarqueContent() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (etapaAtual !== TOTAL_ETAPAS) {
+            return;
+        }
+
         setErroEnvio("");
         setSucessoEnvio("");
         setCarregandoEnvio(true);
@@ -827,14 +832,11 @@ function DesembarqueContent() {
 
             if (formData.ID_desembarque) {
                 await api.atualizarDesembarque(formData.ID_desembarque, payload);
-                setSucessoEnvio("Desembarque atualizado com sucesso!");
+                router.replace("/");
             } else {
-                const response = await api.criarDesembarque(payload);
+                await api.criarDesembarque(payload);
                 await atualizarPerfil();
-                const codigo = response?.data?.cod_desembarque || codigoDesembarqueGerado;
-                setSucessoEnvio(codigo ? `Desembarque ${codigo} salvo com sucesso!` : "Desembarque salvo com sucesso!");
-                setFormData(createInitialFormData());
-                setEtapaAtual(1);
+                router.replace("/");
             }
         } catch (error) {
             setErroEnvio(error?.message || "Falha ao salvar desembarque");
