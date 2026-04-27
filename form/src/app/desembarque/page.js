@@ -816,9 +816,7 @@ function DesembarqueContent() {
         };
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
+    const handleSubmit = async () => {
         if (etapaAtual !== TOTAL_ETAPAS) {
             return;
         }
@@ -843,6 +841,23 @@ function DesembarqueContent() {
         } finally {
             setCarregandoEnvio(false);
         }
+    };
+
+    const handleConfirmarEnvio = async () => {
+        if (etapaAtual !== TOTAL_ETAPAS || carregandoEnvio || carregandoInicial || carregandoEdicao) {
+            return;
+        }
+
+        const mensagemConfirmacao = formData.ID_desembarque
+            ? "Confirma a atualizacao do desembarque?"
+            : "Confirma o envio do desembarque?";
+
+        const confirmado = window.confirm(mensagemConfirmacao);
+        if (!confirmado) {
+            return;
+        }
+
+        await handleSubmit();
     };
 
     return (
@@ -872,7 +887,7 @@ function DesembarqueContent() {
 
                 <div className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
                     <div className="px-6 py-8 sm:p-10">
-                        <form onSubmit={etapaAtual === TOTAL_ETAPAS ? handleSubmit : (e) => e.preventDefault()} className="text-black">
+                        <form onSubmit={(e) => e.preventDefault()} className="text-black">
                             {carregandoInicial && (
                                 <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-600">
                                     Carregando municipios e especies...
@@ -1452,7 +1467,8 @@ function DesembarqueContent() {
                                     </button>
                                 ) : (
                                     <button
-                                        type="submit"
+                                        type="button"
+                                        onClick={handleConfirmarEnvio}
                                         disabled={carregandoEnvio || carregandoInicial || carregandoEdicao}
                                         className="flex-1 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 md:w-56 md:flex-none"
                                     >
