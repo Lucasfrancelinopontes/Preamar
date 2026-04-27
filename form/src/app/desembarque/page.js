@@ -860,6 +860,110 @@ function DesembarqueContent() {
         await handleSubmit();
     };
 
+    const possuiValor = (value) => {
+        if (value === null || value === undefined) return false;
+        return String(value).trim() !== "";
+    };
+
+    const valorResumo = (value) => (possuiValor(value) ? String(value) : "-");
+
+    const formatarDataHoraResumo = (value) => {
+        if (!possuiValor(value)) return "-";
+        return String(value).replace("T", " ");
+    };
+
+    const formatarAtuouNaPescaResumo = (value) => {
+        if (value === "sim") return "Sim";
+        if (value === "nao") return "Nao";
+        return "-";
+    };
+
+    const formatarConservacaoResumo = (value) => {
+        const labels = {
+            urna: "Urna",
+            caixaTermica: "Caixa Termica",
+            pescadoInNatura: "Pescado In Natura"
+        };
+        return labels[value] || valorResumo(value);
+    };
+
+    const formatarTipoEmbarcacaoResumo = () => {
+        if (!possuiValor(formData.tipoEmbarcacao)) return "-";
+        if (formData.tipoEmbarcacao === "outro") return valorResumo(formData.tipoEmbarcacaoOutro);
+        return formData.tipoEmbarcacao;
+    };
+
+    const formatarMunicipioEmbarcacaoResumo = () => {
+        if (formData.municipioEmbarcacao === "outro") {
+            return valorResumo(formData.municipioEmbarcacaoOutro);
+        }
+        return valorResumo(formData.municipioEmbarcacao);
+    };
+
+    const formatarArtePescaResumo = () => {
+        if (!possuiValor(formData.artePesca)) return "-";
+
+        const arteSelecionada = ARTE_OPTIONS.find((item) => item.value === formData.artePesca);
+        const label = arteSelecionada?.label || String(formData.artePesca);
+
+        if (formData.artePesca === "outras") {
+            return possuiValor(formData.artePescaOutro)
+                ? `${label} (${formData.artePescaOutro})`
+                : label;
+        }
+
+        return label;
+    };
+
+    const formatarDestinoResumo = (value) => {
+        if (!possuiValor(value)) return "-";
+        const texto = String(value).trim();
+        return `${texto.charAt(0).toUpperCase()}${texto.slice(1)}`;
+    };
+
+    const formatarCondicaoPeixeResumo = (value) => {
+        const labels = {
+            com_visceras: "Com visceras",
+            sem_visceras: "Sem visceras"
+        };
+        return labels[value] || valorResumo(value);
+    };
+
+    const formatarEspecieResumo = (especieId, especieIdd) => {
+        const key = possuiValor(especieId) ? String(especieId).trim() : "";
+        const especie = key ? especiesPorId.get(key) : null;
+        const nomePopular = especie?.Nome_popular || especie?.nome_popular || "";
+
+        const idd = possuiValor(especieIdd)
+            ? String(especieIdd).trim()
+            : String(especie?.IDD ?? especie?.ID ?? "").trim();
+
+        if (!idd && !nomePopular && !key) return "-";
+        if (idd && nomePopular) return `#${idd} - ${nomePopular}`;
+        if (nomePopular) return nomePopular;
+        if (idd) return `#${idd}`;
+        return `ID ${key}`;
+    };
+
+    const capturasDigitadas = (formData.capturas || []).filter((captura) => {
+        return [
+            captura.especieIdd,
+            captura.especieId,
+            captura.pesoTotalEspecie,
+            captura.precoKg,
+            captura.condicaoPeixe
+        ].some(possuiValor);
+    });
+
+    const individuosDigitados = (formData.individuos || []).filter((individuo) => {
+        return [
+            individuo.especieId,
+            individuo.numeroIndividuo,
+            individuo.comprimentoIndividuo,
+            individuo.pesoIndividuo
+        ].some(possuiValor);
+    });
+
     return (
         <div className="min-h-screen bg-slate-100 pb-10 text-black">
             <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-8 py-4 shadow-sm">
@@ -1429,18 +1533,121 @@ function DesembarqueContent() {
                                 <div className="animate-in fade-in duration-300">
                                     <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Resumo</h2>
 
-                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-sm text-black">
-                                        <h3 className="mb-4 border-b pb-2 text-lg font-bold text-black">Resumo dos Dados</h3>
-                                        <div className="grid grid-cols-2 gap-y-3">
-                                            <p><span className="font-semibold">Codigo:</span> {codigoDesembarqueGerado || "-"}</p>
-                                            <p><span className="font-semibold">Data coleta:</span> {formData.dataColeta || "-"}</p>
-                                            <p><span className="font-semibold">Localidade:</span> {formData.localidade || "-"}</p>
-                                            <p><span className="font-semibold">Pescador:</span> {formData.nomePescador || "-"}</p>
-                                            <p><span className="font-semibold">Embarcacao:</span> {formData.nomeEmbarcacao || "-"}</p>
-                                            <p><span className="font-semibold">Especies registradas:</span> {(formData.capturas || []).filter((captura) => captura.especieId).length || "-"}</p>
-                                            <p><span className="font-semibold">Individuos registrados:</span> {(formData.individuos || []).filter((individuo) => individuo.especieId && (individuo.pesoIndividuo || individuo.comprimentoIndividuo)).length || "-"}</p>
-                                            <p><span className="font-semibold">Destino:</span> {formData.destino || "-"}</p>
-                                            <p><span className="font-semibold">Nome do individuo:</span> {formData.destinoApelido || "-"}</p>
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-sm text-black space-y-5">
+                                        <h3 className="mb-2 border-b pb-2 text-lg font-bold text-black">Resumo completo antes do envio</h3>
+
+                                        <div className="rounded-lg border border-slate-200 bg-white p-4">
+                                            <h4 className="mb-3 text-base font-bold text-black">1. Local e Identificacao</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                                                <p><span className="font-semibold">Codigo do desembarque:</span> {valorResumo(codigoDesembarqueGerado)}</p>
+                                                <p><span className="font-semibold">Municipio:</span> {valorResumo(formData.municipio)}</p>
+                                                <p><span className="font-semibold">Localidade:</span> {valorResumo(formData.localidade)}</p>
+                                                <p><span className="font-semibold">Data da coleta:</span> {valorResumo(formData.dataColeta)}</p>
+                                                <p><span className="font-semibold">Numero consecutivo:</span> {valorResumo(formData.numConsecutivo)}</p>
+                                                <p><span className="font-semibold">Data/Hora saida:</span> {formatarDataHoraResumo(formData.dataSaida)}</p>
+                                                <p><span className="font-semibold">Data/Hora chegada:</span> {formatarDataHoraResumo(formData.dataChegada)}</p>
+                                                <p><span className="font-semibold">Codigo da foto:</span> {valorResumo(formData.codigoFoto)}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border border-slate-200 bg-white p-4">
+                                            <h4 className="mb-3 text-base font-bold text-black">2. Pescador e Proprietario</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                                                <p><span className="font-semibold">Nome do pescador:</span> {valorResumo(formData.nomePescador)}</p>
+                                                <p><span className="font-semibold">Apelido do pescador:</span> {valorResumo(formData.apelidoPescador)}</p>
+                                                <p><span className="font-semibold">CPF do pescador:</span> {valorResumo(formData.cpfPescador)}</p>
+                                                <p><span className="font-semibold">Nome do proprietario:</span> {valorResumo(formData.nomeProprietario)}</p>
+                                                <p><span className="font-semibold">Apelido do proprietario:</span> {valorResumo(formData.apelidoProprietario)}</p>
+                                                <p><span className="font-semibold">CPF do proprietario:</span> {valorResumo(formData.cpfProprietario)}</p>
+                                                <p><span className="font-semibold">Naturalidade do proprietario:</span> {valorResumo(formData.naturalidadeProprietario)}</p>
+                                                <p><span className="font-semibold">Municipio da embarcacao:</span> {formatarMunicipioEmbarcacaoResumo()}</p>
+                                                <p><span className="font-semibold">Municipio da embarcacao (outro):</span> {valorResumo(formData.municipioEmbarcacaoOutro)}</p>
+                                                <p><span className="font-semibold">Atuou na pesca:</span> {formatarAtuouNaPescaResumo(formData.atuouNaPesca)}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border border-slate-200 bg-white p-4">
+                                            <h4 className="mb-3 text-base font-bold text-black">3. Embarcacao e Artes</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                                                <p><span className="font-semibold">ID embarcacao selecionada:</span> {valorResumo(formData.ID_embarcacao)}</p>
+                                                <p><span className="font-semibold">Nome da embarcacao:</span> {valorResumo(formData.nomeEmbarcacao)}</p>
+                                                <p><span className="font-semibold">Codigo da embarcacao:</span> {valorResumo(formData.codigoEmbarcacao)}</p>
+                                                <p><span className="font-semibold">Numero de tripulantes:</span> {valorResumo(formData.numTripulantes)}</p>
+                                                <p><span className="font-semibold">Numero de pesqueiros:</span> {valorResumo(formData.numPesqueiros)}</p>
+                                                <p><span className="font-semibold">Tipo de embarcacao:</span> {formatarTipoEmbarcacaoResumo()}</p>
+                                                <p><span className="font-semibold">Tipo de embarcacao (outro):</span> {valorResumo(formData.tipoEmbarcacaoOutro)}</p>
+                                                <p><span className="font-semibold">Comprimento (m):</span> {valorResumo(formData.comprimento)}</p>
+                                                <p><span className="font-semibold">Capacidade de estocagem (kg):</span> {valorResumo(formData.capacidadeEstocagem)}</p>
+                                                <p><span className="font-semibold">Forca do motor (HP):</span> {valorResumo(formData.forcaMotor)}</p>
+                                                <p><span className="font-semibold">Conservacao:</span> {formatarConservacaoResumo(formData.conservacao)}</p>
+                                                <p><span className="font-semibold">Arte de pesca:</span> {formatarArtePescaResumo()}</p>
+                                                <p><span className="font-semibold">Arte de pesca (outra):</span> {valorResumo(formData.artePescaOutro)}</p>
+                                                <p><span className="font-semibold">Tamanho da arte (m):</span> {valorResumo(formData.tamanhoArte)}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border border-slate-200 bg-white p-4">
+                                            <h4 className="mb-3 text-base font-bold text-black">4. Viagem, Despesas e Destino</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                                                <p><span className="font-semibold">Gelo (kg):</span> {valorResumo(formData.gelo)}</p>
+                                                <p><span className="font-semibold">Rancho (R$):</span> {valorResumo(formData.rancho)}</p>
+                                                <p><span className="font-semibold">Litros de combustivel:</span> {valorResumo(formData.litrosCombustivel)}</p>
+                                                <p><span className="font-semibold">Tipo de combustivel:</span> {valorResumo(formData.tipoCombustivel)}</p>
+                                                <p><span className="font-semibold">Latitude ida:</span> {valorResumo(formData.latIda)}</p>
+                                                <p><span className="font-semibold">Longitude ida:</span> {valorResumo(formData.longIda)}</p>
+                                                <p><span className="font-semibold">Latitude volta:</span> {valorResumo(formData.latVolta)}</p>
+                                                <p><span className="font-semibold">Longitude volta:</span> {valorResumo(formData.longVolta)}</p>
+                                                <p><span className="font-semibold">Quadrante 1:</span> {valorResumo(formData.quadrante1)}</p>
+                                                <p><span className="font-semibold">Quadrante 2:</span> {valorResumo(formData.quadrante2)}</p>
+                                                <p><span className="font-semibold">Quadrante 3:</span> {valorResumo(formData.quadrante3)}</p>
+                                                <p><span className="font-semibold">Destino do pescado:</span> {formatarDestinoResumo(formData.destino)}</p>
+                                                <p><span className="font-semibold">Nome do individuo (destino):</span> {valorResumo(formData.destinoApelido)}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border border-slate-200 bg-white p-4">
+                                            <h4 className="mb-3 text-base font-bold text-black">5. Capturas</h4>
+                                            {capturasDigitadas.length === 0 ? (
+                                                <p className="text-slate-600">Nenhuma captura preenchida.</p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {capturasDigitadas.map((captura, index) => (
+                                                        <div key={`resumo-captura-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                                            <p className="mb-2 font-semibold text-black">Captura {index + 1}</p>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                                                                <p><span className="font-semibold">Especie:</span> {formatarEspecieResumo(captura.especieId, captura.especieIdd)}</p>
+                                                                <p><span className="font-semibold">IDD informado:</span> {valorResumo(captura.especieIdd)}</p>
+                                                                <p><span className="font-semibold">ID especie:</span> {valorResumo(captura.especieId)}</p>
+                                                                <p><span className="font-semibold">Peso total da especie (kg):</span> {valorResumo(captura.pesoTotalEspecie)}</p>
+                                                                <p><span className="font-semibold">Preco por kg:</span> {valorResumo(captura.precoKg)}</p>
+                                                                <p><span className="font-semibold">Condicao do peixe:</span> {formatarCondicaoPeixeResumo(captura.condicaoPeixe)}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="rounded-lg border border-slate-200 bg-white p-4">
+                                            <h4 className="mb-3 text-base font-bold text-black">6. Biometria de Individuos</h4>
+                                            {individuosDigitados.length === 0 ? (
+                                                <p className="text-slate-600">Nenhum individuo preenchido.</p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {individuosDigitados.map((individuo, index) => (
+                                                        <div key={`resumo-individuo-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                                            <p className="mb-2 font-semibold text-black">Individuo {index + 1}</p>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                                                                <p><span className="font-semibold">Especie vinculada:</span> {formatarEspecieResumo(individuo.especieId, null)}</p>
+                                                                <p><span className="font-semibold">ID especie:</span> {valorResumo(individuo.especieId)}</p>
+                                                                <p><span className="font-semibold">Numero do individuo:</span> {valorResumo(individuo.numeroIndividuo)}</p>
+                                                                <p><span className="font-semibold">Comprimento (cm):</span> {valorResumo(individuo.comprimentoIndividuo)}</p>
+                                                                <p><span className="font-semibold">Peso (g):</span> {valorResumo(individuo.pesoIndividuo)}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
