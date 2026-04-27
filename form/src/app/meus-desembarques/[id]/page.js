@@ -728,7 +728,7 @@ export default function DetalhesDesembarque() {
 
         {/* Rodapé */}
         <div className="bg-white dark:bg-dark-surface rounded-lg shadow-lg p-6 mt-6 print:shadow-none">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-300">
             <div>
               <p className="font-medium text-gray-900 dark:text-white">Coletor:</p>
               <p>{formatarResponsavel(desembarque.responsaveis?.coletor, desembarque.coletor, desembarque.coletor_funcao || 'Coletor')}</p>
@@ -748,6 +748,13 @@ export default function DetalhesDesembarque() {
               <p>{formatarResponsavel(desembarque.responsaveis?.digitador, desembarque.digitador, desembarque.digitador_funcao || 'Digitador')}</p>
               {desembarque.data_digitador && (
                 <p className="text-xs">{formatarData(desembarque.data_digitador)}</p>
+              )}
+            </div>
+            <div>
+              <p className="font-medium text-gray-900 dark:text-white">Cadastro:</p>
+              <p>{formatarResponsavel(desembarque.responsavel_cadastro, desembarque.usuario?.nome, desembarque.usuario?.funcao)}</p>
+              {desembarque.createdAt && (
+                <p className="text-xs">{formatarData(desembarque.createdAt)}</p>
               )}
             </div>
           </div>

@@ -218,6 +218,12 @@ const serializeDesembarque = (desembarque) => {
     revisor: buildResponsavelInfo(plain.revisorUsuario, plain.revisor, 'Revisor'),
     digitador: buildResponsavelInfo(plain.digitadorUsuario, plain.digitador, 'Digitador')
   };
+  const responsavelCadastro =
+    buildResponsavelInfo(plain.usuario, null, null)
+    || responsaveis.coletor
+    || responsaveis.revisor
+    || responsaveis.digitador
+    || null;
 
   return {
     ...plain,
@@ -228,6 +234,7 @@ const serializeDesembarque = (desembarque) => {
     revisor_funcao: responsaveis.revisor?.funcao || null,
     digitador_funcao: responsaveis.digitador?.funcao || null,
     responsaveis,
+    responsavel_cadastro: responsavelCadastro,
     data_coleta: dataColeta,
     data_saida: fillDateFromFallback(plain.data_saida, dataColeta, plain.hora_saida),
     data_chegada: fillDateFromFallback(plain.data_chegada, dataColeta, plain.hora_desembarque)
@@ -566,6 +573,11 @@ export const listarDesembarques = async (req, res) => {
         },
         {
           model: Usuario,
+          as: 'usuario',
+          attributes: ['ID_usuario', 'nome', 'funcao']
+        },
+        {
+          model: Usuario,
           as: 'coletorUsuario',
           attributes: ['ID_usuario', 'nome', 'funcao']
         },
@@ -673,6 +685,11 @@ export const buscarDesembarque = async (req, res) => {
             'possui',
             'localidade'
           ]
+        },
+        {
+          model: Usuario,
+          as: 'usuario',
+          attributes: ['ID_usuario', 'nome', 'funcao']
         },
         {
           model: Usuario,

@@ -96,6 +96,14 @@ function MeusDesembarquesContent() {
         }).format(valor);
     };
 
+    const formatarResponsavelCadastro = (desembarque) => {
+        const nome = desembarque?.responsavel_cadastro?.nome || desembarque?.usuario?.nome;
+        if (!nome) return '-';
+
+        const funcao = desembarque?.responsavel_cadastro?.funcao || desembarque?.usuario?.funcao;
+        return funcao ? `${nome} (${funcao})` : nome;
+    };
+
     const handleDelete = async (id, e) => {
         e.stopPropagation();
         if (!confirm('Tem certeza que deseja excluir este desembarque? Esta ação não pode ser desfeita.')) return;
@@ -318,7 +326,7 @@ function MeusDesembarquesContent() {
                                         </div>
 
                                         {/* Grid de Informações */}
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                                             <div>
                                                 <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
                                                     Município
@@ -343,6 +351,15 @@ function MeusDesembarquesContent() {
                                                 </p>
                                                 <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
                                                     {desembarque.pescador?.nome || '-'}
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    Responsável
+                                                </p>
+                                                <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                                    {formatarResponsavelCadastro(desembarque)}
                                                 </p>
                                             </div>
 
@@ -483,6 +500,20 @@ function MeusDesembarquesContent() {
                                             {formatarDataHora(desembarqueSelecionado.data_chegada, desembarqueSelecionado.hora_desembarque)}
                                         </p>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Responsável pelo Cadastro */}
+                            <div>
+                                <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                    🧾 Responsável pelo Cadastro
+                                </h3>
+                                <div className={`p-4 rounded-lg ${
+                                    temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
+                                }`}>
+                                    <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
+                                        {formatarResponsavelCadastro(desembarqueSelecionado)}
+                                    </p>
                                 </div>
                             </div>
 
