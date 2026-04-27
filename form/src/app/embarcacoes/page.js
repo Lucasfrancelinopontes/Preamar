@@ -465,12 +465,12 @@ export default function EmbarcacoesPage() {
                                         Força do Motor (HP)
                                     </label>
                                     <input
-                                        type="number"
-                                        step="0.1"
+                                        type="text"
+                                        inputMode="decimal"
                                         value={formData.hp}
                                         onChange={(e) => setFormData({...formData, hp: e.target.value})}
                                         className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
-                                        placeholder="Ex: 40"
+                                        placeholder="Ex: 6,5"
                                     />
                                 </div>
 
