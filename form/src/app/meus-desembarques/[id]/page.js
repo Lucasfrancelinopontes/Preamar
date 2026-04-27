@@ -82,6 +82,14 @@ export default function DetalhesDesembarque() {
     return `${parseFloat(peso).toFixed(2)} kg`;
   };
 
+  const formatarResponsavel = (responsavel, fallbackNome, fallbackFuncaoPadrao) => {
+    const nome = responsavel?.nome || fallbackNome;
+    if (!nome) return '-';
+
+    const funcao = responsavel?.funcao || fallbackFuncaoPadrao;
+    return funcao ? `${nome} (${funcao})` : nome;
+  };
+
   const handleImprimir = () => {
     window.print();
   };
@@ -723,21 +731,21 @@ export default function DetalhesDesembarque() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
             <div>
               <p className="font-medium text-gray-900 dark:text-white">Coletor:</p>
-              <p>{desembarque.coletor || '-'}</p>
+              <p>{formatarResponsavel(desembarque.responsaveis?.coletor, desembarque.coletor, desembarque.coletor_funcao || 'Coletor')}</p>
               {desembarque.data_coletor && (
                 <p className="text-xs">{formatarData(desembarque.data_coletor)}</p>
               )}
             </div>
             <div>
               <p className="font-medium text-gray-900 dark:text-white">Revisor:</p>
-              <p>{desembarque.revisor || '-'}</p>
+              <p>{formatarResponsavel(desembarque.responsaveis?.revisor, desembarque.revisor, desembarque.revisor_funcao || 'Revisor')}</p>
               {desembarque.data_revisor && (
                 <p className="text-xs">{formatarData(desembarque.data_revisor)}</p>
               )}
             </div>
             <div>
               <p className="font-medium text-gray-900 dark:text-white">Digitador:</p>
-              <p>{desembarque.digitador || '-'}</p>
+              <p>{formatarResponsavel(desembarque.responsaveis?.digitador, desembarque.digitador, desembarque.digitador_funcao || 'Digitador')}</p>
               {desembarque.data_digitador && (
                 <p className="text-xs">{formatarData(desembarque.data_digitador)}</p>
               )}

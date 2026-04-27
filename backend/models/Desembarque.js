@@ -61,6 +61,30 @@ export const Desembarque = sequelize.define('Desembarque', {
       key: 'ID_usuario'
     }
   },
+  ID_coletor: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'usuarios',
+      key: 'ID_usuario'
+    }
+  },
+  ID_revisor: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'usuarios',
+      key: 'ID_usuario'
+    }
+  },
+  ID_digitador: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'usuarios',
+      key: 'ID_usuario'
+    }
+  },
   data_saida: {
     type: DataTypes.DATEONLY,
     comment: 'Data e hora de saída da embarcação'

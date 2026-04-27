@@ -6,6 +6,7 @@ import {
   Captura,
   Individuo,
   Especie,
+  Usuario,
   sequelize
 } from '../models/index.js';
 import { Op } from 'sequelize';
@@ -154,15 +155,79 @@ const fillDateFromFallback = (dateValue, fallbackDate, timeValue) => {
   return normalized;
 };
 
+const RESPONSAVEL_POR_FUNCAO = {
+  Coletor: {
+    idField: 'ID_coletor',
+    nomeField: 'coletor',
+    dataField: 'data_coletor',
+    fallbackFuncao: 'Coletor'
+  },
+  Revisor: {
+    idField: 'ID_revisor',
+    nomeField: 'revisor',
+    dataField: 'data_revisor',
+    fallbackFuncao: 'Revisor'
+  },
+  Digitador: {
+    idField: 'ID_digitador',
+    nomeField: 'digitador',
+    dataField: 'data_digitador',
+    fallbackFuncao: 'Digitador'
+  }
+};
+
+const getResponsavelConfigByFuncao = (funcao) => {
+  const normalized = normalizeTextOrNull(funcao);
+  return normalized ? RESPONSAVEL_POR_FUNCAO[normalized] || null : null;
+};
+
+const buildResponsavelInfo = (usuarioAssociado, nomeLegado, funcaoFallback) => {
+  const nome = normalizeTextOrNull(usuarioAssociado?.nome || nomeLegado);
+  if (!nome) return null;
+
+  return {
+    nome,
+    funcao: normalizeTextOrNull(usuarioAssociado?.funcao) || funcaoFallback
+  };
+};
+
+const preencherResponsavelComUsuario = (payload, usuario, registroExistente = null) => {
+  if (!payload || !usuario?.ID_usuario) return;
+
+  const config = getResponsavelConfigByFuncao(usuario.funcao);
+  if (!config) return;
+
+  if (registroExistente?.[config.idField]) return;
+
+  payload[config.idField] = usuario.ID_usuario;
+  payload[config.nomeField] = normalizeTextOrNull(usuario.nome) || payload[config.nomeField] || null;
+
+  if (!payload[config.dataField]) {
+    payload[config.dataField] = normalizeDateOnly(new Date());
+  }
+};
+
 const serializeDesembarque = (desembarque) => {
   if (!desembarque) return desembarque;
 
   const plain = typeof desembarque.toJSON === 'function' ? desembarque.toJSON() : { ...desembarque };
 
   const dataColeta = normalizeDateOnly(plain.data_coleta);
+  const responsaveis = {
+    coletor: buildResponsavelInfo(plain.coletorUsuario, plain.coletor, 'Coletor'),
+    revisor: buildResponsavelInfo(plain.revisorUsuario, plain.revisor, 'Revisor'),
+    digitador: buildResponsavelInfo(plain.digitadorUsuario, plain.digitador, 'Digitador')
+  };
 
   return {
     ...plain,
+    coletor: responsaveis.coletor?.nome || normalizeTextOrNull(plain.coletor),
+    revisor: responsaveis.revisor?.nome || normalizeTextOrNull(plain.revisor),
+    digitador: responsaveis.digitador?.nome || normalizeTextOrNull(plain.digitador),
+    coletor_funcao: responsaveis.coletor?.funcao || null,
+    revisor_funcao: responsaveis.revisor?.funcao || null,
+    digitador_funcao: responsaveis.digitador?.funcao || null,
+    responsaveis,
     data_coleta: dataColeta,
     data_saida: fillDateFromFallback(plain.data_saida, dataColeta, plain.hora_saida),
     data_chegada: fillDateFromFallback(plain.data_chegada, dataColeta, plain.hora_desembarque)
@@ -316,12 +381,16 @@ export const criarDesembarque = async (req, res) => {
     }
 
     // 4. Criar desembarque (com ID do pescador e embarcação)
-    const desembarqueDb = await Desembarque.create({
+    const desembarquePayload = {
       ...desembarque,
       ID_pescador: pescadorDb?.ID_pescador || null,
       ID_embarcacao: embarcacaoDb?.ID_embarcacao || null,
       ID_usuario: req.usuario?.ID_usuario || null
-    }, { transaction: t });
+    };
+
+    preencherResponsavelComUsuario(desembarquePayload, req.usuario);
+
+    const desembarqueDb = await Desembarque.create(desembarquePayload, { transaction: t });
 
     console.log('✅ Desembarque criado:', desembarqueDb.cod_desembarque, `(ID: ${desembarqueDb.ID_desembarque})`);
 
@@ -496,6 +565,21 @@ export const listarDesembarques = async (req, res) => {
           attributes: ['nome_embarcacao', 'tipo']
         },
         {
+          model: Usuario,
+          as: 'coletorUsuario',
+          attributes: ['ID_usuario', 'nome', 'funcao']
+        },
+        {
+          model: Usuario,
+          as: 'revisorUsuario',
+          attributes: ['ID_usuario', 'nome', 'funcao']
+        },
+        {
+          model: Usuario,
+          as: 'digitadorUsuario',
+          attributes: ['ID_usuario', 'nome', 'funcao']
+        },
+        {
           model: Captura,
           as: 'capturas',
           attributes: ['ID_captura', 'ID_especie', 'peso_kg', 'preco_kg', 'preco_total', 'com_tripa'],
@@ -589,6 +673,21 @@ export const buscarDesembarque = async (req, res) => {
             'possui',
             'localidade'
           ]
+        },
+        {
+          model: Usuario,
+          as: 'coletorUsuario',
+          attributes: ['ID_usuario', 'nome', 'funcao']
+        },
+        {
+          model: Usuario,
+          as: 'revisorUsuario',
+          attributes: ['ID_usuario', 'nome', 'funcao']
+        },
+        {
+          model: Usuario,
+          as: 'digitadorUsuario',
+          attributes: ['ID_usuario', 'nome', 'funcao']
         },
         // Artes de Pesca
         { 
@@ -824,6 +923,16 @@ export const atualizarDesembarque = async (req, res) => {
 
     // A autoria do envio nao deve ser alterada via endpoint de edicao.
     delete updatePayload.ID_usuario;
+    // Metadados de responsavel sao preenchidos no backend com base no usuario logado.
+    delete updatePayload.ID_coletor;
+    delete updatePayload.ID_revisor;
+    delete updatePayload.ID_digitador;
+    delete updatePayload.coletor;
+    delete updatePayload.revisor;
+    delete updatePayload.digitador;
+    delete updatePayload.data_coletor;
+    delete updatePayload.data_revisor;
+    delete updatePayload.data_digitador;
 
     // Normalizar campos que agora suportam múltiplos valores
     if ('destino_pescado' in updatePayload) {
@@ -832,6 +941,8 @@ export const atualizarDesembarque = async (req, res) => {
     if ('destino_apelido' in updatePayload) {
       updatePayload.destino_apelido = normalizeDestinoApelido(updatePayload.destino_apelido);
     }
+
+    preencherResponsavelComUsuario(updatePayload, req.usuario, desembarqueDb);
 
     // Gerar cod_desembarque se não fornecido, usando valores novos ou existentes
     if (!updatePayload.cod_desembarque) {

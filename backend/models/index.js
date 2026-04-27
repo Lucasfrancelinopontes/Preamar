@@ -41,6 +41,34 @@ export const defineAssociations = () => {
     as: 'desembarques'
   });
 
+  // Usuarios responsaveis por etapa do desembarque
+  Desembarque.belongsTo(Usuario, {
+    foreignKey: 'ID_coletor',
+    as: 'coletorUsuario'
+  });
+  Usuario.hasMany(Desembarque, {
+    foreignKey: 'ID_coletor',
+    as: 'desembarques_coletados'
+  });
+
+  Desembarque.belongsTo(Usuario, {
+    foreignKey: 'ID_revisor',
+    as: 'revisorUsuario'
+  });
+  Usuario.hasMany(Desembarque, {
+    foreignKey: 'ID_revisor',
+    as: 'desembarques_revisados'
+  });
+
+  Desembarque.belongsTo(Usuario, {
+    foreignKey: 'ID_digitador',
+    as: 'digitadorUsuario'
+  });
+  Usuario.hasMany(Desembarque, {
+    foreignKey: 'ID_digitador',
+    as: 'desembarques_digitados'
+  });
+
   // Desembarque tem muitas Artes
   Desembarque.hasMany(DesembarqueArte, {
     foreignKey: 'ID_desembarque',

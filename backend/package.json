@@ -20,6 +20,7 @@
     "db:migrate-coords": "node scripts/migrarCoordenadasNativo.js",
     "db:migrate-codigo-embarcacao-optional": "node scripts/migrarCodigoEmbarcacaoOpcional.js",
     "db:migrate-desembarque-usuario": "node scripts/migrarDesembarqueUsuarioGamificacao.js",
+    "db:migrate-user-classificacao-responsaveis": "node scripts/migrarClassificacaoUsuarioResponsaveis.js",
     "db:populate-especies": "node scripts/popularEspecies.js",
     "db:fix-enum": "node scripts/corrigirEnumDestino.js",
     "db:migrate-destino-captura-null": "node scripts/migrarDestinoMultiploECapturaNula.js",
