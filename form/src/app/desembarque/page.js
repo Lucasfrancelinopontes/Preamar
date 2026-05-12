@@ -753,28 +753,29 @@ function DesembarqueContent() {
                     preco_kg: toNumberOrNull(captura.precoKg),
                     com_tripa: captura.condicaoPeixe === "com_visceras"
                         ? true
-            const artesPescaPayload = Array.isArray(formData.artesPesca)
-                ? formData.artesPesca
-                    .map((item) => {
-                        const arteSelecionada = String(item?.arte || "").trim();
-                        if (!arteSelecionada) return null;
-                        const nomeOutro = String(item?.nome || "").trim();
-                        return {
-                            ID: item?.ID || null,
-                            arte: arteSelecionada,
-                            nome: arteSelecionada === "outras" ? (nomeOutro || null) : null,
-                            tamanho: toNumberOrNull(item?.tamanho),
-                            unidade: item?.unidade || "m"
-                        };
-                    })
-                    .filter(Boolean)
-                : [];
                         : captura.condicaoPeixe === "sem_visceras"
                             ? false
                             : null
                 };
             })
             .filter(Boolean);
+
+        const artesPescaPayload = Array.isArray(formData.artesPesca)
+            ? formData.artesPesca
+                .map((item) => {
+                    const arteSelecionada = String(item?.arte || "").trim();
+                    if (!arteSelecionada) return null;
+                    const nomeOutro = String(item?.nome || "").trim();
+                    return {
+                        ID: item?.ID || null,
+                        arte: arteSelecionada,
+                        nome: arteSelecionada === "outras" ? (nomeOutro || null) : null,
+                        tamanho: toNumberOrNull(item?.tamanho),
+                        unidade: item?.unidade || "m"
+                    };
+                })
+                .filter(Boolean)
+            : [];
 
         const individuosPayload = (formData.individuos || [])
             .map((individuo, index) => {
