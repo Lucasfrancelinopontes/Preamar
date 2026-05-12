@@ -854,7 +854,6 @@ function DesembarqueContent() {
                 apelido_proprietario: formData.apelidoProprietario || null,
                 atuou_pesca: formData.atuouNaPesca === "sim" ? "S" : formData.atuouNaPesca === "nao" ? "N" : null
             },
-            artes: formData.artePesca
             artes: artesPescaPayload,
             capturas: capturasPayload,
             individuos: individuosPayload
