@@ -50,6 +50,11 @@ export const Embarcacao = sequelize.define('Embarcacao', {
   possui: {
     type: DataTypes.ENUM('urna', 'caixaTermica', 'pescadoInNatura')
   },
+  artes_pesca: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: []
+  },
   municipio: {
     type: DataTypes.STRING(100)
   },

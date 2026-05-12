@@ -39,6 +39,26 @@ const parseNumeroDecimal = (valor) => {
     return Number.isNaN(numero) ? null : numero
 }
 
+const criarArtePescaItem = () => ({
+    arte: '',
+    tamanho: ''
+})
+
+const normalizarArtesPesca = (artes) => {
+    if (!Array.isArray(artes)) {
+        return [criarArtePescaItem()]
+    }
+
+    const itens = artes.map((item) => ({
+        arte: item?.arte ? String(item.arte).trim() : '',
+        tamanho: item?.tamanho !== null && item?.tamanho !== undefined && item?.tamanho !== ''
+            ? String(item.tamanho).replace(',', '.')
+            : ''
+    }))
+
+    return itens.length > 0 ? itens : [criarArtePescaItem()]
+}
+
 export default function EmbarcacoesPage() {
     const { estaAutenticado, ehAdmin } = useAuth()
     const router = useRouter()
@@ -60,7 +80,8 @@ export default function EmbarcacoesPage() {
         comprimento: '',
         capacidade: '',
         hp: '',
-        possui: ''
+        possui: '',
+        artes_pesca: [criarArtePescaItem()]
     })
 
     // Verificar permissões
@@ -103,7 +124,8 @@ export default function EmbarcacoesPage() {
             comprimento: '',
             capacidade: '',
             hp: '',
-            possui: ''
+            possui: '',
+            artes_pesca: [criarArtePescaItem()]
         })
         setEmbarcacaoEditando(null)
     }
@@ -120,7 +142,8 @@ export default function EmbarcacoesPage() {
                 comprimento: embarcacao.comprimento || '',
                 capacidade: embarcacao.capacidade || '',
                 hp: embarcacao.hp || '',
-                possui: embarcacao.possui || ''
+                possui: embarcacao.possui || '',
+                artes_pesca: normalizarArtesPesca(embarcacao.artes_pesca)
             })
             setEmbarcacaoEditando(embarcacao)
         } else {
@@ -161,7 +184,15 @@ export default function EmbarcacoesPage() {
                 possui: possuiNormalizado || null,
                 comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
                 capacidade: formData.capacidade ? parseFloat(formData.capacidade) : null,
-                hp: parseNumeroDecimal(formData.hp)
+                hp: parseNumeroDecimal(formData.hp),
+                artes_pesca: Array.isArray(formData.artes_pesca)
+                    ? formData.artes_pesca
+                        .map((item) => ({
+                            arte: item?.arte?.trim() || '',
+                            tamanho: parseNumeroDecimal(item?.tamanho)
+                        }))
+                        .filter((item) => item.arte || item.tamanho !== null)
+                    : []
             }
 
             if (embarcacaoEditando) {
@@ -488,6 +519,88 @@ export default function EmbarcacoesPage() {
                                         <option value="urna">Urna</option>
                                         <option value="pescadoInNatura">Pescado In Natura</option>
                                     </select>
+                                </div>
+                            </div>
+
+                            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                <div className="flex items-center justify-between gap-4 mb-4">
+                                    <div>
+                                        <h3 className="text-base font-semibold text-black">Adicionar arte de pesca</h3>
+                                        <p className="text-sm text-gray-600">Inclua uma ou mais artes usadas pela embarcação.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData((prev) => ({
+                                            ...prev,
+                                            artes_pesca: [...(Array.isArray(prev.artes_pesca) ? prev.artes_pesca : []), criarArtePescaItem()]
+                                        }))}
+                                        className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                    >
+                                        + Adicionar arte
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {formData.artes_pesca.map((item, index) => (
+                                        <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-3 items-end rounded-lg bg-white p-3 border border-gray-200">
+                                            <div>
+                                                <label className="block text-sm font-medium text-black mb-1">
+                                                    Arte utilizada
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={item.arte}
+                                                    onChange={(e) => {
+                                                        const valor = e.target.value
+                                                        setFormData((prev) => ({
+                                                            ...prev,
+                                                            artes_pesca: prev.artes_pesca.map((arte, arteIndex) => (
+                                                                arteIndex === index ? { ...arte, arte: valor } : arte
+                                                            ))
+                                                        }))
+                                                    }}
+                                                    className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
+                                                    placeholder="Ex: rede de fundeio"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-black mb-1">
+                                                    Tamanho (m)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    step="0.1"
+                                                    value={item.tamanho}
+                                                    onChange={(e) => {
+                                                        const valor = e.target.value
+                                                        setFormData((prev) => ({
+                                                            ...prev,
+                                                            artes_pesca: prev.artes_pesca.map((arte, arteIndex) => (
+                                                                arteIndex === index ? { ...arte, tamanho: valor } : arte
+                                                            ))
+                                                        }))
+                                                    }}
+                                                    className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
+                                                    placeholder="Ex: 8.5"
+                                                />
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData((prev) => {
+                                                    const artesAtualizadas = prev.artes_pesca.filter((_, arteIndex) => arteIndex !== index)
+                                                    return {
+                                                        ...prev,
+                                                        artes_pesca: artesAtualizadas.length > 0 ? artesAtualizadas : [criarArtePescaItem()]
+                                                    }
+                                                })}
+                                                className="px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 md:justify-self-start"
+                                            >
+                                                Remover
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 

@@ -48,6 +48,25 @@ const ensurePescadorNomeNullable = async () => {
   }
 };
 
+const ensureArtesPescaColumn = async () => {
+  try {
+    const qi = sequelize.getQueryInterface();
+    const table = await qi.describeTable('embarcacoes');
+    if (table?.artes_pesca) return;
+
+    console.log('Adicionando coluna embarcacoes.artes_pesca ...');
+    await qi.addColumn('embarcacoes', 'artes_pesca', {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: [],
+      comment: 'Lista de artes de pesca associadas à embarcação'
+    });
+    console.log('✅ Coluna embarcacoes.artes_pesca adicionada.');
+  } catch (err) {
+    console.warn('⚠️ Falha ao auto-migrar coluna embarcacoes.artes_pesca:', err?.message || err);
+  }
+};
+
 const initDB = async () => {
   if (!dbConnected) {
     console.log('Iniciando conexão com banco de dados (Serverless)...');
@@ -55,6 +74,7 @@ const initDB = async () => {
     defineAssociations();
     await ensureArteNomeColumn();
     await ensurePescadorNomeNullable();
+    await ensureArtesPescaColumn();
     dbConnected = true;
   }
 };

@@ -4,12 +4,34 @@ import express from 'express';
 import { fileURLToPath } from 'url';
 import router from './router.js';
 import { connectDB } from './db.js';
-import { defineAssociations } from './models/index.js';
+import { defineAssociations, sequelize } from './models/index.js';
+import { DataTypes } from 'sequelize';
 import cors from 'cors';
 import { errorHandler } from './middleware/validationMiddleware.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+const ensureArtesPescaColumn = async () => {
+    try {
+        const queryInterface = sequelize.getQueryInterface();
+        const table = await queryInterface.describeTable('embarcacoes');
+        if (table?.artes_pesca) {
+            return;
+        }
+
+        console.log('Adicionando coluna embarcacoes.artes_pesca...');
+        await queryInterface.addColumn('embarcacoes', 'artes_pesca', {
+            type: DataTypes.JSON,
+            allowNull: true,
+            defaultValue: [],
+            comment: 'Lista de artes de pesca associadas à embarcação'
+        });
+        console.log('✅ Coluna embarcacoes.artes_pesca adicionada.');
+    } catch (error) {
+        console.warn('⚠️ Não foi possível garantir a coluna embarcacoes.artes_pesca:', error.message || error);
+    }
+};
 
 // Middlewares
 app.use(cors({
@@ -47,6 +69,7 @@ const start = async () => {
         
         // Definir associações entre os modelos
         defineAssociations();
+        await ensureArtesPescaColumn();
         
         // Apenas inicia o servidor se não estiver rodando na Vercel (serverless)
         if (process.env.VERCEL !== '1') {
