@@ -229,7 +229,7 @@ export default function GerenciarUsuarios() {
                                         type="text"
                                         value={novoUsuario.nome}
                                         onChange={(e) => setNovoUsuario({ ...novoUsuario, nome: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-blue-500"
                                         required
                                     />
                                 </div>
@@ -239,7 +239,7 @@ export default function GerenciarUsuarios() {
                                         type="email"
                                         value={novoUsuario.email}
                                         onChange={(e) => setNovoUsuario({ ...novoUsuario, email: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-blue-500"
                                         required
                                     />
                                 </div>
@@ -249,7 +249,7 @@ export default function GerenciarUsuarios() {
                                         type="password"
                                         value={novoUsuario.senha}
                                         onChange={(e) => setNovoUsuario({ ...novoUsuario, senha: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-blue-500"
                                         required
                                     />
                                 </div>
@@ -258,7 +258,7 @@ export default function GerenciarUsuarios() {
                                     <select
                                         value={novoUsuario.funcao}
                                         onChange={(e) => setNovoUsuario({ ...novoUsuario, funcao: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-blue-500"
                                     >
                                         <option value="Digitador">Digitador</option>
                                         <option value="Validador">Validador</option>
@@ -297,7 +297,7 @@ export default function GerenciarUsuarios() {
                                         type="text"
                                         value={usuarioEditando.nome}
                                         onChange={(e) => setUsuarioEditando({ ...usuarioEditando, nome: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-blue-500"
                                     />
                                 </div>
                                 <div className="mb-4">
@@ -306,7 +306,7 @@ export default function GerenciarUsuarios() {
                                         type="email"
                                         value={usuarioEditando.email}
                                         onChange={(e) => setUsuarioEditando({ ...usuarioEditando, email: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-blue-500"
                                     />
                                 </div>
                                 <div className="mb-4">
@@ -314,7 +314,7 @@ export default function GerenciarUsuarios() {
                                     <select
                                         value={usuarioEditando.funcao}
                                         onChange={(e) => setUsuarioEditando({ ...usuarioEditando, funcao: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-blue-500"
                                     >
                                         <option value="Digitador">Digitador</option>
                                         <option value="Validador">Validador</option>
