@@ -222,6 +222,16 @@ export default function GerenciarUsuarios() {
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
                             <h2 className="text-2xl font-bold text-gray-800 mb-4">Novo Usuário</h2>
+                            {erro && (
+                                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                                    {erro}
+                                </div>
+                            )}
+                            {sucesso && (
+                                <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">
+                                    {sucesso}
+                                </div>
+                            )}
                             <form onSubmit={handleCriarUsuario}>
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
@@ -290,6 +300,16 @@ export default function GerenciarUsuarios() {
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
                             <h2 className="text-2xl font-bold text-gray-800 mb-4">Editar Usuário</h2>
+                            {erro && (
+                                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                                    {erro}
+                                </div>
+                            )}
+                            {sucesso && (
+                                <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">
+                                    {sucesso}
+                                </div>
+                            )}
                             <form onSubmit={handleSalvarEdicao}>
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
