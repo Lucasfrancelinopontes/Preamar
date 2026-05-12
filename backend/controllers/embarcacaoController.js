@@ -45,36 +45,6 @@ const normalizarPossui = (value) => {
   return possui;
 };
 
-const normalizarArtesPesca = (value) => {
-  if (value === null || value === undefined || value === '') return [];
-
-  let itens = value;
-  if (!Array.isArray(itens) && typeof itens === 'string') {
-    try {
-      itens = JSON.parse(itens);
-    } catch {
-      return [];
-    }
-  }
-
-  if (!Array.isArray(itens)) return [];
-
-  return itens
-    .map((item) => {
-      const arte = normalizarTexto(item?.arte ?? item?.nome ?? item?.tipo);
-      const tamanhoRaw = item?.tamanho ?? item?.comprimento;
-      const tamanho = tamanhoRaw === null || tamanhoRaw === undefined || tamanhoRaw === ''
-        ? null
-        : Number(String(tamanhoRaw).replace(',', '.'));
-
-      return {
-        arte,
-        tamanho: Number.isFinite(tamanho) ? tamanho : null
-      };
-    })
-    .filter((item) => item.arte || item.tamanho !== null);
-};
-
 const sanitizarEmbarcacao = (payload = {}) => {
   const dados = { ...payload };
 
@@ -88,7 +58,6 @@ const sanitizarEmbarcacao = (payload = {}) => {
   if (Object.prototype.hasOwnProperty.call(dados, 'tipo_outro')) dados.tipo_outro = normalizarTexto(dados.tipo_outro);
   if (Object.prototype.hasOwnProperty.call(dados, 'tipo')) dados.tipo = normalizarTipoEmbarcacao(dados.tipo);
   if (Object.prototype.hasOwnProperty.call(dados, 'possui')) dados.possui = normalizarPossui(dados.possui);
-  if (Object.prototype.hasOwnProperty.call(dados, 'artes_pesca')) dados.artes_pesca = normalizarArtesPesca(dados.artes_pesca);
 
   return dados;
 };

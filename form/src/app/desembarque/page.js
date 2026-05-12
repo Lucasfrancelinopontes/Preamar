@@ -60,6 +60,26 @@ const createIndividuoItem = () => ({
     comprimentoIndividuo: "",
     pesoIndividuo: ""
 });
+const createArtePescaItem = () => ({
+    ID: null,
+    arte: "",
+    nome: "",
+    tamanho: "",
+    unidade: "m"
+});
+const normalizeArtesPesca = (artes) => {
+    if (!Array.isArray(artes) || artes.length === 0) {
+        return [createArtePescaItem()];
+    }
+    const itens = artes.map((arte) => ({
+        ID: arte?.ID || arte?.id || null,
+        arte: arte?.arte ? String(arte.arte) : "",
+        nome: arte?.nome ? String(arte.nome) : "",
+        tamanho: arte?.tamanho != null ? String(arte.tamanho) : "",
+        unidade: arte?.unidade ? String(arte.unidade) : "m"
+    }));
+    return itens.length > 0 ? itens : [createArtePescaItem()];
+};
 
 const createInitialFormData = () => ({
     ID_desembarque: null,
@@ -94,6 +114,7 @@ const createInitialFormData = () => ({
     artePesca: "",
     artePescaOutro: "",
     tamanhoArte: "",
+    artesPesca: [createArtePescaItem()],
     gelo: "",
     rancho: "",
     litrosCombustivel: "",
@@ -285,6 +306,7 @@ const mapApiToFormData = (data) => {
         artePesca: arteRaw ? (arteIsKnown ? arteRaw : "outras") : "",
         artePescaOutro: arteRaw ? (arteIsKnown ? (arte?.nome || "") : arteRaw) : "",
         tamanhoArte: arte?.tamanho != null ? String(arte.tamanho) : "",
+        artesPesca: normalizeArtesPesca(data?.artes),
         gelo: data?.gelo_kg != null ? String(data.gelo_kg) : "",
         rancho: data?.rancho_valor != null ? String(data.rancho_valor) : "",
         litrosCombustivel: data?.litros != null ? String(data.litros) : "",
@@ -538,6 +560,9 @@ function DesembarqueContent() {
             if (name === "artePesca") {
                 return { ...prev, artePesca: value, artePescaOutro: value === "outras" ? prev.artePescaOutro : "" };
             }
+            if (name === "artesPesca") {
+                return { ...prev, artesPesca: value };
+            }
             if (name === "destino") {
                 return { ...prev, destino: value, destinoApelido: value ? prev.destinoApelido : "" };
             }
@@ -728,6 +753,22 @@ function DesembarqueContent() {
                     preco_kg: toNumberOrNull(captura.precoKg),
                     com_tripa: captura.condicaoPeixe === "com_visceras"
                         ? true
+            const artesPescaPayload = Array.isArray(formData.artesPesca)
+                ? formData.artesPesca
+                    .map((item) => {
+                        const arteSelecionada = String(item?.arte || "").trim();
+                        if (!arteSelecionada) return null;
+                        const nomeOutro = String(item?.nome || "").trim();
+                        return {
+                            ID: item?.ID || null,
+                            arte: arteSelecionada,
+                            nome: arteSelecionada === "outras" ? (nomeOutro || null) : null,
+                            tamanho: toNumberOrNull(item?.tamanho),
+                            unidade: item?.unidade || "m"
+                        };
+                    })
+                    .filter(Boolean)
+                : [];
                         : captura.condicaoPeixe === "sem_visceras"
                             ? false
                             : null
@@ -813,13 +854,7 @@ function DesembarqueContent() {
                 atuou_pesca: formData.atuouNaPesca === "sim" ? "S" : formData.atuouNaPesca === "nao" ? "N" : null
             },
             artes: formData.artePesca
-                ? [{
-                        arte: formData.artePesca,
-                        nome: formData.artePesca === "outras" ? (formData.artePescaOutro || null) : null,
-                        tamanho: toNumberOrNull(formData.tamanhoArte),
-                        unidade: "m"
-                    }]
-                : [],
+            artes: artesPescaPayload,
             capturas: capturasPayload,
             individuos: individuosPayload
         };
@@ -910,18 +945,17 @@ function DesembarqueContent() {
     };
 
     const formatarArtePescaResumo = () => {
-        if (!possuiValor(formData.artePesca)) return "-";
-
-        const arteSelecionada = ARTE_OPTIONS.find((item) => item.value === formData.artePesca);
-        const label = arteSelecionada?.label || String(formData.artePesca);
-
-        if (formData.artePesca === "outras") {
-            return possuiValor(formData.artePescaOutro)
-                ? `${label} (${formData.artePescaOutro})`
-                : label;
-        }
-
-        return label;
+        const itens = Array.isArray(formData.artesPesca) ? formData.artesPesca : [];
+        const textos = itens
+            .filter((item) => possuiValor(item?.arte))
+            .map((item) => {
+                const arteSelecionada = ARTE_OPTIONS.find((option) => option.value === item.arte);
+                const label = arteSelecionada?.label || String(item.arte);
+                const nomeOutro = possuiValor(item?.nome) ? ` (${item.nome})` : "";
+                const tamanho = possuiValor(item?.tamanho) ? ` - ${item.tamanho} m` : "";
+                return `${label}${nomeOutro}${tamanho}`;
+            });
+        return textos.length > 0 ? textos.join("; ") : "-";
     };
 
     const formatarDestinoResumo = (value) => {
@@ -1246,25 +1280,98 @@ function DesembarqueContent() {
                                     </div>
 
                                     <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-black">Arte de Pesca</h3>
-                                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                                        <div>
-                                            <label className="mb-1.5 block text-sm font-semibold text-black">Arte Utilizada</label>
-                                            <select
-                                                name="artePesca"
-                                                value={formData.artePesca}
-                                                onChange={handleInputChange}
-                                                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600"
+                                    <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                                        <div className="mb-4 flex items-center justify-between gap-3">
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-black">Adicionar arte de pesca</h3>
+                                                <p className="text-sm text-slate-600">Inclua uma ou mais artes usadas no desembarque.</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData((prev) => ({
+                                                    ...prev,
+                                                    artesPesca: [...(Array.isArray(prev.artesPesca) ? prev.artesPesca : []), createArtePescaItem()]
+                                                }))}
+                                                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
                                             >
-                                                <option value="">Selecione...</option>
-                                                {ARTE_OPTIONS.map((item) => (
-                                                    <option key={item.value} value={item.value}>{item.label}</option>
-                                                ))}
-                                            </select>
+                                                + Adicionar arte
+                                            </button>
                                         </div>
-                                        <InputGroup label="Tamanho (m)" name="tamanhoArte" type="number" value={formData.tamanhoArte} onChange={handleInputChange} />
-                                        {formData.artePesca === "outras" && (
-                                            <InputGroup label="Qual arte?" name="artePescaOutro" colSpan={2} value={formData.artePescaOutro} onChange={handleInputChange} />
-                                        )}
+
+                                        <div className="space-y-3">
+                                            {(Array.isArray(formData.artesPesca) ? formData.artesPesca : []).map((item, index) => (
+                                                <div key={item.ID ?? index} className="grid grid-cols-1 gap-4 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-[minmax(0,1fr)_160px_auto]">
+                                                    <div>
+                                                        <label className="mb-1.5 block text-sm font-semibold text-black">Arte Utilizada</label>
+                                                        <select
+                                                            value={item.arte}
+                                                            onChange={(e) => setFormData((prev) => ({
+                                                                ...prev,
+                                                                artesPesca: prev.artesPesca.map((arteItem, arteIndex) => (
+                                                                    arteIndex === index
+                                                                        ? {
+                                                                            ...arteItem,
+                                                                            arte: e.target.value,
+                                                                            nome: e.target.value === "outras" ? arteItem.nome : ""
+                                                                        }
+                                                                        : arteItem
+                                                                ))
+                                                            }))}
+                                                            className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600"
+                                                        >
+                                                            <option value="">Selecione...</option>
+                                                            {ARTE_OPTIONS.map((option) => (
+                                                                <option key={option.value} value={option.value}>{option.label}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    <InputGroup
+                                                        label="Tamanho (m)"
+                                                        name={`tamanhoArte-${index}`}
+                                                        type="number"
+                                                        value={item.tamanho}
+                                                        onChange={(e) => setFormData((prev) => ({
+                                                            ...prev,
+                                                            artesPesca: prev.artesPesca.map((arteItem, arteIndex) => (
+                                                                arteIndex === index ? { ...arteItem, tamanho: e.target.value } : arteItem
+                                                            ))
+                                                        }))}
+                                                    />
+
+                                                    <div className="flex items-end">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setFormData((prev) => {
+                                                                const artesAtualizadas = prev.artesPesca.filter((_, arteIndex) => arteIndex !== index)
+                                                                return {
+                                                                    ...prev,
+                                                                    artesPesca: artesAtualizadas.length > 0 ? artesAtualizadas : [createArtePescaItem()]
+                                                                }
+                                                            })}
+                                                            className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                                                        >
+                                                            Remover
+                                                        </button>
+                                                    </div>
+
+                                                    {item.arte === "outras" && (
+                                                        <InputGroup
+                                                            label="Qual arte?"
+                                                            name={`artePescaOutro-${index}`}
+                                                            colSpan={2}
+                                                            value={item.nome}
+                                                            onChange={(e) => setFormData((prev) => ({
+                                                                ...prev,
+                                                                artesPesca: prev.artesPesca.map((arteItem, arteIndex) => (
+                                                                    arteIndex === index ? { ...arteItem, nome: e.target.value } : arteItem
+                                                                ))
+                                                            }))}
+                                                        />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -1590,8 +1697,7 @@ function DesembarqueContent() {
                                                 <p><span className="font-semibold">Forca do motor (HP):</span> {valorResumo(formData.forcaMotor)}</p>
                                                 <p><span className="font-semibold">Conservacao:</span> {formatarConservacaoResumo(formData.conservacao)}</p>
                                                 <p><span className="font-semibold">Arte de pesca:</span> {formatarArtePescaResumo()}</p>
-                                                <p><span className="font-semibold">Arte de pesca (outra):</span> {valorResumo(formData.artePescaOutro)}</p>
-                                                <p><span className="font-semibold">Tamanho da arte (m):</span> {valorResumo(formData.tamanhoArte)}</p>
+                                                <p><span className="font-semibold">Artes de pesca:</span> {formatarArtePescaResumo()}</p>
                                             </div>
                                         </div>
 
