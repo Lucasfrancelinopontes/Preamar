@@ -25,7 +25,7 @@ const resumoInicial = {
 
 export default function ImportarEmbarcacoesPage() {
   const router = useRouter();
-  const { estaAutenticado, ehAdmin } = useAuth();
+  const { estaAutenticado, ehAdmin, carregando } = useAuth();
   const inputRef = useRef(null);
 
   const [arquivoNome, setArquivoNome] = useState('');
@@ -45,6 +45,8 @@ export default function ImportarEmbarcacoesPage() {
   const totalPaginas = Math.max(1, Math.ceil(linhas.length / 12));
 
   useEffect(() => {
+    if (carregando) return;
+
     if (!estaAutenticado()) {
       router.push('/login');
       return;
@@ -53,7 +55,18 @@ export default function ImportarEmbarcacoesPage() {
     if (!ehAdmin()) {
       router.push('/');
     }
-  }, [estaAutenticado, ehAdmin, router]);
+  }, [carregando, estaAutenticado, ehAdmin, router]);
+
+  if (carregando) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-white/20 border-t-white"></div>
+          <p className="mt-4 text-sm uppercase tracking-[0.25em] text-slate-300">Verificando acesso</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const ids = new Set(linhas.filter((linha) => linha.selecionado).map((linha) => linha.linha));
