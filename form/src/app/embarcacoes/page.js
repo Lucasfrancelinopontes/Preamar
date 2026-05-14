@@ -222,7 +222,7 @@ export default function EmbarcacoesPage() {
                     </div>
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={() => window.open('/admin/embarcacoes/importar', '_blank', 'noopener,noreferrer')}
+                            onClick={() => router.push('/admin/embarcacoes/importar')}
                             className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
                         >
                             Importar XLSX/CSV
