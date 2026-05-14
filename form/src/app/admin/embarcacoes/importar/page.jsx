@@ -40,9 +40,9 @@ export default function ImportarEmbarcacoesPage() {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [etapa, setEtapa] = useState('idle');
   const [headersDebug, setHeadersDebug] = useState([]);
-  const [primeiraLinhaDebug, setPrimeiraLinhaDebug] = useState([]);
+  const [primeiroRegistroDebug, setPrimeiroRegistroDebug] = useState(null);
 
-  const linhas = previewServidor?.linhas || previewLocal?.linhas || [];
+  const linhas = previewServidor?.registros || previewServidor?.linhas || previewLocal?.registros || previewLocal?.linhas || [];
   const resumo = previewServidor?.resumo || previewLocal?.resumo || resumoInicial;
   const totalPaginas = Math.max(1, Math.ceil(linhas.length / 12));
 
@@ -70,8 +70,8 @@ export default function ImportarEmbarcacoesPage() {
     const debug = previewServidor?.debug || previewLocal?.debug || null;
     if (!debug) return;
 
-    setHeadersDebug(debug.headersDetectados || []);
-    setPrimeiraLinhaDebug(debug.primeiraLinha || []);
+    setHeadersDebug(debug.headers || debug.headersDetectados || []);
+    setPrimeiroRegistroDebug(debug.primeiraLinhaUtil || debug.primeiroRegistro || null);
   }, [previewLocal, previewServidor]);
 
   if (carregando) {
@@ -267,12 +267,12 @@ export default function ImportarEmbarcacoesPage() {
               <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Debug</p>
-                  <h2 className="mt-1 text-xl font-bold text-slate-900">Headers detectados e primeira linha útil</h2>
+                  <h2 className="mt-1 text-xl font-bold text-slate-900">Headers detectados e primeiro registro</h2>
                 </div>
                 <button
                   type="button"
                   className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  onClick={() => console.log('debugImportacao', { headersDebug, primeiraLinhaDebug, previewLocal, previewServidor })}
+                  onClick={() => console.log('debugImportacao', { headersDebug, primeiroRegistroDebug, previewLocal, previewServidor })}
                 >
                   Log debug
                 </button>
@@ -285,10 +285,10 @@ export default function ImportarEmbarcacoesPage() {
                   </p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Primeira linha útil</p>
-                  <p className="mt-2 text-sm text-slate-700 break-words">
-                    {primeiraLinhaDebug.length > 0 ? primeiraLinhaDebug.join(' · ') : 'Sem dados carregados.'}
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Primeiro registro</p>
+                  <pre className="mt-2 overflow-x-auto text-sm text-slate-700 whitespace-pre-wrap break-words">
+                    {primeiroRegistroDebug ? JSON.stringify(primeiroRegistroDebug, null, 2) : 'Sem dados carregados.'}
+                  </pre>
                 </div>
               </div>
             </div>

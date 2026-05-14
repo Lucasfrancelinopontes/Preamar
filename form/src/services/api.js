@@ -520,12 +520,12 @@ const api = {
     }
   },
 
-  confirmarImportacaoEmbarcacoes: async (linhas) => {
+  confirmarImportacaoEmbarcacoes: async (registros) => {
     try {
       const response = await fetch(`${API_URL}/embarcacoes/importar/confirmar`, {
         method: 'POST',
         headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ linhas })
+        body: JSON.stringify({ registros })
       });
 
       return handleResponse(response);

@@ -329,16 +329,22 @@ export const prepararImportacaoEmbarcacoes = async (req, res) => {
 
 export const confirmarImportacaoEmbarcacoes = async (req, res) => {
   try {
-    const linhas = Array.isArray(req.body?.linhas) ? req.body.linhas : Array.isArray(req.body?.rows) ? req.body.rows : [];
+    const registros = Array.isArray(req.body?.registros)
+      ? req.body.registros
+      : Array.isArray(req.body?.linhas)
+        ? req.body.linhas
+        : Array.isArray(req.body?.rows)
+          ? req.body.rows
+          : [];
 
-    if (linhas.length === 0) {
+    if (registros.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Envie as linhas selecionadas para confirmar a importação'
+        message: 'Envie os registros selecionados para confirmar a importação'
       });
     }
 
-    const resultado = await confirmarImportacaoArquivo(linhas);
+    const resultado = await confirmarImportacaoArquivo(registros);
 
     return res.json({
       success: true,

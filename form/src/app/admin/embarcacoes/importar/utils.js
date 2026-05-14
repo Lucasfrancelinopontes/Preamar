@@ -432,7 +432,7 @@ const coletarCabecalhos = (linhasBrutas = []) => {
   return Array.from(colunas);
 };
 
-const lerPlanilhaComoMatriz = async (file) => {
+const lerPlanilhaComoLinhas = async (file) => {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: 'array', cellDates: true, raw: false });
   const planilha = workbook.SheetNames[0];
@@ -445,7 +445,7 @@ const lerPlanilhaComoMatriz = async (file) => {
   return {
     workbook,
     worksheet,
-    linhasBrutas: XLSX.utils.sheet_to_json(worksheet, { header: 'A', defval: '', raw: false, blankrows: false })
+    rows: XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false })
   };
 };
 
@@ -459,45 +459,48 @@ export const analisarArquivoImportacao = async (file) => {
     throw new Error('Formato inválido. Envie um arquivo .xlsx ou .csv');
   }
 
-  const { workbook, worksheet, linhasBrutas } = await lerPlanilhaComoMatriz(file);
+  const { workbook, worksheet, rows } = await lerPlanilhaComoLinhas(file);
 
-  if (!Array.isArray(linhasBrutas) || !linhasBrutas.length) {
+  if (!Array.isArray(rows) || !rows.length) {
     throw new Error('Arquivo sem dados válidos');
   }
 
-  const primeiraLinha = linhasBrutas.find((linha) => !linhaVazia(linha)) || {};
-  const headerRowIndex = encontrarLinhaCabecalho(linhasBrutas);
-  const headersDetectados = valoresDaLinha(linhasBrutas[headerRowIndex] || {});
+  const headersNormalizados = Array.isArray(rows[0]) ? rows[0].map((header) => normalizarHeader(header)) : [];
+  const headers = headersNormalizados.filter(Boolean);
+  const linhasAposCabecalho = rows.slice(1);
+  const linhasVaziasDescartadas = linhasAposCabecalho.filter((row) => !Array.isArray(row) || !row.some((cell) => String(cell || '').trim())).length;
 
-  console.log('headersDetectados', headersDetectados);
-  console.log('primeiraLinha', primeiraLinha);
+  const registros = linhasAposCabecalho
+    .filter((row) => Array.isArray(row) && row.some((cell) => String(cell || '').trim()))
+    .map((row) => {
+      const obj = {};
 
-  const dados = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false, range: headerRowIndex });
-  console.log(dados[0]);
-  console.log(typeof dados[0]);
+      headersNormalizados.forEach((header, index) => {
+        if (!header) return;
+        obj[header] = row[index] ?? '';
+      });
 
-  if (!Array.isArray(dados) || !dados.length) {
-    throw new Error('Arquivo sem dados válidos');
-  }
+      return obj;
+    });
+
+  console.log('HEADERS', headers);
+  console.log('PRIMEIRO REGISTRO', registros[0]);
+  console.log('TOTAL REGISTROS', registros.length);
+
   const linhas = [];
-  let linhasVaziasDescartadas = 0;
 
-  dados.forEach((linha, indice) => {
-    if (linhaVazia(linha)) {
-      linhasVaziasDescartadas += 1;
-      return;
-    }
-
-    linhas.push(avaliarLinhaImportacao(linha, indice));
+  registros.forEach((registro, indice) => {
+    linhas.push(avaliarLinhaImportacao(registro, indice));
   });
 
-  const colunas = headersDetectados.map((header) => normalizarHeader(header)).filter(Boolean);
+  const colunas = headers.filter(Boolean);
   const linhasValidas = linhas.filter((linha) => linha.status !== 'invalid').length;
   const linhasInvalidas = linhas.filter((linha) => linha.status === 'invalid').length;
 
   return {
     arquivo: file.name,
     colunas,
+    registros: linhas,
     linhas,
     resumo: {
       ...construirResumo(linhas),
@@ -507,12 +510,13 @@ export const analisarArquivoImportacao = async (file) => {
       vaziasDescartadas: linhasVaziasDescartadas,
       linhasVaziasDescartadas
     },
-    headersDetectados: headersDetectados.map((header) => normalizarHeader(header)),
-    primeiraLinha: valoresDaLinha(primeiraLinha).map((valor) => String(valor ?? '').trim()),
+    registros,
+    headersDetectados: headers,
+    primeiraLinhaUtil: registros[0] || null,
     debug: {
-      headersDetectados: headersDetectados.map((header) => normalizarHeader(header)),
-      primeiraLinha: valoresDaLinha(primeiraLinha).map((valor) => String(valor ?? '').trim()),
-      dadosPrimeiroRegistro: dados[0] || null,
+      headers,
+      primeiraLinhaUtil: registros[0] || null,
+      totalRegistros: registros.length,
       linhasVaziasDescartadas
     }
   };

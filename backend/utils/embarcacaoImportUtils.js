@@ -532,8 +532,32 @@ const lerPlanilhaComoLinhas = (buffer) => {
   return {
     workbook,
     worksheet,
-    linhasBrutas: XLSX.utils.sheet_to_json(worksheet, { header: 'A', defval: '', raw: false, blankrows: false })
+    rows: XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false })
   };
+};
+
+const converterRowsEmRegistros = (rows = []) => {
+  const headersBrutos = Array.isArray(rows[0]) ? rows[0] : [];
+  const headersNormalizados = headersBrutos.map((header) => normalizarHeader(header));
+  const headers = headersNormalizados.filter(Boolean);
+
+  const linhasAposCabecalho = rows.slice(1);
+  const linhasVaziasDescartadas = linhasAposCabecalho.filter((row) => !Array.isArray(row) || !row.some((cell) => String(cell || '').trim())).length;
+
+  const registros = linhasAposCabecalho
+    .filter((row) => Array.isArray(row) && row.some((cell) => String(cell || '').trim()))
+    .map((row) => {
+      const obj = {};
+
+      headersNormalizados.forEach((header, index) => {
+        if (!header) return;
+        obj[header] = row[index] ?? '';
+      });
+
+      return obj;
+    });
+
+  return { headers, registros };
 };
 
 export const processarArquivoImportacao = async (buffer, originalname = '') => {
@@ -542,39 +566,29 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
     throw new Error('Formato inválido. Envie um arquivo .xlsx ou .csv');
   }
 
-  const { worksheet, linhasBrutas } = lerPlanilhaComoLinhas(buffer);
+  const { rows } = lerPlanilhaComoLinhas(buffer);
 
-  if (!Array.isArray(linhasBrutas) || !linhasBrutas.length) {
+  if (!Array.isArray(rows) || !rows.length) {
     throw new Error('Arquivo sem dados válidos');
   }
 
-  const primeiraLinha = linhasBrutas.find((linha) => !linhaVazia(linha)) || {};
-  const headerRowIndex = encontrarLinhaCabecalho(linhasBrutas);
-  const headersDetectados = valoresDaLinha(linhasBrutas[headerRowIndex] || {});
+  const { headers, registros } = converterRowsEmRegistros(rows);
 
-  console.log('headersDetectados', headersDetectados);
-  console.log('primeiraLinha', primeiraLinha);
-
-  const dados = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false, range: headerRowIndex });
-  console.log(dados[0]);
-  console.log(typeof dados[0]);
-
-  if (!Array.isArray(dados) || !dados.length) {
+  if (!Array.isArray(registros) || !registros.length) {
     throw new Error('Arquivo sem dados válidos');
   }
+
+  console.log('HEADERS', headers);
+  console.log('PRIMEIRO REGISTRO', registros[0]);
+  console.log('TOTAL REGISTROS', registros.length);
+
   const linhas = [];
-  let linhasVaziasDescartadas = 0;
 
-  dados.forEach((linha, indice) => {
-    if (linhaVazia(linha)) {
-      linhasVaziasDescartadas += 1;
-      return;
-    }
-
+  registros.forEach((linha, indice) => {
     linhas.push(avaliarLinha(linha, indice));
   });
 
-  const colunas = headersDetectados.map((header) => normalizarHeader(header)).filter(Boolean);
+  const colunas = headers.filter(Boolean);
 
   const codigos = linhas
     .map((linha) => linha.normalizado.codigo_embarcacao)
@@ -629,6 +643,7 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
   return {
     arquivo: originalname,
     colunas,
+    registros: linhas,
     linhas,
     resumo: {
       ...construirResumo(linhas),
@@ -637,8 +652,8 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
       vaziasDescartadas: linhasVaziasDescartadas,
       linhasVaziasDescartadas
     },
-    headersDetectados: headersDetectados.map((header) => normalizarHeader(header)),
-    primeiraLinha: valoresDaLinha(primeiraLinha).map((valor) => String(valor ?? '').trim()),
+    headersDetectados: headers,
+    primeiraLinhaUtil: registros[0] || null,
     logs: linhas.flatMap((linha) => [
       ...linha.ajustes.map((ajuste) => ({
         linha: linha.linha,
@@ -652,9 +667,9 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
       }))
     ]),
     debug: {
-      headersDetectados: headersDetectados.map((header) => normalizarHeader(header)),
-      primeiraLinha: valoresDaLinha(primeiraLinha).map((valor) => String(valor ?? '').trim()),
-      dadosPrimeiroRegistro: dados[0] || null,
+      headers,
+      primeiraLinhaUtil: registros[0] || null,
+      totalRegistros: registros.length,
       linhasVaziasDescartadas
     }
   };
@@ -665,7 +680,7 @@ export const confirmarImportacaoEmbarcacoes = async (linhasSelecionadas = []) =>
   const logs = [];
 
   for (const [index, linha] of linhasSelecionadas.entries()) {
-    const normalizado = linha?.normalizado || linha?.dados_normalizados || linha?.data || null;
+    const normalizado = linha?.normalizado || linha?.dados_normalizados || linha?.data || linha || null;
     if (!normalizado) {
       logs.push({ linha: index + 1, nivel: 'error', mensagem: 'Linha sem dados normalizados' });
       continue;
