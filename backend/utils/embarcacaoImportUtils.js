@@ -326,9 +326,10 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
   const originalCpf = normalizarTexto(dadosOriginais.cpf_proprietario);
   const originalRgp = normalizarTexto(dadosOriginais.rgp);
 
-  const nome_embarcacao = originalNome;
-  if (!nome_embarcacao) {
-    erros.push('Nome da embarcação é obrigatório');
+  const nome_embarcacao = originalNome || `Embarcação sem nome ${indice + 1}`;
+  if (!originalNome) {
+    avisos.push('Nome da embarcação gerado automaticamente');
+    ajustes.push({ campo: 'nome_embarcacao', original: '', normalizado: nome_embarcacao, motivo: 'Gerado automaticamente' });
   } else if (nome_embarcacao !== String(dadosOriginais.nome_embarcacao || '').trim()) {
     avisos.push(montarMensagemAjuste('nome_embarcacao', dadosOriginais.nome_embarcacao, nome_embarcacao));
     ajustes.push({ campo: 'nome_embarcacao', original: dadosOriginais.nome_embarcacao, normalizado: nome_embarcacao, motivo: 'Limpeza de espaços' });
@@ -557,7 +558,7 @@ const converterRowsEmRegistros = (rows = []) => {
       return obj;
     });
 
-  return { headers, registros };
+  return { headers, registros, linhasVaziasDescartadas };
 };
 
 export const processarArquivoImportacao = async (buffer, originalname = '') => {
@@ -572,7 +573,7 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
     throw new Error('Arquivo sem dados válidos');
   }
 
-  const { headers, registros } = converterRowsEmRegistros(rows);
+  const { headers, registros, linhasVaziasDescartadas } = converterRowsEmRegistros(rows);
 
   if (!Array.isArray(registros) || !registros.length) {
     throw new Error('Arquivo sem dados válidos');
@@ -580,6 +581,8 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
 
   console.log('HEADERS', headers);
   console.log('PRIMEIRO REGISTRO', registros[0]);
+  console.log('TOTAL LINHAS ORIGINAIS', rows.length);
+  console.log('LINHAS VAZIAS DESCARTADAS', linhasVaziasDescartadas);
   console.log('TOTAL REGISTROS', registros.length);
 
   const linhas = [];

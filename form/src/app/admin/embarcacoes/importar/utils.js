@@ -259,9 +259,11 @@ export const avaliarLinhaImportacao = (linhaOriginal = {}, indice = 0) => {
   const erros = [];
   const ajustes = [];
 
-  const nome_embarcacao = normalizarTexto(dadosOriginais.nome_embarcacao);
-  if (!nome_embarcacao) {
-    erros.push('Nome da embarcação é obrigatório');
+  const nomeOriginal = normalizarTexto(dadosOriginais.nome_embarcacao);
+  const nome_embarcacao = nomeOriginal || `Embarcação sem nome ${indice + 1}`;
+  if (!nomeOriginal) {
+    avisos.push('Nome da embarcação gerado automaticamente');
+    ajustes.push({ campo: 'nome_embarcacao', original: '', normalizado: nome_embarcacao, motivo: 'Gerado automaticamente' });
   } else if (nome_embarcacao !== String(dadosOriginais.nome_embarcacao || '').trim()) {
     avisos.push(mensagemAjuste('nome_embarcacao', dadosOriginais.nome_embarcacao, nome_embarcacao));
     ajustes.push({ campo: 'nome_embarcacao', original: dadosOriginais.nome_embarcacao, normalizado: nome_embarcacao, motivo: 'Limpeza de espaços' });
@@ -485,6 +487,8 @@ export const analisarArquivoImportacao = async (file) => {
 
   console.log('HEADERS', headers);
   console.log('PRIMEIRO REGISTRO', registros[0]);
+  console.log('TOTAL LINHAS ORIGINAIS', rows.length);
+  console.log('LINHAS VAZIAS DESCARTADAS', linhasVaziasDescartadas);
   console.log('TOTAL REGISTROS', registros.length);
 
   const linhas = [];
@@ -564,6 +568,6 @@ export const baixarArquivo = (blob, fileName) => {
   link.download = fileName;
   document.body.appendChild(link);
   link.click();
-  link.remove();
+  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };

@@ -316,6 +316,8 @@ export const prepararImportacaoEmbarcacoes = async (req, res) => {
     return res.json({
       success: true,
       message: 'Preview da importação gerado com sucesso',
+      linhasVaziasDescartadas: resultado.resumo?.linhasVaziasDescartadas ?? resultado.resumo?.vaziasDescartadas ?? 0,
+      totalRegistros: resultado.debug?.totalRegistros ?? resultado.resumo?.total ?? 0,
       data: resultado
     });
   } catch (error) {
@@ -349,6 +351,7 @@ export const confirmarImportacaoEmbarcacoes = async (req, res) => {
     return res.json({
       success: true,
       message: 'Importação concluída com sucesso',
+      totalRegistros: registros.length,
       data: resultado
     });
   } catch (error) {

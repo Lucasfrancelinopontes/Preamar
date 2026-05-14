@@ -8,7 +8,7 @@ const statusStyles = {
 
 const statusLabel = {
   valid: 'Válida',
-  warning: 'Corrigida',
+  warning: 'Corrigida automaticamente',
   invalid: 'Inválida'
 };
 
