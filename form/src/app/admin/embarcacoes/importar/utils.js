@@ -78,9 +78,14 @@ const linhaVazia = (row) => {
   return valorVazio(row);
 };
 
+const valoresDaLinha = (row) => {
+  if (Array.isArray(row)) return row;
+  if (row && typeof row === 'object') return Object.values(row);
+  return [];
+};
+
 const contarCelulasPreenchidas = (row) => {
-  if (!Array.isArray(row)) return 0;
-  return row.filter((value) => !valorVazio(value)).length;
+  return valoresDaLinha(row).filter((value) => !valorVazio(value)).length;
 };
 
 const isMatchHeader = (normalizedHeader, normalizedAlias) => {
@@ -107,7 +112,7 @@ const mapearHeaderParaCampo = (header) => {
   return null;
 };
 
-const rowHasRecognizedField = (rowValues = []) => rowValues.some((value) => mapearHeaderParaCampo(value));
+const rowHasRecognizedField = (rowValues = []) => valoresDaLinha(rowValues).some((value) => mapearHeaderParaCampo(value));
 
 const encontrarLinhaCabecalho = (rows = []) => {
   for (let index = 0; index < rows.length; index += 1) {
@@ -115,8 +120,9 @@ const encontrarLinhaCabecalho = (rows = []) => {
     const preenchidas = contarCelulasPreenchidas(row);
     if (preenchidas < 2) continue;
 
-    const reconhecidas = row.filter((value) => mapearHeaderParaCampo(value)).length;
-    if (reconhecidas >= 1 || rowHasRecognizedField(row)) {
+    const valores = valoresDaLinha(row);
+    const reconhecidas = valores.filter((value) => mapearHeaderParaCampo(value)).length;
+    if (reconhecidas >= 1 || rowHasRecognizedField(valores)) {
       return index;
     }
   }
@@ -439,7 +445,7 @@ const lerPlanilhaComoMatriz = async (file) => {
   return {
     workbook,
     worksheet,
-    matriz: XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false })
+    linhasBrutas: XLSX.utils.sheet_to_json(worksheet, { header: 'A', defval: '', raw: false, blankrows: false })
   };
 };
 
@@ -453,19 +459,30 @@ export const analisarArquivoImportacao = async (file) => {
     throw new Error('Formato inválido. Envie um arquivo .xlsx ou .csv');
   }
 
-  const { workbook, worksheet, matriz } = await lerPlanilhaComoMatriz(file);
-  const primeiraLinha = matriz.find((linha) => !linhaVazia(linha)) || [];
-  const headerRowIndex = encontrarLinhaCabecalho(matriz);
-  const headersDetectados = matriz[headerRowIndex] || [];
+  const { workbook, worksheet, linhasBrutas } = await lerPlanilhaComoMatriz(file);
+
+  if (!Array.isArray(linhasBrutas) || !linhasBrutas.length) {
+    throw new Error('Arquivo sem dados válidos');
+  }
+
+  const primeiraLinha = linhasBrutas.find((linha) => !linhaVazia(linha)) || {};
+  const headerRowIndex = encontrarLinhaCabecalho(linhasBrutas);
+  const headersDetectados = valoresDaLinha(linhasBrutas[headerRowIndex] || {});
 
   console.log('headersDetectados', headersDetectados);
   console.log('primeiraLinha', primeiraLinha);
 
-  const linhasObjetos = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false, range: headerRowIndex });
+  const dados = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false, range: headerRowIndex });
+  console.log(dados[0]);
+  console.log(typeof dados[0]);
+
+  if (!Array.isArray(dados) || !dados.length) {
+    throw new Error('Arquivo sem dados válidos');
+  }
   const linhas = [];
   let linhasVaziasDescartadas = 0;
 
-  linhasObjetos.forEach((linha, indice) => {
+  dados.forEach((linha, indice) => {
     if (linhaVazia(linha)) {
       linhasVaziasDescartadas += 1;
       return;
@@ -491,10 +508,11 @@ export const analisarArquivoImportacao = async (file) => {
       linhasVaziasDescartadas
     },
     headersDetectados: headersDetectados.map((header) => normalizarHeader(header)),
-    primeiraLinha: primeiraLinha.map((valor) => String(valor ?? '').trim()),
+    primeiraLinha: valoresDaLinha(primeiraLinha).map((valor) => String(valor ?? '').trim()),
     debug: {
       headersDetectados: headersDetectados.map((header) => normalizarHeader(header)),
-      primeiraLinha: primeiraLinha.map((valor) => String(valor ?? '').trim()),
+      primeiraLinha: valoresDaLinha(primeiraLinha).map((valor) => String(valor ?? '').trim()),
+      dadosPrimeiroRegistro: dados[0] || null,
       linhasVaziasDescartadas
     }
   };

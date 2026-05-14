@@ -130,10 +130,13 @@ const linhaVazia = (row) => {
   return valorVazio(row);
 };
 
-const contarCelulasPreenchidas = (row) => {
-  if (!Array.isArray(row)) return 0;
-  return row.filter((value) => !valorVazio(value)).length;
+const valoresDaLinha = (row) => {
+  if (Array.isArray(row)) return row;
+  if (row && typeof row === 'object') return Object.values(row);
+  return [];
 };
+
+const contarCelulasPreenchidas = (row) => valoresDaLinha(row).filter((value) => !valorVazio(value)).length;
 
 const isMatchHeader = (normalizedHeader, normalizedAlias) => {
   if (!normalizedHeader || !normalizedAlias) return false;
@@ -159,9 +162,7 @@ const mapearHeaderParaCampo = (header) => {
   return null;
 };
 
-const rowHasRecognizedField = (rowValues = []) => {
-  return rowValues.some((value) => mapearHeaderParaCampo(value));
-};
+const rowHasRecognizedField = (rowValues = []) => valoresDaLinha(rowValues).some((value) => mapearHeaderParaCampo(value));
 
 const encontrarLinhaCabecalho = (rows = []) => {
   for (let index = 0; index < rows.length; index += 1) {
@@ -169,8 +170,9 @@ const encontrarLinhaCabecalho = (rows = []) => {
     const preenchidas = contarCelulasPreenchidas(row);
     if (preenchidas < 2) continue;
 
-    const reconhecidas = row.filter((value) => mapearHeaderParaCampo(value)).length;
-    if (reconhecidas >= 1 || rowHasRecognizedField(row)) {
+    const valores = valoresDaLinha(row);
+    const reconhecidas = valores.filter((value) => mapearHeaderParaCampo(value)).length;
+    if (reconhecidas >= 1 || rowHasRecognizedField(valores)) {
       return index;
     }
   }
@@ -518,7 +520,7 @@ const construirResumo = (linhas) => {
   };
 };
 
-const lerPlanilhaComoMatriz = (buffer) => {
+const lerPlanilhaComoLinhas = (buffer) => {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, raw: false });
   const primeiraAba = workbook.SheetNames[0];
 
@@ -530,7 +532,7 @@ const lerPlanilhaComoMatriz = (buffer) => {
   return {
     workbook,
     worksheet,
-    matriz: XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false })
+    linhasBrutas: XLSX.utils.sheet_to_json(worksheet, { header: 'A', defval: '', raw: false, blankrows: false })
   };
 };
 
@@ -540,20 +542,30 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
     throw new Error('Formato inválido. Envie um arquivo .xlsx ou .csv');
   }
 
-  const { worksheet, matriz } = lerPlanilhaComoMatriz(buffer);
-  const primeiraLinha = matriz.find((linha) => !linhaVazia(linha)) || [];
-  const headerRowIndex = encontrarLinhaCabecalho(matriz);
-  const headersDetectados = matriz[headerRowIndex] || [];
+  const { worksheet, linhasBrutas } = lerPlanilhaComoLinhas(buffer);
+
+  if (!Array.isArray(linhasBrutas) || !linhasBrutas.length) {
+    throw new Error('Arquivo sem dados válidos');
+  }
+
+  const primeiraLinha = linhasBrutas.find((linha) => !linhaVazia(linha)) || {};
+  const headerRowIndex = encontrarLinhaCabecalho(linhasBrutas);
+  const headersDetectados = valoresDaLinha(linhasBrutas[headerRowIndex] || {});
 
   console.log('headersDetectados', headersDetectados);
   console.log('primeiraLinha', primeiraLinha);
 
-  const linhasBrutas = matriz.slice(headerRowIndex + 1);
-  const linhasObjetos = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false, range: headerRowIndex });
+  const dados = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false, range: headerRowIndex });
+  console.log(dados[0]);
+  console.log(typeof dados[0]);
+
+  if (!Array.isArray(dados) || !dados.length) {
+    throw new Error('Arquivo sem dados válidos');
+  }
   const linhas = [];
   let linhasVaziasDescartadas = 0;
 
-  linhasObjetos.forEach((linha, indice) => {
+  dados.forEach((linha, indice) => {
     if (linhaVazia(linha)) {
       linhasVaziasDescartadas += 1;
       return;
@@ -626,7 +638,7 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
       linhasVaziasDescartadas
     },
     headersDetectados: headersDetectados.map((header) => normalizarHeader(header)),
-    primeiraLinha: primeiraLinha.map((valor) => String(valor ?? '').trim()),
+    primeiraLinha: valoresDaLinha(primeiraLinha).map((valor) => String(valor ?? '').trim()),
     logs: linhas.flatMap((linha) => [
       ...linha.ajustes.map((ajuste) => ({
         linha: linha.linha,
@@ -641,7 +653,8 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
     ]),
     debug: {
       headersDetectados: headersDetectados.map((header) => normalizarHeader(header)),
-      primeiraLinha: primeiraLinha.map((valor) => String(valor ?? '').trim()),
+      primeiraLinha: valoresDaLinha(primeiraLinha).map((valor) => String(valor ?? '').trim()),
+      dadosPrimeiroRegistro: dados[0] || null,
       linhasVaziasDescartadas
     }
   };
