@@ -229,7 +229,7 @@ export const parseNumeroDecimal = (value) => converterNumero(value);
 
 const normalizarTipoBase = (value) => {
   const tipo = normalizarTextoParaComparacao(value);
-  if (!tipo) return null;
+  if (!tipo) return 'outro';
 
   const canonical = TIPOS_VALIDOS.find((item) => normalizarComparacao(item) === tipo);
   if (canonical) return canonical;
@@ -366,8 +366,9 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
   }
 
   const tipoNormalizado = normalizarTipo(originalTipo);
-  if (!tipoNormalizado) {
-    erros.push('Tipo não reconhecido');
+  if (!originalTipo) {
+    avisos.push('Tipo da embarcação preenchido automaticamente como outro');
+    ajustes.push({ campo: 'tipo', original: '', normalizado: tipoNormalizado, motivo: 'Gerado automaticamente' });
   } else if (normalizarComparacao(originalTipo) !== normalizarComparacao(tipoNormalizado)) {
     avisos.push(montarMensagemAjuste('tipo', originalTipo, tipoNormalizado));
     ajustes.push({ campo: 'tipo', original: originalTipo, normalizado: tipoNormalizado, motivo: 'Normalização por heurística' });
@@ -426,10 +427,6 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
   if (rgp && rgp !== String(dadosOriginais.rgp || '').trim()) {
     avisos.push(montarMensagemAjuste('rgp', dadosOriginais.rgp, rgp));
     ajustes.push({ campo: 'rgp', original: dadosOriginais.rgp, normalizado: rgp, motivo: 'Limpeza de espaços' });
-  }
-
-  if (!tipoNormalizado) {
-    erros.push('Tipo da embarcação é obrigatório');
   }
 
   const dadosNormalizados = {

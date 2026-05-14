@@ -177,7 +177,7 @@ export const parseNumeroDecimal = (value) => {
 
 export const normalizarTipo = (value) => {
   const tipo = normalizarTextoComparavel(value);
-  if (!tipo) return null;
+  if (!tipo) return 'outro';
 
   const canonical = TIPOS_VALIDOS.find((item) => normalizarComparacao(item) === tipo);
   if (canonical) return canonical;
@@ -300,9 +300,9 @@ export const avaliarLinhaImportacao = (linhaOriginal = {}, indice = 0) => {
   }
 
   const tipo = normalizarTipo(dadosOriginais.tipo);
-  if (!tipo) {
-    erros.push('Tipo não reconhecido');
-    erros.push('Tipo da embarcação é obrigatório');
+  if (!dadosOriginais.tipo) {
+    avisos.push('Tipo da embarcação preenchido automaticamente como outro');
+    ajustes.push({ campo: 'tipo', original: '', normalizado: tipo, motivo: 'Gerado automaticamente' });
   } else if (normalizarComparacao(dadosOriginais.tipo) !== normalizarComparacao(tipo)) {
     avisos.push(mensagemAjuste('tipo', dadosOriginais.tipo, tipo));
     ajustes.push({ campo: 'tipo', original: dadosOriginais.tipo, normalizado: tipo, motivo: 'Normalização por heurística' });
