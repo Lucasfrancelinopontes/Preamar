@@ -32,6 +32,19 @@ const getAuthHeaders = () => {
   return headers;
 };
 
+const getMultipartAuthHeaders = () => {
+  const token = getToken();
+  const headers = {
+    'Accept': 'application/json'
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
+};
+
 const handleResponse = async (response) => {
   // Se retornar 401 (não autorizado), redirecionar para login
   if (response.status === 401 && typeof window !== 'undefined') {
@@ -485,6 +498,39 @@ const api = {
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao excluir embarcação:', error);
+      throw error;
+    }
+  },
+
+  prepararImportacaoEmbarcacoes: async (arquivo) => {
+    try {
+      const formData = new FormData();
+      formData.append('arquivo', arquivo);
+
+      const response = await fetch(`${API_URL}/embarcacoes/importar`, {
+        method: 'POST',
+        headers: getMultipartAuthHeaders(),
+        body: formData
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao preparar importação de embarcações:', error);
+      throw error;
+    }
+  },
+
+  confirmarImportacaoEmbarcacoes: async (linhas) => {
+    try {
+      const response = await fetch(`${API_URL}/embarcacoes/importar/confirmar`, {
+        method: 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linhas })
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao confirmar importação de embarcações:', error);
       throw error;
     }
   },

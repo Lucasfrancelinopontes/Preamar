@@ -1,5 +1,13 @@
 import { Router } from 'express';
+import multer from 'multer';
 const router = Router();
+
+const uploadImportacao = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  }
+});
 
 // Importar controllers
 import { gmun, gesp } from './api/funcoes.js';
@@ -30,7 +38,9 @@ import {
   criarEmbarcacao,
   buscarEmbarcacao,
   atualizarEmbarcacao,
-  deletarEmbarcacao
+  deletarEmbarcacao,
+  prepararImportacaoEmbarcacoes,
+  confirmarImportacaoEmbarcacoes
 } from './controllers/embarcacaoController.js';
 import {
   login,
@@ -95,6 +105,8 @@ router.delete('/pescadores/:id', verificarAutenticacao, deletarPescador);
 // Rotas de Embarcações (protegidas)
 router.get('/embarcacoes', verificarAutenticacao, listarEmbarcacoes);
 router.post('/embarcacoes', verificarAutenticacao, criarEmbarcacao);
+router.post('/embarcacoes/importar', verificarAutenticacao, verificarAdmin, uploadImportacao.single('arquivo'), prepararImportacaoEmbarcacoes);
+router.post('/embarcacoes/importar/confirmar', verificarAutenticacao, verificarAdmin, confirmarImportacaoEmbarcacoes);
 router.get('/embarcacoes/:id', verificarAutenticacao, buscarEmbarcacao);
 router.put('/embarcacoes/:id', verificarAutenticacao, atualizarEmbarcacao);
 router.delete('/embarcacoes/:id', verificarAutenticacao, deletarEmbarcacao);

@@ -1,22 +1,14 @@
 import { Embarcacao, Desembarque } from '../models/index.js';
 import { Op } from 'sequelize';
-
-const TIPOS_PERMITIDOS = new Set(['catraia', 'caico', 'jangada', 'boteLancha', 'canoa', 'barco', 'outro']);
-const POSSUI_PERMITIDOS = new Set(['urna', 'caixaTermica', 'pescadoInNatura']);
-
-const TIPO_ALIAS = {
-  bote: 'boteLancha',
-  outros: 'outro',
-  traineira: 'outro',
-  chalana: 'outro'
-};
-
-const POSSUI_ALIAS = {
-  caixa: 'caixaTermica',
-  in_natura: 'pescadoInNatura',
-  gelo: null,
-  sem: null
-};
+import {
+  TIPOS_VALIDOS,
+  POSSUI_VALIDOS,
+  normalizarTipo,
+  normalizarPossui,
+  parseNumeroDecimal,
+  processarArquivoImportacao,
+  confirmarImportacaoEmbarcacoes as confirmarImportacaoArquivo
+} from '../utils/embarcacaoImportUtils.js';
 
 const normalizarTexto = (value) => {
   if (value === null || value === undefined) return null;
@@ -30,21 +22,6 @@ const normalizarCodigoEmbarcacao = (value) => {
   return codigo || null;
 };
 
-const normalizarTipoEmbarcacao = (value) => {
-  const tipo = normalizarTexto(value);
-  if (!tipo) return null;
-  return TIPO_ALIAS[tipo] || tipo;
-};
-
-const normalizarPossui = (value) => {
-  const possui = normalizarTexto(value);
-  if (!possui) return null;
-  if (Object.prototype.hasOwnProperty.call(POSSUI_ALIAS, possui)) {
-    return POSSUI_ALIAS[possui];
-  }
-  return possui;
-};
-
 const sanitizarEmbarcacao = (payload = {}) => {
   const dados = { ...payload };
 
@@ -56,8 +33,11 @@ const sanitizarEmbarcacao = (payload = {}) => {
   if (Object.prototype.hasOwnProperty.call(dados, 'municipio')) dados.municipio = normalizarTexto(dados.municipio);
   if (Object.prototype.hasOwnProperty.call(dados, 'localidade')) dados.localidade = normalizarTexto(dados.localidade);
   if (Object.prototype.hasOwnProperty.call(dados, 'tipo_outro')) dados.tipo_outro = normalizarTexto(dados.tipo_outro);
-  if (Object.prototype.hasOwnProperty.call(dados, 'tipo')) dados.tipo = normalizarTipoEmbarcacao(dados.tipo);
+  if (Object.prototype.hasOwnProperty.call(dados, 'tipo')) dados.tipo = normalizarTipo(dados.tipo);
   if (Object.prototype.hasOwnProperty.call(dados, 'possui')) dados.possui = normalizarPossui(dados.possui);
+  if (Object.prototype.hasOwnProperty.call(dados, 'comprimento')) dados.comprimento = parseNumeroDecimal(dados.comprimento);
+  if (Object.prototype.hasOwnProperty.call(dados, 'capacidade')) dados.capacidade = parseNumeroDecimal(dados.capacidade);
+  if (Object.prototype.hasOwnProperty.call(dados, 'hp')) dados.hp = parseNumeroDecimal(dados.hp);
 
   return dados;
 };
@@ -318,6 +298,58 @@ export const buscarEmbarcacao = async (req, res) => {
       success: false,
       message: 'Erro ao buscar embarcação',
       error: error.message
+    });
+  }
+};
+
+export const prepararImportacaoEmbarcacoes = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Envie um arquivo .xlsx ou .csv'
+      });
+    }
+
+    const resultado = await processarArquivoImportacao(req.file.buffer, req.file.originalname);
+
+    return res.json({
+      success: true,
+      message: 'Preview da importação gerado com sucesso',
+      data: resultado
+    });
+  } catch (error) {
+    console.error('Erro ao processar importação de embarcações:', error);
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Erro ao processar arquivo de importação'
+    });
+  }
+};
+
+export const confirmarImportacaoEmbarcacoes = async (req, res) => {
+  try {
+    const linhas = Array.isArray(req.body?.linhas) ? req.body.linhas : Array.isArray(req.body?.rows) ? req.body.rows : [];
+
+    if (linhas.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Envie as linhas selecionadas para confirmar a importação'
+      });
+    }
+
+    const resultado = await confirmarImportacaoArquivo(linhas);
+
+    return res.json({
+      success: true,
+      message: 'Importação concluída com sucesso',
+      data: resultado
+    });
+  } catch (error) {
+    console.error('Erro ao confirmar importação de embarcações:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Erro ao confirmar importação'
     });
   }
 };

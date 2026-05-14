@@ -220,12 +220,20 @@ export default function EmbarcacoesPage() {
                         </button>
                         <h1 className="text-2xl font-bold text-black">Gerenciar Embarcações</h1>
                     </div>
-                    <button
-                        onClick={() => abrirModal()}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        Nova Embarcação
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => window.open('/admin/embarcacoes/importar', '_blank', 'noopener,noreferrer')}
+                            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                        >
+                            Importar XLSX/CSV
+                        </button>
+                        <button
+                            onClick={() => abrirModal()}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Nova Embarcação
+                        </button>
+                    </div>
                 </div>
             </header>
 
