@@ -39,10 +39,19 @@ export default function ImportarEmbarcacoesPage() {
   const [sucesso, setSucesso] = useState('');
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [etapa, setEtapa] = useState('idle');
+  const [headersDebug, setHeadersDebug] = useState([]);
+  const [primeiraLinhaDebug, setPrimeiraLinhaDebug] = useState([]);
 
   const linhas = previewServidor?.linhas || previewLocal?.linhas || [];
   const resumo = previewServidor?.resumo || previewLocal?.resumo || resumoInicial;
   const totalPaginas = Math.max(1, Math.ceil(linhas.length / 12));
+
+  useEffect(() => {
+    const ids = new Set(linhas.filter((linha) => linha.selecionado).map((linha) => linha.linha));
+    setSelectedIds(ids);
+    setSelectedRowId(linhas.find((linha) => linha.selecionado)?.linha || null);
+    setPaginaAtual(1);
+  }, [previewLocal, previewServidor]);
 
   useEffect(() => {
     if (carregando) return;
@@ -57,6 +66,14 @@ export default function ImportarEmbarcacoesPage() {
     }
   }, [carregando, estaAutenticado, ehAdmin, router]);
 
+  useEffect(() => {
+    const debug = previewServidor?.debug || previewLocal?.debug || null;
+    if (!debug) return;
+
+    setHeadersDebug(debug.headersDetectados || []);
+    setPrimeiraLinhaDebug(debug.primeiraLinha || []);
+  }, [previewLocal, previewServidor]);
+
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
@@ -67,13 +84,6 @@ export default function ImportarEmbarcacoesPage() {
       </div>
     );
   }
-
-  useEffect(() => {
-    const ids = new Set(linhas.filter((linha) => linha.selecionado).map((linha) => linha.linha));
-    setSelectedIds(ids);
-    setSelectedRowId(linhas.find((linha) => linha.selecionado)?.linha || null);
-    setPaginaAtual(1);
-  }, [previewLocal, previewServidor]);
 
   const linhasPaginadas = useMemo(() => {
     const inicio = (paginaAtual - 1) * 12;
@@ -179,7 +189,9 @@ export default function ImportarEmbarcacoesPage() {
     { label: 'Total', value: resumo.total, tone: 'text-slate-900' },
     { label: 'Válidos', value: resumo.validos, tone: 'text-emerald-700' },
     { label: 'Corrigidos', value: resumo.corrigidos, tone: 'text-amber-700' },
-    { label: 'Inválidos', value: resumo.invalidos, tone: 'text-rose-700' }
+    { label: 'Inválidos', value: resumo.invalidos, tone: 'text-rose-700' },
+    { label: 'Ignoradas', value: resumo.ignoradas || 0, tone: 'text-slate-700' },
+    { label: 'Vazias descartadas', value: resumo.vaziasDescartadas || 0, tone: 'text-slate-700' }
   ];
 
   return (
@@ -248,6 +260,36 @@ export default function ImportarEmbarcacoesPage() {
               <div className={`${cardClass} p-5`}>
                 <p className="text-sm text-slate-500">Inválidas</p>
                 <p className="mt-2 text-2xl font-black text-rose-700">{resumo.invalidos}</p>
+              </div>
+            </div>
+
+            <div className={`${cardClass} p-5`}>
+              <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Debug</p>
+                  <h2 className="mt-1 text-xl font-bold text-slate-900">Headers detectados e primeira linha útil</h2>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  onClick={() => console.log('debugImportacao', { headersDebug, primeiraLinhaDebug, previewLocal, previewServidor })}
+                >
+                  Log debug
+                </button>
+              </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Headers</p>
+                  <p className="mt-2 text-sm text-slate-700 break-words">
+                    {headersDebug.length > 0 ? headersDebug.join(' · ') : 'Nenhum header detectado ainda.'}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Primeira linha útil</p>
+                  <p className="mt-2 text-sm text-slate-700 break-words">
+                    {primeiraLinhaDebug.length > 0 ? primeiraLinhaDebug.join(' · ') : 'Sem dados carregados.'}
+                  </p>
+                </div>
               </div>
             </div>
 

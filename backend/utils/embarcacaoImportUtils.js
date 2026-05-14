@@ -67,6 +67,117 @@ const CAMPOS_IMPORTACAO = [
   'rgp'
 ];
 
+const HEADER_MAP = {
+  nome_embarcacao: [
+    'nome da embarcacao',
+    'nome da embarcação',
+    'nome embarcacao',
+    'nome embarcação',
+    'embarcacao',
+    'embarcação',
+    'nome'
+  ],
+  codigo_embarcacao: [
+    'codigo embarcacao',
+    'codigo embarcação',
+    'código embarcacao',
+    'código embarcação',
+    'codigo',
+    'código',
+    'cod embarcacao',
+    'cod embarcação'
+  ],
+  proprietario: ['proprietario', 'proprietário', 'dono', 'responsavel', 'responsável'],
+  apelido_propietario: ['apelido proprietario', 'apelido do proprietario', 'apelido proprietário', 'apelido', 'nick'],
+  municipio: ['municipio', 'município'],
+  localidade: ['localidade', 'comunidade', 'bairro'],
+  tipo: ['tipo de embarcacao', 'tipo de embarcação', 'tipo embarcacao', 'tipo embarcação', 'embarcacao_tipo', 'embarcação_tipo', 'tipo'],
+  tipo_outro: ['tipo outro', 'outro tipo', 'tipo alternativo'],
+  comprimento: ['comprimento', 'comprimento m', 'comprimento (m)', 'comprimento metros'],
+  capacidade: ['capacidade', 'capacidade estocagem', 'capacidade de estocagem', 'capacidade (kg)', 'capacidade kg'],
+  hp: ['hp', 'forca do motor', 'força do motor', 'motor hp'],
+  possui: ['possui', 'armazenamento', 'equipamento'],
+  cpf_proprietario: ['cpf proprietario', 'cpf do proprietario', 'cpf proprietário', 'cpf'],
+  rgp: ['rgp']
+};
+
+const normalizarHeader = (value) => {
+  if (value === null || value === undefined) return '';
+
+  return String(value)
+    .replace(/[\r\n]+/g, ' ')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+};
+
+const valorVazio = (value) => !String(value ?? '').trim();
+
+const linhaVazia = (row) => {
+  if (!row) return true;
+  if (Array.isArray(row)) {
+    return row.every((value) => valorVazio(value));
+  }
+
+  if (typeof row === 'object') {
+    return Object.values(row).every((value) => valorVazio(value));
+  }
+
+  return valorVazio(row);
+};
+
+const contarCelulasPreenchidas = (row) => {
+  if (!Array.isArray(row)) return 0;
+  return row.filter((value) => !valorVazio(value)).length;
+};
+
+const isMatchHeader = (normalizedHeader, normalizedAlias) => {
+  if (!normalizedHeader || !normalizedAlias) return false;
+  return normalizedHeader === normalizedAlias || normalizedHeader.includes(normalizedAlias) || normalizedAlias.includes(normalizedHeader);
+};
+
+const mapearHeaderParaCampo = (header) => {
+  const normalized = normalizarHeader(header);
+  if (!normalized) return null;
+
+  for (const [campo, aliases] of Object.entries(HEADER_MAP)) {
+    if (isMatchHeader(normalized, normalizarHeader(campo))) {
+      return campo;
+    }
+
+    for (const alias of aliases) {
+      if (isMatchHeader(normalized, normalizarHeader(alias))) {
+        return campo;
+      }
+    }
+  }
+
+  return null;
+};
+
+const rowHasRecognizedField = (rowValues = []) => {
+  return rowValues.some((value) => mapearHeaderParaCampo(value));
+};
+
+const encontrarLinhaCabecalho = (rows = []) => {
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const preenchidas = contarCelulasPreenchidas(row);
+    if (preenchidas < 2) continue;
+
+    const reconhecidas = row.filter((value) => mapearHeaderParaCampo(value)).length;
+    if (reconhecidas >= 1 || rowHasRecognizedField(row)) {
+      return index;
+    }
+  }
+
+  return 0;
+};
+
 const normalizarComparacao = (value) => {
   if (value === null || value === undefined) return '';
   return String(value)
@@ -166,25 +277,11 @@ const normalizarPossuiBase = (value) => {
 export const normalizarTipo = (value) => normalizarTipoBase(value);
 export const normalizarPossui = (value) => normalizarPossuiBase(value);
 
-const mapearCabecalho = (label) => {
-  const chave = normalizarComparacao(label);
-  if (!chave) return null;
-
-  for (const [campo, variantes] of Object.entries(CABECALHOS)) {
-    if (normalizarComparacao(campo) === chave) return campo;
-    if (variantes.some((variante) => normalizarComparacao(variante) === chave || chave.includes(normalizarComparacao(variante)))) {
-      return campo;
-    }
-  }
-
-  return null;
-};
-
 const extrairObjetoLinha = (linhaOriginal = {}) => {
   const linha = {};
 
   for (const [chave, valor] of Object.entries(linhaOriginal)) {
-    const campo = mapearCabecalho(chave) || mapearCabecalho(String(chave).replace(/[_-]/g, ' ')) || null;
+    const campo = mapearHeaderParaCampo(chave) || mapearHeaderParaCampo(String(chave).replace(/[_-]/g, ' ')) || null;
     if (campo) {
       linha[campo] = valor;
     }
@@ -421,15 +518,51 @@ const construirResumo = (linhas) => {
   };
 };
 
+const lerPlanilhaComoMatriz = (buffer) => {
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, raw: false });
+  const primeiraAba = workbook.SheetNames[0];
+
+  if (!primeiraAba) {
+    throw new Error('Arquivo sem planilhas válidas');
+  }
+
+  const worksheet = workbook.Sheets[primeiraAba];
+  return {
+    workbook,
+    worksheet,
+    matriz: XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false })
+  };
+};
+
 export const processarArquivoImportacao = async (buffer, originalname = '') => {
   const extensao = originalname.split('.').pop()?.toLowerCase();
   if (!['xlsx', 'csv'].includes(extensao)) {
     throw new Error('Formato inválido. Envie um arquivo .xlsx ou .csv');
   }
 
-  const linhasBrutas = lerArquivoPlanilha(buffer);
-  const colunas = determinarColunasDaPlanilha(linhasBrutas);
-  const linhas = linhasBrutas.map((linha, indice) => avaliarLinha(linha, indice));
+  const { worksheet, matriz } = lerPlanilhaComoMatriz(buffer);
+  const primeiraLinha = matriz.find((linha) => !linhaVazia(linha)) || [];
+  const headerRowIndex = encontrarLinhaCabecalho(matriz);
+  const headersDetectados = matriz[headerRowIndex] || [];
+
+  console.log('headersDetectados', headersDetectados);
+  console.log('primeiraLinha', primeiraLinha);
+
+  const linhasBrutas = matriz.slice(headerRowIndex + 1);
+  const linhasObjetos = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false, range: headerRowIndex });
+  const linhas = [];
+  let linhasVaziasDescartadas = 0;
+
+  linhasObjetos.forEach((linha, indice) => {
+    if (linhaVazia(linha)) {
+      linhasVaziasDescartadas += 1;
+      return;
+    }
+
+    linhas.push(avaliarLinha(linha, indice));
+  });
+
+  const colunas = headersDetectados.map((header) => normalizarHeader(header)).filter(Boolean);
 
   const codigos = linhas
     .map((linha) => linha.normalizado.codigo_embarcacao)
@@ -485,7 +618,15 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
     arquivo: originalname,
     colunas,
     linhas,
-    resumo: construirResumo(linhas),
+    resumo: {
+      ...construirResumo(linhas),
+      total: linhas.length,
+      ignoradas: linhas.filter((linha) => linha.status === 'invalid').length,
+      vaziasDescartadas: linhasVaziasDescartadas,
+      linhasVaziasDescartadas
+    },
+    headersDetectados: headersDetectados.map((header) => normalizarHeader(header)),
+    primeiraLinha: primeiraLinha.map((valor) => String(valor ?? '').trim()),
     logs: linhas.flatMap((linha) => [
       ...linha.ajustes.map((ajuste) => ({
         linha: linha.linha,
@@ -497,7 +638,12 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
         nivel: 'error',
         mensagem: erro
       }))
-    ])
+    ]),
+    debug: {
+      headersDetectados: headersDetectados.map((header) => normalizarHeader(header)),
+      primeiraLinha: primeiraLinha.map((valor) => String(valor ?? '').trim()),
+      linhasVaziasDescartadas
+    }
   };
 };
 
