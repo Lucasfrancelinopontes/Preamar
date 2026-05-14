@@ -63,6 +63,14 @@ const normalizarHeader = (value) => {
     .replace(/^_|_$/g, '');
 };
 
+const limparValor = (valor) => {
+  if (valor === undefined || valor === null || String(valor).trim() === '') {
+    return null;
+  }
+
+  return String(valor).trim();
+};
+
 const valorVazio = (value) => !String(value ?? '').trim();
 
 const linhaVazia = (row) => {
@@ -142,11 +150,7 @@ const normalizarComparacao = (value) => {
     .replace(/\s+/g, ' ');
 };
 
-const normalizarTexto = (value) => {
-  if (value === null || value === undefined) return null;
-  const texto = String(value).trim();
-  return texto || null;
-};
+const normalizarTexto = (value) => limparValor(value);
 
 const normalizarTextoComparavel = (value) => normalizarComparacao(normalizarTexto(value));
 
@@ -318,7 +322,8 @@ export const avaliarLinhaImportacao = (linhaOriginal = {}, indice = 0) => {
   const possuiEhAliasNulo = Object.prototype.hasOwnProperty.call(POSSUI_ALIASES, possuiChave) && POSSUI_ALIASES[possuiChave] === null;
   const possui = normalizarPossui(dadosOriginais.possui);
   if (dadosOriginais.possui && !possui && !possuiEhAliasNulo) {
-    erros.push('Armazenamento não reconhecido');
+    avisos.push(mensagemAjuste('possui', dadosOriginais.possui, ''));
+    ajustes.push({ campo: 'possui', original: dadosOriginais.possui, normalizado: null, motivo: 'Valor não reconhecido' });
   } else if (possui && normalizarComparacao(dadosOriginais.possui) !== normalizarComparacao(possui)) {
     avisos.push(mensagemAjuste('possui', dadosOriginais.possui, possui));
     ajustes.push({ campo: 'possui', original: dadosOriginais.possui, normalizado: possui, motivo: 'Normalização por heurística' });
@@ -328,24 +333,27 @@ export const avaliarLinhaImportacao = (linhaOriginal = {}, indice = 0) => {
   }
 
   const comprimento = parseNumeroDecimal(dadosOriginais.comprimento);
-  if (dadosOriginais.comprimento !== null && dadosOriginais.comprimento !== undefined && String(dadosOriginais.comprimento).trim() !== '' && comprimento === null) {
-    erros.push('Comprimento inválido');
+  if (limparValor(dadosOriginais.comprimento) !== null && comprimento === null) {
+    avisos.push(mensagemAjuste('comprimento', dadosOriginais.comprimento, ''));
+    ajustes.push({ campo: 'comprimento', original: dadosOriginais.comprimento, normalizado: null, motivo: 'Valor numérico inválido ignorado' });
   } else if (comprimento !== null && String(dadosOriginais.comprimento).trim() !== String(comprimento).replace('.', ',')) {
     avisos.push(mensagemAjuste('comprimento', dadosOriginais.comprimento, comprimento));
     ajustes.push({ campo: 'comprimento', original: dadosOriginais.comprimento, normalizado: comprimento, motivo: 'Número convertido' });
   }
 
   const capacidade = parseNumeroDecimal(dadosOriginais.capacidade);
-  if (dadosOriginais.capacidade !== null && dadosOriginais.capacidade !== undefined && String(dadosOriginais.capacidade).trim() !== '' && capacidade === null) {
-    erros.push('Capacidade inválida');
+  if (limparValor(dadosOriginais.capacidade) !== null && capacidade === null) {
+    avisos.push(mensagemAjuste('capacidade', dadosOriginais.capacidade, ''));
+    ajustes.push({ campo: 'capacidade', original: dadosOriginais.capacidade, normalizado: null, motivo: 'Valor numérico inválido ignorado' });
   } else if (capacidade !== null && String(dadosOriginais.capacidade).trim() !== String(capacidade).replace('.', ',')) {
     avisos.push(mensagemAjuste('capacidade', dadosOriginais.capacidade, capacidade));
     ajustes.push({ campo: 'capacidade', original: dadosOriginais.capacidade, normalizado: capacidade, motivo: 'Número convertido' });
   }
 
   const hp = parseNumeroDecimal(dadosOriginais.hp);
-  if (dadosOriginais.hp !== null && dadosOriginais.hp !== undefined && String(dadosOriginais.hp).trim() !== '' && hp === null) {
-    erros.push('HP inválido');
+  if (limparValor(dadosOriginais.hp) !== null && hp === null) {
+    avisos.push(mensagemAjuste('hp', dadosOriginais.hp, ''));
+    ajustes.push({ campo: 'hp', original: dadosOriginais.hp, normalizado: null, motivo: 'Valor numérico inválido ignorado' });
   } else if (hp !== null && String(dadosOriginais.hp).trim() !== String(hp).replace('.', ',')) {
     avisos.push(mensagemAjuste('hp', dadosOriginais.hp, hp));
     ajustes.push({ campo: 'hp', original: dadosOriginais.hp, normalizado: hp, motivo: 'Número convertido' });

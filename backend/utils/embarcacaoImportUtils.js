@@ -115,6 +115,14 @@ const normalizarHeader = (value) => {
     .replace(/^_|_$/g, '');
 };
 
+const limparValor = (valor) => {
+  if (valor === undefined || valor === null || String(valor).trim() === '') {
+    return null;
+  }
+
+  return String(valor).trim();
+};
+
 const valorVazio = (value) => !String(value ?? '').trim();
 
 const linhaVazia = (row) => {
@@ -192,11 +200,7 @@ const normalizarComparacao = (value) => {
     .replace(/\s+/g, ' ');
 };
 
-const normalizarTexto = (value) => {
-  if (value === null || value === undefined) return null;
-  const texto = String(value).trim();
-  return texto || null;
-};
+const normalizarTexto = (value) => limparValor(value);
 
 const normalizarTextoParaComparacao = (value) => normalizarComparacao(normalizarTexto(value));
 
@@ -314,17 +318,17 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
   const erros = [];
   const ajustes = [];
 
-  const originalNome = normalizarTexto(dadosOriginais.nome_embarcacao);
-  const originalCodigo = normalizarTexto(dadosOriginais.codigo_embarcacao);
-  const originalProprietario = normalizarTexto(dadosOriginais.proprietario);
-  const originalApelido = normalizarTexto(dadosOriginais.apelido_propietario);
-  const originalMunicipio = normalizarTexto(dadosOriginais.municipio);
-  const originalLocalidade = normalizarTexto(dadosOriginais.localidade);
-  const originalTipo = normalizarTexto(dadosOriginais.tipo);
-  const originalTipoOutro = normalizarTexto(dadosOriginais.tipo_outro);
-  const originalPossui = normalizarTexto(dadosOriginais.possui);
-  const originalCpf = normalizarTexto(dadosOriginais.cpf_proprietario);
-  const originalRgp = normalizarTexto(dadosOriginais.rgp);
+  const originalNome = limparValor(dadosOriginais.nome_embarcacao);
+  const originalCodigo = limparValor(dadosOriginais.codigo_embarcacao);
+  const originalProprietario = limparValor(dadosOriginais.proprietario);
+  const originalApelido = limparValor(dadosOriginais.apelido_propietario);
+  const originalMunicipio = limparValor(dadosOriginais.municipio);
+  const originalLocalidade = limparValor(dadosOriginais.localidade);
+  const originalTipo = limparValor(dadosOriginais.tipo);
+  const originalTipoOutro = limparValor(dadosOriginais.tipo_outro);
+  const originalPossui = limparValor(dadosOriginais.possui);
+  const originalCpf = limparValor(dadosOriginais.cpf_proprietario);
+  const originalRgp = limparValor(dadosOriginais.rgp);
 
   const nome_embarcacao = originalNome || `Embarcação sem nome ${indice + 1}`;
   if (!originalNome) {
@@ -384,7 +388,8 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
   const possuiEhAliasNulo = Object.prototype.hasOwnProperty.call(POSSUI_ALIASES, possuiChave) && POSSUI_ALIASES[possuiChave] === null;
   const possuiNormalizado = normalizarPossui(originalPossui);
   if (originalPossui && !possuiNormalizado && !possuiEhAliasNulo) {
-    erros.push('Armazenamento não reconhecido');
+    avisos.push(montarMensagemAjuste('possui', originalPossui, ''));
+    ajustes.push({ campo: 'possui', original: originalPossui, normalizado: null, motivo: 'Valor não reconhecido' });
   } else if (possuiNormalizado && normalizarComparacao(originalPossui) !== normalizarComparacao(possuiNormalizado)) {
     avisos.push(montarMensagemAjuste('possui', originalPossui, possuiNormalizado));
     ajustes.push({ campo: 'possui', original: originalPossui, normalizado: possuiNormalizado, motivo: 'Normalização por heurística' });
@@ -394,24 +399,27 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
   }
 
   const comprimento = parseNumeroDecimal(dadosOriginais.comprimento);
-  if (dadosOriginais.comprimento !== null && dadosOriginais.comprimento !== undefined && String(dadosOriginais.comprimento).trim() !== '' && comprimento === null) {
-    erros.push('Comprimento inválido');
+  if (limparValor(dadosOriginais.comprimento) !== null && comprimento === null) {
+    avisos.push(montarMensagemAjuste('comprimento', dadosOriginais.comprimento, ''));
+    ajustes.push({ campo: 'comprimento', original: dadosOriginais.comprimento, normalizado: null, motivo: 'Valor numérico inválido ignorado' });
   } else if (comprimento !== null && String(dadosOriginais.comprimento).trim() !== String(comprimento).replace('.', ',')) {
     avisos.push(montarMensagemAjuste('comprimento', dadosOriginais.comprimento, comprimento));
     ajustes.push({ campo: 'comprimento', original: dadosOriginais.comprimento, normalizado: comprimento, motivo: 'Número convertido' });
   }
 
   const capacidade = parseNumeroDecimal(dadosOriginais.capacidade);
-  if (dadosOriginais.capacidade !== null && dadosOriginais.capacidade !== undefined && String(dadosOriginais.capacidade).trim() !== '' && capacidade === null) {
-    erros.push('Capacidade inválida');
+  if (limparValor(dadosOriginais.capacidade) !== null && capacidade === null) {
+    avisos.push(montarMensagemAjuste('capacidade', dadosOriginais.capacidade, ''));
+    ajustes.push({ campo: 'capacidade', original: dadosOriginais.capacidade, normalizado: null, motivo: 'Valor numérico inválido ignorado' });
   } else if (capacidade !== null && String(dadosOriginais.capacidade).trim() !== String(capacidade).replace('.', ',')) {
     avisos.push(montarMensagemAjuste('capacidade', dadosOriginais.capacidade, capacidade));
     ajustes.push({ campo: 'capacidade', original: dadosOriginais.capacidade, normalizado: capacidade, motivo: 'Número convertido' });
   }
 
   const hp = parseNumeroDecimal(dadosOriginais.hp);
-  if (dadosOriginais.hp !== null && dadosOriginais.hp !== undefined && String(dadosOriginais.hp).trim() !== '' && hp === null) {
-    erros.push('HP inválido');
+  if (limparValor(dadosOriginais.hp) !== null && hp === null) {
+    avisos.push(montarMensagemAjuste('hp', dadosOriginais.hp, ''));
+    ajustes.push({ campo: 'hp', original: dadosOriginais.hp, normalizado: null, motivo: 'Valor numérico inválido ignorado' });
   } else if (hp !== null && String(dadosOriginais.hp).trim() !== String(hp).replace('.', ',')) {
     avisos.push(montarMensagemAjuste('hp', dadosOriginais.hp, hp));
     ajustes.push({ campo: 'hp', original: dadosOriginais.hp, normalizado: hp, motivo: 'Número convertido' });
@@ -609,10 +617,9 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
     for (const linha of linhas) {
       const codigo = linha.normalizado.codigo_embarcacao;
       if (codigo && codigosDuplicadosNoArquivo.has(codigo)) {
-        if (linha.status !== 'invalid') linha.status = 'invalid';
         const mensagem = `Código duplicado no arquivo: ${codigo}`;
-        if (!linha.erros.includes(mensagem)) linha.erros.push(mensagem);
-        linha.selecionado = false;
+        if (!linha.avisos.includes(mensagem)) linha.avisos.push(mensagem);
+        if (linha.status === 'valid') linha.status = 'warning';
       }
     }
   }
@@ -631,10 +638,9 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
       for (const linha of linhas) {
         const codigo = linha.normalizado.codigo_embarcacao;
         if (codigo && existentesSet.has(codigo)) {
-          if (linha.status !== 'invalid') linha.status = 'invalid';
           const mensagem = `Código já existente no banco: ${codigo}`;
-          if (!linha.erros.includes(mensagem)) linha.erros.push(mensagem);
-          linha.selecionado = false;
+          if (!linha.avisos.includes(mensagem)) linha.avisos.push(mensagem);
+          if (linha.status === 'valid') linha.status = 'warning';
         }
       }
     }
