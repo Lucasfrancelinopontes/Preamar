@@ -445,13 +445,53 @@ const api = {
 
   // ==================== EMBARCAÇÕES ====================
 
-  getEmbarcacoes: async () => {
+  getEmbarcacoes: async (filtros = {}) => {
     try {
-      const response = await fetch(`${API_URL}/embarcacoes`, {
-        headers: getAuthHeaders()
-      });
-      
-      return handleResponse(response);
+      const fetchPage = async (page) => {
+        const params = new URLSearchParams({
+          ...filtros,
+          page: String(page),
+          limit: String(filtros.limit || 50)
+        });
+
+        const response = await fetch(`${API_URL}/embarcacoes?${params}`, {
+          headers: getAuthHeaders()
+        });
+
+        return handleResponse(response);
+      };
+
+      const primeiraPagina = await fetchPage(1);
+      const primeiraLista = Array.isArray(primeiraPagina?.data) ? primeiraPagina.data : [];
+      const paginaInfo = primeiraPagina?.pagination || {};
+      const totalPaginas = Math.max(1, Number(paginaInfo.pages || 1));
+
+      if (totalPaginas <= 1) {
+        return primeiraPagina;
+      }
+
+      const paginasRestantes = [];
+      for (let page = 2; page <= totalPaginas; page += 1) {
+        paginasRestantes.push(fetchPage(page));
+      }
+
+      const respostasRestantes = await Promise.all(paginasRestantes);
+      const embarcacoes = [
+        ...primeiraLista,
+        ...respostasRestantes.flatMap((resposta) => (Array.isArray(resposta?.data) ? resposta.data : []))
+      ];
+
+      return {
+        ...primeiraPagina,
+        data: embarcacoes,
+        pagination: {
+          ...paginaInfo,
+          total: embarcacoes.length,
+          page: 1,
+          limit: embarcacoes.length,
+          pages: 1
+        }
+      };
     } catch (error) {
       console.error('Erro ao buscar embarcações:', error);
       throw error;

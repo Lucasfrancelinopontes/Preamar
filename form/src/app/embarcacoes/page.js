@@ -81,12 +81,24 @@ export default function EmbarcacoesPage() {
     const carregarEmbarcacoes = async () => {
         try {
             setLoading(true)
+            console.groupCollapsed('[Embarcacoes] carregarEmbarcacoes')
+            console.log('Iniciando carregamento da lista de embarcações')
             const response = await api.getEmbarcacoes()
+            console.log('Resposta bruta da API:', response)
             // Se a resposta tem a estrutura { success: true, data: [...] }
             const data = response.data || response
+            console.log('Payload normalizado:', data)
+            console.log('Quantidade carregada:', Array.isArray(data) ? data.length : 0)
             setEmbarcacoes(Array.isArray(data) ? data : [])
+            console.groupEnd()
         } catch (error) {
-            console.error('Erro ao carregar embarcações:', error)
+            console.error('[Embarcacoes] Erro ao carregar embarcações:', error)
+            console.error('[Embarcacoes] Detalhes do erro ao carregar:', {
+                message: error?.message,
+                response: error?.response?.data,
+                status: error?.response?.status
+            })
+            console.groupEnd()
             setErro('Erro ao carregar embarcações')
             setEmbarcacoes([]) // Definir como array vazio em caso de erro
         } finally {
@@ -141,21 +153,33 @@ export default function EmbarcacoesPage() {
         setErro('')
         setSucesso('')
 
+        let dadosEnvio = null
+
         try {
             const tipoNormalizado = normalizarTipo(formData.tipo)
             const possuiNormalizado = normalizarPossui(formData.possui)
 
+            console.groupCollapsed('[Embarcacoes] handleSubmit')
+            console.log('Modo:', embarcacaoEditando ? 'update' : 'create')
+            console.log('FormData original:', formData)
+            console.log('Tipo normalizado:', tipoNormalizado)
+            console.log('Possui normalizado:', possuiNormalizado)
+
             if (!TIPOS_VALIDOS.includes(tipoNormalizado)) {
+                console.warn('[Embarcacoes] Tipo inválido detectado:', tipoNormalizado)
+                console.groupEnd()
                 setErro('Tipo de embarcação inválido. Selecione uma opção válida.')
                 return
             }
 
             if (possuiNormalizado && !POSSUI_VALIDOS.includes(possuiNormalizado)) {
+                console.warn('[Embarcacoes] Armazenamento inválido detectado:', possuiNormalizado)
+                console.groupEnd()
                 setErro('Armazenamento inválido. Selecione uma opção válida.')
                 return
             }
 
-            const dadosEnvio = {
+            dadosEnvio = {
                 ...formData,
                 codigo_embarcacao: formData.codigo_embarcacao?.trim() || null,
                 proprietario: formData.proprietario?.trim() || null,
@@ -166,20 +190,36 @@ export default function EmbarcacoesPage() {
                 hp: parseNumeroDecimal(formData.hp)
             }
 
+            console.log('Payload final enviado ao backend:', dadosEnvio)
+
             if (embarcacaoEditando) {
                 // Editar embarcação existente
-                await api.atualizarEmbarcacao(embarcacaoEditando.ID_embarcacao, dadosEnvio)
+                console.log('Atualizando embarcação ID:', embarcacaoEditando.ID_embarcacao)
+                const response = await api.atualizarEmbarcacao(embarcacaoEditando.ID_embarcacao, dadosEnvio)
+                console.log('Resposta da atualização:', response)
                 setSucesso('Embarcação atualizada com sucesso!')
             } else {
                 // Criar nova embarcação
-                await api.criarEmbarcacao(dadosEnvio)
+                console.log('Criando nova embarcação')
+                const response = await api.criarEmbarcacao(dadosEnvio)
+                console.log('Resposta da criação:', response)
                 setSucesso('Embarcação criada com sucesso!')
             }
+
+            console.groupEnd()
             
             fecharModal()
             carregarEmbarcacoes()
         } catch (error) {
-            console.error('Erro ao salvar embarcação:', error)
+            console.error('[Embarcacoes] Erro ao salvar embarcação:', error)
+            console.error('[Embarcacoes] Contexto do erro ao salvar:', {
+                message: error?.message,
+                response: error?.response?.data,
+                status: error?.response?.status,
+                payload: dadosEnvio,
+                modo: embarcacaoEditando ? 'update' : 'create'
+            })
+            console.groupEnd()
             setErro('Erro ao salvar embarcação: ' + (error.message || 'Erro desconhecido'))
         }
     }
@@ -190,11 +230,22 @@ export default function EmbarcacoesPage() {
         }
 
         try {
+            console.groupCollapsed('[Embarcacoes] excluirEmbarcacao')
+            console.log('ID solicitado para exclusão:', id)
             await api.excluirEmbarcacao(id)
+            console.log('Exclusão concluída com sucesso')
+            console.groupEnd()
             setSucesso('Embarcação excluída com sucesso!')
             carregarEmbarcacoes()
         } catch (error) {
-            console.error('Erro ao excluir embarcação:', error)
+            console.error('[Embarcacoes] Erro ao excluir embarcação:', error)
+            console.error('[Embarcacoes] Contexto do erro ao excluir:', {
+                message: error?.message,
+                response: error?.response?.data,
+                status: error?.response?.status,
+                id
+            })
+            console.groupEnd()
             setErro('Erro ao excluir embarcação: ' + (error.message || 'Erro desconhecido'))
         }
     }
