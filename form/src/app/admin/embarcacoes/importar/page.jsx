@@ -23,6 +23,8 @@ const resumoInicial = {
   selecionados: 0
 };
 
+const ITENS_POR_PAGINA = 50;
+
 export default function ImportarEmbarcacoesPage() {
   const router = useRouter();
   const { estaAutenticado, ehAdmin, carregando } = useAuth();
@@ -44,7 +46,7 @@ export default function ImportarEmbarcacoesPage() {
 
   const linhas = previewServidor?.registros || previewServidor?.linhas || previewLocal?.registros || previewLocal?.linhas || [];
   const resumo = previewServidor?.resumo || previewLocal?.resumo || resumoInicial;
-  const totalPaginas = Math.max(1, Math.ceil(linhas.length / 12));
+  const totalPaginas = Math.max(1, Math.ceil(linhas.length / ITENS_POR_PAGINA));
 
   useEffect(() => {
     const ids = new Set(linhas.filter((linha) => linha.selecionado).map((linha) => linha.linha));
@@ -86,8 +88,8 @@ export default function ImportarEmbarcacoesPage() {
   }
 
   const linhasPaginadas = useMemo(() => {
-    const inicio = (paginaAtual - 1) * 12;
-    return linhas.slice(inicio, inicio + 12);
+    const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+    return linhas.slice(inicio, inicio + ITENS_POR_PAGINA);
   }, [linhas, paginaAtual]);
 
   const carregarArquivo = async (file) => {
