@@ -8,6 +8,7 @@ import api from '@/services/api'
 export default function EspeciesPage() {
     const { estaAutenticado, ehAdmin } = useAuth()
     const router = useRouter()
+    const ITENS_POR_PAGINA = 50
     const [especies, setEspecies] = useState([])
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState('')
@@ -15,6 +16,7 @@ export default function EspeciesPage() {
     const [modalAberto, setModalAberto] = useState(false)
     const [especieEditando, setEspecieEditando] = useState(null)
     const [busca, setBusca] = useState('')
+    const [paginaAtual, setPaginaAtual] = useState(1)
 
     const [formData, setFormData] = useState({
         idd: '',
@@ -164,6 +166,18 @@ export default function EspeciesPage() {
         especie.Nome_cientifico?.toLowerCase().includes(busca.toLowerCase()) ||
         especie.Familia?.toLowerCase().includes(busca.toLowerCase())
     )
+    const totalPaginas = Math.max(1, Math.ceil(especiesFiltradas.length / ITENS_POR_PAGINA))
+    const paginaSegura = Math.min(paginaAtual, totalPaginas)
+    const indiceInicial = (paginaSegura - 1) * ITENS_POR_PAGINA
+    const especiesExibidas = especiesFiltradas.slice(indiceInicial, indiceInicial + ITENS_POR_PAGINA)
+
+    useEffect(() => {
+        setPaginaAtual(1)
+    }, [busca])
+
+    useEffect(() => {
+        setPaginaAtual((current) => Math.min(current, totalPaginas))
+    }, [totalPaginas])
 
     return (
         <div className="min-h-screen bg-gray-50 text-black">
@@ -247,7 +261,7 @@ export default function EspeciesPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {especiesFiltradas.map((especie) => (
+                                    {especiesExibidas.map((especie) => (
                                         <tr key={especie.ID} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
                                                 {especie.Nome_popular}
@@ -283,6 +297,35 @@ export default function EspeciesPage() {
                                 </tbody>
                             </table>
                         </div>
+
+                        {especiesFiltradas.length > ITENS_POR_PAGINA && (
+                            <div className="flex flex-col gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-sm text-gray-600">
+                                    Mostrando {indiceInicial + 1}-{Math.min(indiceInicial + ITENS_POR_PAGINA, especiesFiltradas.length)} de {especiesFiltradas.length} espécies
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaginaAtual((current) => Math.max(1, current - 1))}
+                                        disabled={paginaSegura <= 1}
+                                        className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Anterior
+                                    </button>
+                                    <span className="text-sm font-medium text-gray-700">
+                                        Página {paginaSegura} de {totalPaginas}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaginaAtual((current) => Math.min(totalPaginas, current + 1))}
+                                        disabled={paginaSegura >= totalPaginas}
+                                        className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Próxima
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {especiesFiltradas.length === 0 && (
                             <div className="text-center py-8 text-black">

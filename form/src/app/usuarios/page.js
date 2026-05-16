@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../../services/api';
 
 export default function GerenciarUsuarios() {
+    const ITENS_POR_PAGINA = 50;
     const [usuarios, setUsuarios] = useState([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState('');
@@ -12,6 +13,7 @@ export default function GerenciarUsuarios() {
     const [mostrarModal, setMostrarModal] = useState(false);
     const [mostrarModalEdicao, setMostrarModalEdicao] = useState(false);
     const [usuarioEditando, setUsuarioEditando] = useState(null);
+    const [paginaAtual, setPaginaAtual] = useState(1);
     const [novoUsuario, setNovoUsuario] = useState({
         nome: '',
         email: '',
@@ -122,6 +124,15 @@ export default function GerenciarUsuarios() {
         }
     };
 
+    const totalPaginas = Math.max(1, Math.ceil(usuarios.length / ITENS_POR_PAGINA));
+    const paginaSegura = Math.min(paginaAtual, totalPaginas);
+    const indiceInicial = (paginaSegura - 1) * ITENS_POR_PAGINA;
+    const usuariosExibidos = usuarios.slice(indiceInicial, indiceInicial + ITENS_POR_PAGINA);
+
+    useEffect(() => {
+        setPaginaAtual((current) => Math.min(current, totalPaginas));
+    }, [totalPaginas]);
+
     if (carregando) {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -182,7 +193,7 @@ export default function GerenciarUsuarios() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {usuarios.map((usuario) => (
+                                {usuariosExibidos.map((usuario) => (
                                     <tr key={usuario.ID_usuario} className="border-b hover:bg-gray-50">
                                         <td className="px-6 py-4 text-sm text-gray-900">{usuario.nome}</td>
                                         <td className="px-6 py-4 text-sm text-gray-900">{usuario.email}</td>
@@ -214,6 +225,35 @@ export default function GerenciarUsuarios() {
                                 ))}
                             </tbody>
                         </table>
+                    )}
+
+                    {usuarios.length > ITENS_POR_PAGINA && (
+                        <div className="flex flex-col gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-sm text-gray-600">
+                                Mostrando {indiceInicial + 1}-{Math.min(indiceInicial + ITENS_POR_PAGINA, usuarios.length)} de {usuarios.length} usuários
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setPaginaAtual((current) => Math.max(1, current - 1))}
+                                    disabled={paginaSegura <= 1}
+                                    className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Anterior
+                                </button>
+                                <span className="text-sm font-medium text-gray-700">
+                                    Página {paginaSegura} de {totalPaginas}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setPaginaAtual((current) => Math.min(totalPaginas, current + 1))}
+                                    disabled={paginaSegura >= totalPaginas}
+                                    className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Próxima
+                                </button>
+                            </div>
+                        </div>
                     )}
                 </div>
 

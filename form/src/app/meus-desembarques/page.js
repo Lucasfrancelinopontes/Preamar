@@ -10,12 +10,14 @@ import { formatDatePtBr, formatDateTimePtBr, parseApiDate } from '@/utils/date';
 function MeusDesembarquesContent() {
     const router = useRouter();
     const { user } = useAuth();
+    const ITENS_POR_PAGINA = 50;
     const [desembarques, setDesembarques] = useState([]);
     const [pesquisaCodigoColeta, setPesquisaCodigoColeta] = useState('');
     const [mostrarFiltrosData, setMostrarFiltrosData] = useState(false);
     const [dataInicio, setDataInicio] = useState('');
     const [dataFim, setDataFim] = useState('');
     const [desembarqueSelecionado, setDesembarqueSelecionado] = useState(null);
+    const [paginaAtual, setPaginaAtual] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [temaEscuro, setTemaEscuro] = useState(false);
@@ -53,10 +55,22 @@ function MeusDesembarquesContent() {
 
         return passouFiltroCodigo && passouFiltroData;
     });
+    const totalPaginas = Math.max(1, Math.ceil(desembarquesFiltrados.length / ITENS_POR_PAGINA));
+    const paginaSegura = Math.min(paginaAtual, totalPaginas);
+    const indiceInicial = (paginaSegura - 1) * ITENS_POR_PAGINA;
+    const desembarquesExibidos = desembarquesFiltrados.slice(indiceInicial, indiceInicial + ITENS_POR_PAGINA);
 
     useEffect(() => {
         carregarDesembarques();
     }, []);
+
+    useEffect(() => {
+        setPaginaAtual(1);
+    }, [pesquisaCodigoColeta, dataInicio, dataFim]);
+
+    useEffect(() => {
+        setPaginaAtual((current) => Math.min(current, totalPaginas));
+    }, [totalPaginas]);
 
     const carregarDesembarques = async () => {
         try {
@@ -304,7 +318,7 @@ function MeusDesembarquesContent() {
                                 Nenhum desembarque encontrado para este código de coleta.
                             </div>
                         ) : (
-                            desembarquesFiltrados.map((desembarque) => (
+                            desembarquesExibidos.map((desembarque) => (
                             <div 
                                 key={desembarque.cod_desembarque}
                                 className={`p-6 rounded-lg shadow hover:shadow-lg transition-all ${
@@ -409,6 +423,43 @@ function MeusDesembarquesContent() {
                                 </div>
                             </div>
                             ))
+                        )}
+
+                        {desembarquesFiltrados.length > ITENS_POR_PAGINA && (
+                            <div className={`flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between ${temaEscuro ? 'border-gray-700' : 'border-gray-200'}`}>
+                                <p className={`text-sm ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    Mostrando {indiceInicial + 1}-{Math.min(indiceInicial + ITENS_POR_PAGINA, desembarquesFiltrados.length)} de {desembarquesFiltrados.length} desembarques
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaginaAtual((current) => Math.max(1, current - 1))}
+                                        disabled={paginaSegura <= 1}
+                                        className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                            temaEscuro
+                                                ? 'bg-gray-700 text-gray-100 hover:bg-gray-600'
+                                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        Anterior
+                                    </button>
+                                    <span className={`text-sm font-medium ${temaEscuro ? 'text-gray-200' : 'text-gray-700'}`}>
+                                        Página {paginaSegura} de {totalPaginas}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaginaAtual((current) => Math.min(totalPaginas, current + 1))}
+                                        disabled={paginaSegura >= totalPaginas}
+                                        className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                            temaEscuro
+                                                ? 'bg-gray-700 text-gray-100 hover:bg-gray-600'
+                                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        Próxima
+                                    </button>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}
