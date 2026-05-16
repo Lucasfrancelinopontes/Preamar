@@ -47,6 +47,10 @@ export default function ImportarEmbarcacoesPage() {
   const linhas = previewServidor?.registros || previewServidor?.linhas || previewLocal?.registros || previewLocal?.linhas || [];
   const resumo = previewServidor?.resumo || previewLocal?.resumo || resumoInicial;
   const totalPaginas = Math.max(1, Math.ceil(linhas.length / ITENS_POR_PAGINA));
+  const linhasPaginadas = useMemo(() => {
+    const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+    return linhas.slice(inicio, inicio + ITENS_POR_PAGINA);
+  }, [linhas, paginaAtual]);
 
   useEffect(() => {
     const ids = new Set(linhas.filter((linha) => linha.selecionado).map((linha) => linha.linha));
@@ -54,6 +58,20 @@ export default function ImportarEmbarcacoesPage() {
     setSelectedRowId(linhas.find((linha) => linha.selecionado)?.linha || null);
     setPaginaAtual(1);
   }, [previewLocal, previewServidor]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+
+    console.log('[ImportarEmbarcacoes] preview', {
+      totalLinhas: linhas.length,
+      paginaAtual,
+      totalPaginas,
+      linhasNaPagina: linhasPaginadas.length,
+      primeiraLinha: linhasPaginadas[0]?.linha || null,
+      ultimaLinha: linhasPaginadas[linhasPaginadas.length - 1]?.linha || null,
+      origem: previewServidor ? 'servidor' : previewLocal ? 'local' : 'vazio'
+    });
+  }, [linhas.length, paginaAtual, totalPaginas, linhasPaginadas, previewServidor, previewLocal]);
 
   useEffect(() => {
     if (carregando) return;
@@ -86,11 +104,6 @@ export default function ImportarEmbarcacoesPage() {
       </div>
     );
   }
-
-  const linhasPaginadas = useMemo(() => {
-    const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
-    return linhas.slice(inicio, inicio + ITENS_POR_PAGINA);
-  }, [linhas, paginaAtual]);
 
   const carregarArquivo = async (file) => {
     if (!file) return;
