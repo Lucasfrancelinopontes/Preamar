@@ -60,20 +60,6 @@ export default function ImportarEmbarcacoesPage() {
   }, [previewLocal, previewServidor]);
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') return;
-
-    console.log('[ImportarEmbarcacoes] preview', {
-      totalLinhas: linhas.length,
-      paginaAtual,
-      totalPaginas,
-      linhasNaPagina: linhasPaginadas.length,
-      primeiraLinha: linhasPaginadas[0]?.linha || null,
-      ultimaLinha: linhasPaginadas[linhasPaginadas.length - 1]?.linha || null,
-      origem: previewServidor ? 'servidor' : previewLocal ? 'local' : 'vazio'
-    });
-  }, [linhas.length, paginaAtual, totalPaginas, linhasPaginadas, previewServidor, previewLocal]);
-
-  useEffect(() => {
     if (carregando) return;
 
     if (!estaAutenticado()) {
@@ -188,9 +174,6 @@ export default function ImportarEmbarcacoesPage() {
       setSucesso(`Importação concluída. ${dados.inseridas || 0} embarcação(ões) inserida(s).`);
       setSelectedIds(new Set());
       setEtapa('concluido');
-      if (dados.logs?.length) {
-        console.log('Logs da importação:', dados.logs);
-      }
     } catch (error) {
       console.error('Erro ao importar embarcações:', error);
       setErro(error.message || 'Erro ao importar embarcações');
@@ -284,13 +267,6 @@ export default function ImportarEmbarcacoesPage() {
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Debug</p>
                   <h2 className="mt-1 text-xl font-bold text-slate-900">Headers detectados e primeiro registro</h2>
                 </div>
-                <button
-                  type="button"
-                  className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  onClick={() => console.log('debugImportacao', { headersDebug, primeiroRegistroDebug, previewLocal, previewServidor })}
-                >
-                  Log debug
-                </button>
               </div>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl bg-slate-50 p-4">

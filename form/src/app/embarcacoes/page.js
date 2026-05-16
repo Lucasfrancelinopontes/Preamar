@@ -205,6 +205,7 @@ export default function EmbarcacoesPage() {
         embarcacao.proprietario?.toLowerCase().includes(busca.toLowerCase()) ||
         embarcacao.tipo?.toLowerCase().includes(busca.toLowerCase())
     )
+    const mostrarPaginacao = embarcacoesFiltradas.length > ITENS_POR_PAGINA
     const totalPaginas = Math.max(1, Math.ceil(embarcacoesFiltradas.length / ITENS_POR_PAGINA))
     const paginaSegura = Math.min(paginaAtual, totalPaginas)
     const indiceInicial = (paginaSegura - 1) * ITENS_POR_PAGINA
@@ -283,6 +284,34 @@ export default function EmbarcacoesPage() {
                     </div>
                 ) : (
                     <div className="bg-white rounded-lg shadow overflow-hidden">
+                        {mostrarPaginacao && (
+                            <div className="flex flex-col gap-3 border-b border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-sm text-gray-600">
+                                    Mostrando {indiceInicial + 1}-{Math.min(indiceInicial + ITENS_POR_PAGINA, embarcacoesFiltradas.length)} de {embarcacoesFiltradas.length} embarcações
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaginaAtual((current) => Math.max(1, current - 1))}
+                                        disabled={paginaSegura <= 1}
+                                        className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Anterior
+                                    </button>
+                                    <span className="text-sm font-medium text-gray-700">
+                                        Página {paginaSegura} de {totalPaginas}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaginaAtual((current) => Math.min(totalPaginas, current + 1))}
+                                        disabled={paginaSegura >= totalPaginas}
+                                        className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Próxima
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -351,7 +380,7 @@ export default function EmbarcacoesPage() {
                             </table>
                         </div>
 
-                        {embarcacoesFiltradas.length > ITENS_POR_PAGINA && (
+                        {mostrarPaginacao && (
                             <div className="flex flex-col gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                                 <p className="text-sm text-gray-600">
                                     Mostrando {indiceInicial + 1}-{Math.min(indiceInicial + ITENS_POR_PAGINA, embarcacoesFiltradas.length)} de {embarcacoesFiltradas.length} embarcações
