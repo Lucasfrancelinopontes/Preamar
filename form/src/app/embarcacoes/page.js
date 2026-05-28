@@ -44,6 +44,7 @@ export default function EmbarcacoesPage() {
     const router = useRouter()
     const ITENS_POR_PAGINA = 50
     const [embarcacoes, setEmbarcacoes] = useState([])
+    const [municipios, setMunicipios] = useState([])
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState('')
     const [sucesso, setSucesso] = useState('')
@@ -59,6 +60,7 @@ export default function EmbarcacoesPage() {
         apelido_propietario: '',
         municipio: '',
         tipo: '',
+        tipo_outro: '',
         comprimento: '',
         capacidade: '',
         hp: '',
@@ -75,8 +77,20 @@ export default function EmbarcacoesPage() {
             router.push('/')
             return
         }
+        carregarMunicipios()
         carregarEmbarcacoes()
     }, [estaAutenticado, ehAdmin, router])
+
+    const carregarMunicipios = async () => {
+        try {
+            const response = await api.getMunicipios()
+            const data = response?.data || response
+            setMunicipios(Array.isArray(data) ? data : [])
+        } catch (error) {
+            console.error('[Embarcacoes] Erro ao carregar municípios:', error)
+            setMunicipios([])
+        }
+    }
 
     const carregarEmbarcacoes = async () => {
         try {
@@ -114,6 +128,7 @@ export default function EmbarcacoesPage() {
             apelido_propietario: '',
             municipio: '',
             tipo: '',
+            tipo_outro: '',
             comprimento: '',
             capacidade: '',
             hp: '',
@@ -131,6 +146,7 @@ export default function EmbarcacoesPage() {
                 apelido_propietario: embarcacao.apelido_propietario || '',
                 municipio: embarcacao.municipio || '',
                 tipo: embarcacao.tipo || '',
+                tipo_outro: embarcacao.tipo_outro || '',
                 comprimento: embarcacao.comprimento || '',
                 capacidade: embarcacao.capacidade || '',
                 hp: embarcacao.hp || '',
@@ -184,6 +200,7 @@ export default function EmbarcacoesPage() {
                 codigo_embarcacao: formData.codigo_embarcacao?.trim() || null,
                 proprietario: formData.proprietario?.trim() || null,
                 tipo: tipoNormalizado,
+                tipo_outro: tipoNormalizado === 'outro' ? (formData.tipo_outro?.trim() || null) : null,
                 possui: possuiNormalizado || null,
                 comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
                 capacidade: formData.capacidade ? parseFloat(formData.capacidade) : null,
@@ -534,13 +551,21 @@ export default function EmbarcacoesPage() {
                                     <label className="block text-sm font-medium text-black mb-1">
                                         Município da Embarcação
                                     </label>
-                                    <input
-                                        type="text"
+                                    <select
                                         value={formData.municipio}
                                         onChange={(e) => setFormData({...formData, municipio: e.target.value})}
-                                        className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
-                                        placeholder="Ex: João Pessoa"
-                                    />
+                                        className="w-full p-2 border rounded-lg text-black"
+                                    >
+                                        <option value="">Selecione o município</option>
+                                        {formData.municipio && !municipios.some((municipio) => municipio.municipio === formData.municipio) && (
+                                            <option value={formData.municipio}>{formData.municipio}</option>
+                                        )}
+                                        {municipios.map((municipio) => (
+                                            <option key={municipio.ID_municipio || municipio.municipio} value={municipio.municipio}>
+                                                {municipio.municipio}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div>
@@ -549,7 +574,7 @@ export default function EmbarcacoesPage() {
                                     </label>
                                     <select
                                         value={formData.tipo}
-                                        onChange={(e) => setFormData({...formData, tipo: e.target.value})}
+                                        onChange={(e) => setFormData({...formData, tipo: e.target.value, tipo_outro: e.target.value === 'outro' ? formData.tipo_outro : ''})}
                                         className="w-full p-2 border rounded-lg text-black"
                                         required
                                     >
@@ -562,6 +587,15 @@ export default function EmbarcacoesPage() {
                                         <option value="barco">Barco</option>
                                         <option value="outro">Outro</option>
                                     </select>
+                                    {formData.tipo === 'outro' && (
+                                        <input
+                                            type="text"
+                                            value={formData.tipo_outro}
+                                            onChange={(e) => setFormData({...formData, tipo_outro: e.target.value})}
+                                            className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500 mt-2"
+                                            placeholder="Informe o tipo da embarcação"
+                                        />
+                                    )}
                                 </div>
 
                                 <div>
