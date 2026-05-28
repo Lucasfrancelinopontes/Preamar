@@ -31,20 +31,21 @@ const POSSUI_ALIASES = {
 };
 
 const CABECALHOS = {
-  nome_embarcacao: ['nome da embarcacao', 'nome da embarcação', 'nome embarcacao', 'nome embarcação', 'embarcacao', 'embarcação', 'nome'],
-  codigo_embarcacao: ['codigo embarcacao', 'codigo embarcação', 'código embarcacao', 'código embarcação', 'codigo', 'código', 'cod embarcacao', 'cod embarcação'],
-  proprietario: ['proprietario', 'proprietário', 'dono', 'responsavel', 'responsável'],
-  apelido_propietario: ['apelido proprietario', 'apelido do proprietario', 'apelido proprietário', 'apelido', 'nick'],
-  municipio: ['municipio', 'município'],
+  nome_embarcacao: ['nome da embarcacao', 'nome da embarcação', 'nome embarcacao', 'nome embarcação', 'nome_da_embarcacao', 'embarcação', 'nome'],
+  codigo_embarcacao: ['codigo embarcacao', 'codigo embarcação', 'código embarcacao', 'código embarcação', 'codigo_embarcacao', 'codigo', 'código', 'cod embarcacao', 'cod embarcação', 'numero_da_embarcacao'],
+  proprietario: ['proprietario', 'proprietário', 'dono', 'responsavel', 'responsável', 'nome_do_dono'],
+  apelido_propietario: ['apelido proprietario', 'apelido do proprietario', 'apelido proprietário', 'apelido', 'nick', 'apelido_do_dono'],
+  municipio: ['municipio', 'município', 'local_1'],
   localidade: ['localidade', 'comunidade', 'bairro'],
-  tipo: ['tipo de embarcacao', 'tipo de embarcação', 'tipo embarcacao', 'tipo embarcação', 'embarcacao_tipo', 'embarcação_tipo', 'tipo'],
+  tipo: ['tipo de embarcacao', 'tipo de embarcação', 'tipo embarcacao', 'tipo embarcação', 'tipo_de_embarcacao', 'embarcacao_tipo', 'embarcação_tipo', 'tipo'],
   tipo_outro: ['tipo outro', 'outro tipo', 'tipo alternativo'],
-  comprimento: ['comprimento', 'comprimento m', 'comprimento (m)', 'comprimento metros'],
-  capacidade: ['capacidade', 'capacidade estocagem', 'capacidade de estocagem', 'capacidade (kg)', 'capacidade kg'],
-  hp: ['hp', 'forca do motor', 'força do motor', 'motor hp'],
+  comprimento: ['comprimento', 'comprimento m', 'comprimento (m)', 'comprimento metros', 'comprimento_m'],
+  capacidade: ['capacidade', 'capacidade estocagem', 'capacidade de estocagem', 'capacidade (kg)', 'capacidade kg', 'capacidade_estocagem_kg'],
+  hp: ['hp', 'forca do motor', 'força do motor', 'motor hp', 'forca_do_motor_hp'],
+  numero_tripulantes: ['numero tripulantes', 'número tripulantes', 'tripulantes', 'qtde tripulantes', 'quantidade tripulantes', 'tripulacao_mp'],
   possui: ['possui', 'armazenamento', 'equipamento'],
   cpf_proprietario: ['cpf proprietario', 'cpf do proprietario', 'cpf proprietário', 'cpf'],
-  rgp: ['rgp']
+  rgp: ['rgp', 'numero_de_inscricao_no_rgp_ppp_ou_raep_mp']
 };
 
 const HEADER_MAP = CABECALHOS;
@@ -98,7 +99,7 @@ const contarCelulasPreenchidas = (row) => {
 
 const isMatchHeader = (normalizedHeader, normalizedAlias) => {
   if (!normalizedHeader || !normalizedAlias) return false;
-  return normalizedHeader === normalizedAlias || normalizedHeader.includes(normalizedAlias) || normalizedAlias.includes(normalizedHeader);
+  return normalizedHeader === normalizedAlias;
 };
 
 const mapearHeaderParaCampo = (header) => {
@@ -241,6 +242,53 @@ const extrairLinha = (linha = {}) => {
   return resultado;
 };
 
+const lerPrimeiroValor = (...valores) => {
+  for (const valor of valores) {
+    const normalizado = limparValor(valor);
+    if (normalizado) return normalizado;
+  }
+
+  return null;
+};
+
+const ehValorPlaceholder = (value) => {
+  const comparacao = normalizarComparacao(value);
+  if (!comparacao) return true;
+
+  // Keep common placeholders, but do not treat "nn" as a placeholder so it
+  // can be saved as a literal name when present in the sheet.
+  return /^(0+|sem|s\/n|sn|na|n\/a|\.|\-+)$/i.test(comparacao);
+};
+
+const pareceCodigoEmbarcacao = (value) => {
+  const comparacao = normalizarComparacao(value);
+  if (!comparacao || ehValorPlaceholder(comparacao)) return false;
+
+  const digitos = (comparacao.match(/[0-9]/g) || []).length;
+  const letras = (comparacao.match(/[a-z]/g) || []).length;
+
+  if (/^[0-9][0-9a-z\-\/]*$/.test(comparacao) && digitos >= 4) return true;
+  if (/^[a-z]?-?[0-9]{4,}[0-9a-z\-\/]*$/.test(comparacao) && digitos >= letras) return true;
+  return digitos >= 6 && digitos >= letras;
+};
+
+const normalizarNomeEmbarcacao = (nome) => {
+  const texto = limparValor(nome);
+  if (!texto || ehValorPlaceholder(texto)) return null;
+
+  if (pareceCodigoEmbarcacao(texto)) {
+    return null;
+  }
+
+  return texto;
+};
+
+const normalizarCodigoEmbarcacao = (codigo) => {
+  const texto = limparValor(codigo);
+  if (!texto || ehValorPlaceholder(texto)) return null;
+  return texto;
+};
+
 const mensagemAjuste = (campo, original, normalizado) => {
   const rotulos = {
     tipo: 'Tipo normalizado',
@@ -263,9 +311,32 @@ export const avaliarLinhaImportacao = (linhaOriginal = {}, indice = 0) => {
   const erros = [];
   const ajustes = [];
 
-  const nomeOriginal = normalizarTexto(dadosOriginais.nome_embarcacao);
-  const nome_embarcacao = nomeOriginal || `Embarcação sem nome ${indice + 1}`;
-  if (!nomeOriginal) {
+  const nomeOriginal = lerPrimeiroValor(
+    dadosOriginais.nome_embarcacao,
+    linhaOriginal?.nome_embarcacao,
+    linhaOriginal?.nome_da_embarcacao,
+    linhaOriginal?.nome,
+    linhaOriginal?.embarcacao
+  );
+  const codigoOriginal = lerPrimeiroValor(
+    dadosOriginais.codigo_embarcacao,
+    linhaOriginal?.codigo_embarcacao,
+    linhaOriginal?.numero_da_embarcacao,
+    linhaOriginal?.codigo,
+    linhaOriginal?.código,
+    linhaOriginal?.cod_embarcacao
+  );
+  const codigo_embarcacao = normalizarCodigoEmbarcacao(codigoOriginal);
+  const nomeNormalizado = normalizarNomeEmbarcacao(nomeOriginal);
+  // If the original cell was empty, preserve it as blank. Otherwise keep the
+  // normalized value or generate a fallback name.
+  const nome_embarcacao = nomeOriginal === null
+    ? ''
+    : (nomeNormalizado || `Embarcação sem nome ${indice + 1}`);
+
+  if (nomeOriginal === null) {
+    // keep blank, no automatic name generated
+  } else if (!nomeNormalizado) {
     avisos.push('Nome da embarcação gerado automaticamente');
     ajustes.push({ campo: 'nome_embarcacao', original: '', normalizado: nome_embarcacao, motivo: 'Gerado automaticamente' });
   } else if (nome_embarcacao !== String(dadosOriginais.nome_embarcacao || '').trim()) {
@@ -273,31 +344,54 @@ export const avaliarLinhaImportacao = (linhaOriginal = {}, indice = 0) => {
     ajustes.push({ campo: 'nome_embarcacao', original: dadosOriginais.nome_embarcacao, normalizado: nome_embarcacao, motivo: 'Limpeza de espaços' });
   }
 
-  const codigo_embarcacao = normalizarTexto(dadosOriginais.codigo_embarcacao);
-  if (codigo_embarcacao && codigo_embarcacao !== String(dadosOriginais.codigo_embarcacao || '').trim()) {
+  if (codigoOriginal && !codigo_embarcacao) {
+    avisos.push(mensagemAjuste('codigo_embarcacao', codigoOriginal, ''));
+    ajustes.push({ campo: 'codigo_embarcacao', original: codigoOriginal, normalizado: null, motivo: 'Código inválido ignorado' });
+  } else if (codigo_embarcacao && codigo_embarcacao !== String(dadosOriginais.codigo_embarcacao || '').trim()) {
     avisos.push(mensagemAjuste('codigo_embarcacao', dadosOriginais.codigo_embarcacao, codigo_embarcacao));
     ajustes.push({ campo: 'codigo_embarcacao', original: dadosOriginais.codigo_embarcacao, normalizado: codigo_embarcacao, motivo: 'Limpeza de espaços' });
   }
 
-  const proprietario = normalizarTexto(dadosOriginais.proprietario);
+  const proprietario = lerPrimeiroValor(
+    dadosOriginais.proprietario,
+    linhaOriginal?.proprietario,
+    linhaOriginal?.nome_do_dono,
+    linhaOriginal?.dono,
+    linhaOriginal?.responsavel,
+    linhaOriginal?.responsável
+  );
   if (proprietario && proprietario !== String(dadosOriginais.proprietario || '').trim()) {
     avisos.push(mensagemAjuste('proprietario', dadosOriginais.proprietario, proprietario));
     ajustes.push({ campo: 'proprietario', original: dadosOriginais.proprietario, normalizado: proprietario, motivo: 'Limpeza de espaços' });
   }
 
-  const apelido_propietario = normalizarTexto(dadosOriginais.apelido_propietario);
+  const apelido_propietario = lerPrimeiroValor(
+    dadosOriginais.apelido_propietario,
+    linhaOriginal?.apelido_propietario,
+    linhaOriginal?.apelido_do_dono,
+    linhaOriginal?.apelido
+  );
   if (apelido_propietario && apelido_propietario !== String(dadosOriginais.apelido_propietario || '').trim()) {
     avisos.push(mensagemAjuste('apelido_propietario', dadosOriginais.apelido_propietario, apelido_propietario));
     ajustes.push({ campo: 'apelido_propietario', original: dadosOriginais.apelido_propietario, normalizado: apelido_propietario, motivo: 'Limpeza de espaços' });
   }
 
-  const municipio = normalizarTexto(dadosOriginais.municipio);
+  const municipio = lerPrimeiroValor(
+    dadosOriginais.municipio,
+    linhaOriginal?.municipio,
+    linhaOriginal?.local_1
+  );
   if (municipio && municipio !== String(dadosOriginais.municipio || '').trim()) {
     avisos.push(mensagemAjuste('municipio', dadosOriginais.municipio, municipio));
     ajustes.push({ campo: 'municipio', original: dadosOriginais.municipio, normalizado: municipio, motivo: 'Limpeza de espaços' });
   }
 
-  const localidade = normalizarTexto(dadosOriginais.localidade);
+  const localidade = lerPrimeiroValor(
+    dadosOriginais.localidade,
+    linhaOriginal?.localidade,
+    linhaOriginal?.comunidade,
+    linhaOriginal?.bairro
+  );
   if (localidade && localidade !== String(dadosOriginais.localidade || '').trim()) {
     avisos.push(mensagemAjuste('localidade', dadosOriginais.localidade, localidade));
     ajustes.push({ campo: 'localidade', original: dadosOriginais.localidade, normalizado: localidade, motivo: 'Limpeza de espaços' });

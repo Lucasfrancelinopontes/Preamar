@@ -40,22 +40,32 @@ export default function ImportPreviewTable({
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Selecionar</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Linha</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Nome</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Município final</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">ID</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tipo original</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tipo final</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tripulantes</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Avisos</th>
               <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Detalhes</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
-            {linhas.map((linha) => {
+            {linhas.map((linha, index) => {
               const isSelected = selectedIds.has(linha.linha);
               const isActive = selectedRowId === linha.linha;
               const selecionavel = linha.status !== 'invalid';
+              const linhaKey = [
+                linha.linha,
+                linha.normalizado?.codigo_embarcacao || linha.original?.codigo_embarcacao || '',
+                linha.normalizado?.nome_embarcacao || linha.original?.nome_embarcacao || '',
+                linha.status || '',
+                index
+              ].join('-');
 
               return (
                 <tr
-                  key={linha.linha}
+                  key={linhaKey}
                   className={`transition ${isActive ? 'bg-emerald-50/80' : 'hover:bg-slate-50'} ${linha.status === 'invalid' ? 'opacity-90' : ''}`}
                   onClick={() => onSelecionarDetalhe(linha)}
                 >
@@ -77,8 +87,17 @@ export default function ImportPreviewTable({
                     <div className="font-medium">{linha.normalizado?.nome_embarcacao || linha.original?.nome_embarcacao || '-'}</div>
                     <div className="mt-1 text-xs text-slate-500">Código: {linha.normalizado?.codigo_embarcacao || linha.original?.codigo_embarcacao || '-'}</div>
                   </td>
+                  <td className="px-4 py-4 align-top text-sm text-slate-700">
+                    {linha.normalizado?.municipio || linha.original?.municipio || '-'}
+                  </td>
+                  <td className="px-4 py-4 align-top text-sm text-slate-700">
+                    {linha.normalizado?.ID_municipio ?? linha.original?.ID_municipio ?? '-'}
+                  </td>
                   <td className="px-4 py-4 align-top text-sm text-slate-700">{linha.original?.tipo || '-'}</td>
                   <td className="px-4 py-4 align-top text-sm text-slate-700">{linha.normalizado?.tipo || '-'}</td>
+                  <td className="px-4 py-4 align-top text-sm text-slate-700">
+                    {linha.normalizado?.numero_tripulantes ?? linha.original?.numero_tripulantes ?? '-'}
+                  </td>
                   <td className="px-4 py-4 align-top">
                     <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusStyles[linha.status] || statusStyles.warning}`}>
                       {statusLabel[linha.status] || 'Corrigida'}

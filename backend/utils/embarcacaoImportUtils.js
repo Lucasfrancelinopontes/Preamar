@@ -1,6 +1,6 @@
 import XLSX from 'xlsx';
 import { Op } from 'sequelize';
-import { Embarcacao } from '../models/index.js';
+import { Embarcacao, Municipio } from '../models/index.js';
 
 export const TIPOS_VALIDOS = ['catraia', 'caico', 'jangada', 'boteLancha', 'canoa', 'barco', 'outro'];
 export const POSSUI_VALIDOS = ['urna', 'caixaTermica', 'pescadoInNatura'];
@@ -34,20 +34,21 @@ const POSSUI_ALIASES = {
 };
 
 const CABECALHOS = {
-  nome_embarcacao: ['nome', 'nome embarcacao', 'nome da embarcacao', 'embarcacao', 'embarcacao nome'],
-  codigo_embarcacao: ['codigo', 'codigo embarcacao', 'código', 'código embarcação', 'cod embarcacao'],
-  proprietario: ['proprietario', 'proprietário', 'dono', 'responsavel'],
-  apelido_propietario: ['apelido proprietario', 'apelido do proprietario', 'apelido', 'apelido proprietário'],
-  municipio: ['municipio', 'município'],
+  nome_embarcacao: ['nome', 'nome embarcacao', 'nome da embarcacao', 'nome_da_embarcacao', 'embarcacao nome'],
+  codigo_embarcacao: ['codigo', 'codigo embarcacao', 'codigo_embarcacao', 'código', 'código embarcação', 'cod embarcacao', 'numero_da_embarcacao'],
+  proprietario: ['proprietario', 'proprietário', 'dono', 'responsavel', 'nome_do_dono'],
+  apelido_propietario: ['apelido proprietario', 'apelido do proprietario', 'apelido', 'apelido proprietário', 'apelido_do_dono'],
+  municipio: ['municipio', 'município', 'local_1'],
   localidade: ['localidade', 'comunidade'],
-  tipo: ['tipo', 'tipo embarcacao', 'tipo embarcação'],
+  tipo: ['tipo', 'tipo embarcacao', 'tipo embarcação', 'tipo_de_embarcacao'],
   tipo_outro: ['tipo outro', 'outro tipo', 'tipo alternativo'],
-  comprimento: ['comprimento', 'comprimento m', 'comprimento (m)', 'comprimento metros'],
-  capacidade: ['capacidade', 'capacidade estocagem', 'capacidade de estocagem', 'capacidade (kg)', 'capacidade kg'],
-  hp: ['hp', 'forca do motor', 'força do motor', 'motor hp'],
+  comprimento: ['comprimento', 'comprimento m', 'comprimento (m)', 'comprimento metros', 'comprimento_m'],
+  numero_tripulantes: ['numero tripulantes', 'número tripulantes', 'tripulantes', 'qtde tripulantes', 'quantidade tripulantes', 'tripulacao_mp'],
+  capacidade: ['capacidade', 'capacidade estocagem', 'capacidade de estocagem', 'capacidade (kg)', 'capacidade kg', 'capacidade_estocagem_kg'],
+  hp: ['hp', 'forca do motor', 'força do motor', 'motor hp', 'forca_do_motor_hp'],
   possui: ['possui', 'armazenamento', 'equipamento'],
-  cpf_proprietario: ['cpf proprietario', 'cpf do proprietario', 'cpf proprietário'],
-  rgp: ['rgp']
+  cpf_proprietario: ['cpf proprietario', 'cpf do proprietario', 'cpf proprietário', 'cpf'],
+  rgp: ['rgp', 'numero_de_inscricao_no_rgp_ppp_ou_raep_mp']
 };
 
 const CAMPOS_IMPORTACAO = [
@@ -60,6 +61,7 @@ const CAMPOS_IMPORTACAO = [
   'tipo',
   'tipo_outro',
   'comprimento',
+  'numero_tripulantes',
   'capacidade',
   'hp',
   'possui',
@@ -73,7 +75,7 @@ const HEADER_MAP = {
     'nome da embarcação',
     'nome embarcacao',
     'nome embarcação',
-    'embarcacao',
+    'nome_da_embarcacao',
     'embarcação',
     'nome'
   ],
@@ -82,23 +84,26 @@ const HEADER_MAP = {
     'codigo embarcação',
     'código embarcacao',
     'código embarcação',
+    'codigo_embarcacao',
     'codigo',
     'código',
     'cod embarcacao',
-    'cod embarcação'
+    'cod embarcação',
+    'numero_da_embarcacao'
   ],
-  proprietario: ['proprietario', 'proprietário', 'dono', 'responsavel', 'responsável'],
-  apelido_propietario: ['apelido proprietario', 'apelido do proprietario', 'apelido proprietário', 'apelido', 'nick'],
-  municipio: ['municipio', 'município'],
+  proprietario: ['proprietario', 'proprietário', 'dono', 'responsavel', 'responsável', 'nome_do_dono'],
+  apelido_propietario: ['apelido proprietario', 'apelido do proprietario', 'apelido proprietário', 'apelido', 'nick', 'apelido_do_dono'],
+  municipio: ['municipio', 'município', 'local_1'],
   localidade: ['localidade', 'comunidade', 'bairro'],
-  tipo: ['tipo de embarcacao', 'tipo de embarcação', 'tipo embarcacao', 'tipo embarcação', 'embarcacao_tipo', 'embarcação_tipo', 'tipo'],
+  tipo: ['tipo de embarcacao', 'tipo de embarcação', 'tipo embarcacao', 'tipo embarcação', 'tipo_de_embarcacao', 'embarcacao_tipo', 'embarcação_tipo', 'tipo'],
   tipo_outro: ['tipo outro', 'outro tipo', 'tipo alternativo'],
-  comprimento: ['comprimento', 'comprimento m', 'comprimento (m)', 'comprimento metros'],
-  capacidade: ['capacidade', 'capacidade estocagem', 'capacidade de estocagem', 'capacidade (kg)', 'capacidade kg'],
-  hp: ['hp', 'forca do motor', 'força do motor', 'motor hp'],
+  comprimento: ['comprimento', 'comprimento m', 'comprimento (m)', 'comprimento metros', 'comprimento_m'],
+  numero_tripulantes: ['numero tripulantes', 'número tripulantes', 'tripulantes', 'qtde tripulantes', 'quantidade tripulantes', 'tripulacao_mp'],
+  capacidade: ['capacidade', 'capacidade estocagem', 'capacidade de estocagem', 'capacidade (kg)', 'capacidade kg', 'capacidade_estocagem_kg'],
+  hp: ['hp', 'forca do motor', 'força do motor', 'motor hp', 'forca_do_motor_hp'],
   possui: ['possui', 'armazenamento', 'equipamento'],
   cpf_proprietario: ['cpf proprietario', 'cpf do proprietario', 'cpf proprietário', 'cpf'],
-  rgp: ['rgp']
+  rgp: ['rgp', 'numero_de_inscricao_no_rgp_ppp_ou_raep_mp']
 };
 
 const normalizarHeader = (value) => {
@@ -148,7 +153,7 @@ const contarCelulasPreenchidas = (row) => valoresDaLinha(row).filter((value) => 
 
 const isMatchHeader = (normalizedHeader, normalizedAlias) => {
   if (!normalizedHeader || !normalizedAlias) return false;
-  return normalizedHeader === normalizedAlias || normalizedHeader.includes(normalizedAlias) || normalizedAlias.includes(normalizedHeader);
+  return normalizedHeader === normalizedAlias;
 };
 
 const mapearHeaderParaCampo = (header) => {
@@ -283,6 +288,102 @@ const normalizarPossuiBase = (value) => {
 export const normalizarTipo = (value) => normalizarTipoBase(value);
 export const normalizarPossui = (value) => normalizarPossuiBase(value);
 
+let municipiosIndexadosPromise = null;
+
+const extrairLocalidades = (localidades) => {
+  if (!Array.isArray(localidades)) return [];
+
+  return localidades
+    .map((item) => ({
+      localidade: normalizarTextoParaComparacao(item?.localidade),
+      localidadeCode: normalizarTextoParaComparacao(item?.localidadeCode)
+    }))
+    .filter((item) => item.localidade || item.localidadeCode);
+};
+
+const carregarMunicipiosIndexados = async () => {
+  if (!municipiosIndexadosPromise) {
+    municipiosIndexadosPromise = Municipio.findAll({
+      attributes: ['ID_municipio', 'municipio', 'municipioCode', 'localidades'],
+      raw: true
+    }).then((municipios) => municipios.map((municipio) => ({
+      ID_municipio: municipio.ID_municipio,
+      municipio: municipio.municipio,
+      municipioCode: municipio.municipioCode,
+      municipioNorm: normalizarTextoParaComparacao(municipio.municipio),
+      municipioCodeNorm: normalizarTextoParaComparacao(municipio.municipioCode),
+      localidades: extrairLocalidades(municipio.localidades)
+    })));
+  }
+
+  return municipiosIndexadosPromise;
+};
+
+const resolverMunicipioPlanilha = async (municipio, localidade) => {
+  const municipioNormalizado = normalizarTextoParaComparacao(municipio);
+  const localidadeNormalizada = normalizarTextoParaComparacao(localidade);
+
+  if (!municipioNormalizado && !localidadeNormalizada) {
+    return { ID_municipio: null, municipio: null, municipioCode: null, encontrado: false, metodo: null };
+  }
+
+  const municipios = await carregarMunicipiosIndexados();
+
+  const municipioAliases = {
+    acau: ['pitimbu'],
+    pitimbu: ['pitimbu']
+  };
+
+  const municipioCandidatos = Array.from(new Set([
+    municipioNormalizado,
+    ...(municipioAliases[municipioNormalizado] || [])
+  ].filter(Boolean)));
+
+  const porNome = municipios.find((item) => item.municipioNorm && municipioCandidatos.includes(item.municipioNorm));
+
+  if (porNome) {
+    return {
+      ID_municipio: porNome.ID_municipio,
+      municipio: porNome.municipio,
+      municipioCode: porNome.municipioCode,
+      encontrado: true,
+      metodo: 'nome'
+    };
+  }
+
+  const porCodigo = municipios.find((item) => item.municipioCodeNorm && municipioCandidatos.includes(item.municipioCodeNorm));
+  if (porCodigo) {
+    return {
+      ID_municipio: porCodigo.ID_municipio,
+      municipio: porCodigo.municipio,
+      municipioCode: porCodigo.municipioCode,
+      encontrado: true,
+      metodo: 'codigo'
+    };
+  }
+
+  if (localidadeNormalizada) {
+    const porLocalidade = municipios.find((item) => item.localidades.some((loc) => (loc.localidade && loc.localidade === localidadeNormalizada) || (loc.localidadeCode && loc.localidadeCode === localidadeNormalizada)));
+    if (porLocalidade) {
+      return {
+        ID_municipio: porLocalidade.ID_municipio,
+        municipio: porLocalidade.municipio,
+        municipioCode: porLocalidade.municipioCode,
+        encontrado: true,
+        metodo: 'localidade'
+      };
+    }
+  }
+
+  return {
+    ID_municipio: null,
+    municipio: limparValor(municipio),
+    municipioCode: null,
+    encontrado: false,
+    metodo: null
+  };
+};
+
 const extrairObjetoLinha = (linhaOriginal = {}) => {
   const linha = {};
 
@@ -296,6 +397,53 @@ const extrairObjetoLinha = (linhaOriginal = {}) => {
   return linha;
 };
 
+const lerPrimeiroValor = (...valores) => {
+  for (const valor of valores) {
+    const normalizado = limparValor(valor);
+    if (normalizado) return normalizado;
+  }
+
+  return null;
+};
+
+const ehValorPlaceholder = (value) => {
+  const comparacao = normalizarComparacao(value);
+  if (!comparacao) return true;
+
+  // Treat common placeholders as empty, but do NOT treat "nn" as placeholder —
+  // user wants "nn" preserved as a real name.
+  return /^(0+|sem|s\/n|sn|na|n\/a|\.|\-+)$/i.test(comparacao);
+};
+
+const pareceCodigoEmbarcacao = (value) => {
+  const comparacao = normalizarComparacao(value);
+  if (!comparacao || ehValorPlaceholder(comparacao)) return false;
+
+  const digitos = (comparacao.match(/[0-9]/g) || []).length;
+  const letras = (comparacao.match(/[a-z]/g) || []).length;
+
+  if (/^[0-9][0-9a-z\-\/]*$/.test(comparacao) && digitos >= 4) return true;
+  if (/^[a-z]?-?[0-9]{4,}[0-9a-z\-\/]*$/.test(comparacao) && digitos >= letras) return true;
+  return digitos >= 6 && digitos >= letras;
+};
+
+const normalizarNomeEmbarcacao = (nome) => {
+  const texto = limparValor(nome);
+  if (!texto || ehValorPlaceholder(texto)) return null;
+
+  if (pareceCodigoEmbarcacao(texto)) {
+    return null;
+  }
+
+  return texto;
+};
+
+const normalizarCodigoEmbarcacao = (codigo) => {
+  const texto = limparValor(codigo);
+  if (!texto || ehValorPlaceholder(texto)) return null;
+  return texto;
+};
+
 const montarMensagemAjuste = (campo, original, normalizado) => {
   const rotulos = {
     tipo: 'Tipo normalizado',
@@ -303,6 +451,8 @@ const montarMensagemAjuste = (campo, original, normalizado) => {
     comprimento: 'Comprimento ajustado',
     capacidade: 'Capacidade ajustada',
     hp: 'HP ajustado',
+    numero_tripulantes: 'Tripulantes ajustados',
+    ID_municipio: 'Município resolvido',
     codigo_embarcacao: 'Código limpo',
     nome_embarcacao: 'Nome limpo',
     proprietario: 'Proprietário limpo'
@@ -312,26 +462,71 @@ const montarMensagemAjuste = (campo, original, normalizado) => {
   return `${rotulo}: "${original}" → "${normalizado}"`;
 };
 
-const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
+const avaliarLinha = async (linhaOriginal = {}, indice = 0) => {
   const dadosOriginais = extrairObjetoLinha(linhaOriginal);
   const avisos = [];
   const erros = [];
   const ajustes = [];
 
-  const originalNome = limparValor(dadosOriginais.nome_embarcacao);
-  const originalCodigo = limparValor(dadosOriginais.codigo_embarcacao);
-  const originalProprietario = limparValor(dadosOriginais.proprietario);
-  const originalApelido = limparValor(dadosOriginais.apelido_propietario);
-  const originalMunicipio = limparValor(dadosOriginais.municipio);
-  const originalLocalidade = limparValor(dadosOriginais.localidade);
+  const originalNome = lerPrimeiroValor(
+    dadosOriginais.nome_embarcacao,
+    linhaOriginal?.nome_embarcacao,
+    linhaOriginal?.nome_da_embarcacao,
+    linhaOriginal?.nome,
+    linhaOriginal?.embarcacao
+  );
+  const originalCodigo = lerPrimeiroValor(
+    dadosOriginais.codigo_embarcacao,
+    linhaOriginal?.codigo_embarcacao,
+    linhaOriginal?.numero_da_embarcacao,
+    linhaOriginal?.codigo,
+    linhaOriginal?.código,
+    linhaOriginal?.cod_embarcacao
+  );
+  const originalProprietario = lerPrimeiroValor(
+    dadosOriginais.proprietario,
+    linhaOriginal?.proprietario,
+    linhaOriginal?.nome_do_dono,
+    linhaOriginal?.dono,
+    linhaOriginal?.responsavel,
+    linhaOriginal?.responsável
+  );
+  const originalApelido = lerPrimeiroValor(
+    dadosOriginais.apelido_propietario,
+    linhaOriginal?.apelido_propietario,
+    linhaOriginal?.apelido_do_dono,
+    linhaOriginal?.apelido
+  );
+  const originalMunicipio = lerPrimeiroValor(
+    dadosOriginais.municipio,
+    linhaOriginal?.municipio,
+    linhaOriginal?.local_1
+  );
+  const originalLocalidade = lerPrimeiroValor(
+    dadosOriginais.localidade,
+    linhaOriginal?.localidade,
+    linhaOriginal?.comunidade,
+    linhaOriginal?.bairro
+  );
   const originalTipo = limparValor(dadosOriginais.tipo);
   const originalTipoOutro = limparValor(dadosOriginais.tipo_outro);
   const originalPossui = limparValor(dadosOriginais.possui);
+  const originalNumeroTripulantes = limparValor(dadosOriginais.numero_tripulantes);
   const originalCpf = limparValor(dadosOriginais.cpf_proprietario);
   const originalRgp = limparValor(dadosOriginais.rgp);
 
-  const nome_embarcacao = originalNome || `Embarcação sem nome ${indice + 1}`;
-  if (!originalNome) {
+  const nomeNormalizado = normalizarNomeEmbarcacao(originalNome);
+  const codigo_embarcacao = normalizarCodigoEmbarcacao(originalCodigo);
+
+  // Preserve an explicitly empty original name as blank. If the original cell
+  // was empty, leave the name empty (don't generate a placeholder name).
+  const nome_embarcacao = originalNome === null
+    ? ''
+    : (nomeNormalizado || `Embarcação sem nome ${indice + 1}`);
+
+  if (originalNome === null) {
+    // keep blank, no automatic name generated
+  } else if (!nomeNormalizado) {
     avisos.push('Nome da embarcação gerado automaticamente');
     ajustes.push({ campo: 'nome_embarcacao', original: '', normalizado: nome_embarcacao, motivo: 'Gerado automaticamente' });
   } else if (nome_embarcacao !== String(dadosOriginais.nome_embarcacao || '').trim()) {
@@ -339,8 +534,10 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
     ajustes.push({ campo: 'nome_embarcacao', original: dadosOriginais.nome_embarcacao, normalizado: nome_embarcacao, motivo: 'Limpeza de espaços' });
   }
 
-  const codigo_embarcacao = originalCodigo;
-  if (codigo_embarcacao && codigo_embarcacao !== String(dadosOriginais.codigo_embarcacao || '').trim()) {
+  if (originalCodigo && !codigo_embarcacao) {
+    avisos.push(montarMensagemAjuste('codigo_embarcacao', originalCodigo, ''));
+    ajustes.push({ campo: 'codigo_embarcacao', original: originalCodigo, normalizado: null, motivo: 'Código inválido ignorado' });
+  } else if (codigo_embarcacao && codigo_embarcacao !== String(dadosOriginais.codigo_embarcacao || '').trim()) {
     avisos.push(montarMensagemAjuste('codigo_embarcacao', dadosOriginais.codigo_embarcacao, codigo_embarcacao));
     ajustes.push({ campo: 'codigo_embarcacao', original: dadosOriginais.codigo_embarcacao, normalizado: codigo_embarcacao, motivo: 'Limpeza de espaços' });
   }
@@ -368,6 +565,32 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
     avisos.push(montarMensagemAjuste('localidade', dadosOriginais.localidade, localidade));
     ajustes.push({ campo: 'localidade', original: dadosOriginais.localidade, normalizado: localidade, motivo: 'Limpeza de espaços' });
   }
+
+  const municipioResolvido = await resolverMunicipioPlanilha(originalMunicipio, originalLocalidade);
+  if (municipioResolvido.encontrado) {
+    avisos.push(`Município resolvido para ${municipioResolvido.municipio} (${municipioResolvido.metodo})`);
+    ajustes.push({
+      campo: 'ID_municipio',
+      original: originalMunicipio,
+      normalizado: municipioResolvido.ID_municipio,
+      motivo: `Resolvido por ${municipioResolvido.metodo}`
+    });
+    if (municipioResolvido.municipio && municipioResolvido.municipio !== originalMunicipio) {
+      avisos.push(montarMensagemAjuste('municipio', originalMunicipio, municipioResolvido.municipio));
+      ajustes.push({
+        campo: 'municipio',
+        original: originalMunicipio,
+        normalizado: municipioResolvido.municipio,
+        motivo: 'Normalizado pela tabela municipios'
+      });
+    }
+  } else if (originalMunicipio) {
+    avisos.push(`Município não localizado na base: ${originalMunicipio}`);
+  }
+
+  const municipioFinal = municipioResolvido.encontrado && municipioResolvido.municipio
+    ? municipioResolvido.municipio
+    : originalMunicipio;
 
   const tipoNormalizado = normalizarTipo(originalTipo);
   if (!originalTipo) {
@@ -425,6 +648,15 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
     ajustes.push({ campo: 'hp', original: dadosOriginais.hp, normalizado: hp, motivo: 'Número convertido' });
   }
 
+  const numero_tripulantes = parseNumeroDecimal(originalNumeroTripulantes);
+  if (limparValor(dadosOriginais.numero_tripulantes) !== null && numero_tripulantes === null) {
+    avisos.push(montarMensagemAjuste('numero_tripulantes', dadosOriginais.numero_tripulantes, ''));
+    ajustes.push({ campo: 'numero_tripulantes', original: dadosOriginais.numero_tripulantes, normalizado: null, motivo: 'Valor numérico inválido ignorado' });
+  } else if (numero_tripulantes !== null && String(dadosOriginais.numero_tripulantes).trim() !== String(numero_tripulantes).replace('.', ',')) {
+    avisos.push(montarMensagemAjuste('numero_tripulantes', dadosOriginais.numero_tripulantes, numero_tripulantes));
+    ajustes.push({ campo: 'numero_tripulantes', original: dadosOriginais.numero_tripulantes, normalizado: numero_tripulantes, motivo: 'Número convertido' });
+  }
+
   const cpf_proprietario = originalCpf;
   if (cpf_proprietario && cpf_proprietario !== String(dadosOriginais.cpf_proprietario || '').trim()) {
     avisos.push(montarMensagemAjuste('cpf_proprietario', dadosOriginais.cpf_proprietario, cpf_proprietario));
@@ -442,11 +674,13 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
     codigo_embarcacao,
     proprietario,
     apelido_propietario,
-    municipio,
+    municipio: municipioFinal,
     localidade,
+    ID_municipio: municipioResolvido.ID_municipio,
     tipo: tipoNormalizado,
     tipo_outro,
     comprimento,
+    numero_tripulantes,
     capacidade,
     hp,
     possui: possuiNormalizado,
@@ -465,6 +699,7 @@ const avaliarLinha = (linhaOriginal = {}, indice = 0) => {
       apelido_propietario: dadosOriginais.apelido_propietario ?? '',
       municipio: dadosOriginais.municipio ?? '',
       localidade: dadosOriginais.localidade ?? '',
+      numero_tripulantes: dadosOriginais.numero_tripulantes ?? '',
       tipo: dadosOriginais.tipo ?? '',
       tipo_outro: dadosOriginais.tipo_outro ?? '',
       comprimento: dadosOriginais.comprimento ?? '',
@@ -592,9 +827,9 @@ export const processarArquivoImportacao = async (buffer, originalname = '') => {
 
   const linhas = [];
 
-  registros.forEach((linha, indice) => {
-    linhas.push(avaliarLinha(linha, indice));
-  });
+  for (const [indice, linha] of registros.entries()) {
+    linhas.push(await avaliarLinha(linha, indice));
+  }
 
   const colunas = headers.filter(Boolean);
 
@@ -692,14 +927,18 @@ export const confirmarImportacaoEmbarcacoes = async (linhasSelecionadas = []) =>
       continue;
     }
 
-    const avaliacao = avaliarLinha(normalizado, index);
+    const avaliacao = await avaliarLinha(normalizado, index);
     if (avaliacao.status === 'invalid') {
       logs.push({ linha: index + 1, nivel: 'error', mensagem: avaliacao.erros.join('; ') });
       continue;
     }
 
     linhasValidas.push(avaliacao.normalizado);
-    logs.push({ linha: index + 1, nivel: 'info', mensagem: `Linha preparada para importação: ${avaliacao.normalizado.nome_embarcacao || 'sem nome'}` });
+    logs.push({
+      linha: index + 1,
+      nivel: 'info',
+      mensagem: `Linha preparada para importação: ${avaliacao.normalizado.nome_embarcacao || 'sem nome'}${avaliacao.normalizado.ID_municipio ? ` | municipioId=${avaliacao.normalizado.ID_municipio}` : ''}`
+    });
   }
 
   if (linhasValidas.length === 0) {
@@ -749,7 +988,7 @@ export const confirmarImportacaoEmbarcacoes = async (linhasSelecionadas = []) =>
     ? await Embarcacao.bulkCreate(payloadFinal, {
       ignoreDuplicates: true,
       validate: true,
-      fields: CAMPOS_IMPORTACAO
+      fields: [...CAMPOS_IMPORTACAO, 'ID_municipio']
     })
     : [];
 

@@ -400,6 +400,9 @@ export default function ImportarEmbarcacoesPage() {
                       <div><strong>Nome:</strong> {linha.original?.nome_embarcacao || '-'} → {linha.normalizado?.nome_embarcacao || '-'}</div>
                       <div><strong>Tipo:</strong> {linha.original?.tipo || '-'} → {linha.normalizado?.tipo || '-'}</div>
                       <div><strong>Código:</strong> {linha.original?.codigo_embarcacao || '-'} → {linha.normalizado?.codigo_embarcacao || '-'}</div>
+                      <div><strong>Município:</strong> {linha.original?.municipio || '-'} → {linha.normalizado?.municipio || '-'}</div>
+                      <div><strong>ID município:</strong> {linha.normalizado?.ID_municipio ?? '-'}</div>
+                      <div><strong>Tripulantes:</strong> {linha.original?.numero_tripulantes || '-'} → {linha.normalizado?.numero_tripulantes ?? '-'}</div>
                       <div><strong>Possui:</strong> {linha.original?.possui || '-'} → {linha.normalizado?.possui || '-'}</div>
                     </div>
 
