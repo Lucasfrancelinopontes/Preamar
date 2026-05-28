@@ -65,6 +65,7 @@ const createArtePescaItem = () => ({
     arte: "",
     nome: "",
     tamanho: "",
+    quantidade: "",
     unidade: "m"
 });
 const normalizeArtesPesca = (artes) => {
@@ -76,6 +77,7 @@ const normalizeArtesPesca = (artes) => {
         arte: arte?.arte ? String(arte.arte) : "",
         nome: arte?.nome ? String(arte.nome) : "",
         tamanho: arte?.tamanho != null ? String(arte.tamanho) : "",
+        quantidade: arte?.quantidade != null ? String(arte.quantidade) : "",
         unidade: arte?.unidade ? String(arte.unidade) : "m"
     }));
     return itens.length > 0 ? itens : [createArtePescaItem()];
@@ -898,6 +900,7 @@ function DesembarqueContent() {
                         arte: arteSelecionada,
                         nome: arteSelecionada === "outras" ? (nomeOutro || null) : null,
                         tamanho: toNumberOrNull(item?.tamanho),
+                        quantidade: toNumberOrNull(item?.quantidade),
                         unidade: item?.unidade || "m"
                     };
                 })
@@ -1080,7 +1083,8 @@ function DesembarqueContent() {
                 const label = arteSelecionada?.label || String(item.arte);
                 const nomeOutro = possuiValor(item?.nome) ? ` (${item.nome})` : "";
                 const tamanho = possuiValor(item?.tamanho) ? ` - ${item.tamanho} m` : "";
-                return `${label}${nomeOutro}${tamanho}`;
+                const quantidade = possuiValor(item?.quantidade) ? ` - Qtd: ${item.quantidade}` : "";
+                return `${label}${nomeOutro}${tamanho}${quantidade}`;
             });
         return textos.length > 0 ? textos.join("; ") : "-";
     };
@@ -1492,7 +1496,7 @@ function DesembarqueContent() {
 
                                         <div className="space-y-3">
                                             {(Array.isArray(formData.artesPesca) ? formData.artesPesca : []).map((item, index) => (
-                                                <div key={item.ID ?? index} className="grid grid-cols-1 gap-4 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-[minmax(0,1fr)_160px_auto]">
+                                                <div key={item.ID ?? index} className="grid grid-cols-1 gap-4 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-[minmax(0,1fr)_140px_140px_auto]">
                                                     <div>
                                                         <label className="mb-1.5 block text-sm font-semibold text-black">Arte Utilizada</label>
                                                         <select
@@ -1527,6 +1531,20 @@ function DesembarqueContent() {
                                                             ...prev,
                                                             artesPesca: prev.artesPesca.map((arteItem, arteIndex) => (
                                                                 arteIndex === index ? { ...arteItem, tamanho: e.target.value } : arteItem
+                                                            ))
+                                                        }))}
+                                                    />
+
+                                                    <InputGroup
+                                                        label="Quantidade"
+                                                        name={`quantidadeArte-${index}`}
+                                                        type="number"
+                                                        step="1"
+                                                        value={item.quantidade}
+                                                        onChange={(e) => setFormData((prev) => ({
+                                                            ...prev,
+                                                            artesPesca: prev.artesPesca.map((arteItem, arteIndex) => (
+                                                                arteIndex === index ? { ...arteItem, quantidade: e.target.value } : arteItem
                                                             ))
                                                         }))}
                                                     />

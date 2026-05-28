@@ -24,6 +24,12 @@ const normalizeTextOrNull = (value) => {
   return str ? str : null;
 };
 
+const normalizeIntOrNull = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 const buildPescadorPayload = (pescador) => {
   if (!pescador) return null;
   return {
@@ -418,6 +424,7 @@ export const criarDesembarque = async (req, res) => {
             arte: arteValue,
             ...(includeArteNome ? { nome: nomeValue } : {}),
             tamanho: a.tamanho != null && String(a.tamanho).trim() ? String(a.tamanho).trim() : null,
+            quantidade: normalizeIntOrNull(a.quantidade),
             unidade: a.unidade != null && String(a.unidade).trim() ? String(a.unidade).trim() : null
           };
         });
@@ -1004,6 +1011,7 @@ export const atualizarDesembarque = async (req, res) => {
           arte: arteValue,
           ...(includeArteNome ? { nome: nomeValue } : {}),
           tamanho: arte.tamanho != null && String(arte.tamanho).trim() ? String(arte.tamanho).trim() : null,
+          quantidade: normalizeIntOrNull(arte.quantidade),
           unidade: arte.unidade != null && String(arte.unidade).trim() ? String(arte.unidade).trim() : null
         };
 

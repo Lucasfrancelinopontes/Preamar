@@ -34,6 +34,10 @@ export const DesembarqueArte = sequelize.define('DesembarqueArte', {
   tamanho: {
     type: DataTypes.STRING(50)
   },
+  quantidade: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
   unidade: {
     type: DataTypes.ENUM('m', 'No'),
     comment: 'metros ou número'
