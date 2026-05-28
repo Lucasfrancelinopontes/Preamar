@@ -5,6 +5,7 @@ import {
   Embarcacao, 
   Especie, 
   Petrecho, 
+  Municipio,
   Desembarque,
   DesembarqueArte,
   Captura,
@@ -14,6 +15,7 @@ import {
   sequelize
 } from './models/index.js';
 import especiesData from './api/especies.json' with { type: 'json' };
+import municipiosData from './api/municipios.json' with { type: 'json' };
 
 // Definir associações antes de sincronizar
 defineAssociations();
@@ -25,10 +27,15 @@ const syncDatabase = async (options = {}) => {
     
     console.log('Sincronizando modelos com o banco de dados...');
     
+    if (options.alter) {
+      console.log('⚠️  Modo --alter desativado neste projeto para evitar conflitos de constraint no banco.');
+      console.log('   A sincronização seguirá apenas criando tabelas/modelos ausentes.');
+    }
+    
     // Opções de sincronização
     // { force: true } - dropa e recria todas as tabelas
     // { alter: true } - altera tabelas existentes para corresponder aos modelos
-    await sequelize.sync(options);
+    await sequelize.sync({ force: options.force });
     
     console.log('✅ Banco de dados sincronizado com sucesso!');
     
@@ -37,7 +44,10 @@ const syncDatabase = async (options = {}) => {
       console.log('Populando tabelas...');
       await seedEspecies();
       await seedPetrechos();
+      await seedMunicipios();
       await seedAdminUsuario();
+    } else {
+      await seedMunicipios();
     }
     
   } catch (error) {
@@ -94,6 +104,28 @@ const seedPetrechos = async () => {
   }
 };
 
+const seedMunicipios = async () => {
+  try {
+    const totalMunicipios = await Municipio.count();
+
+    if (totalMunicipios > 0) {
+      console.log('⏭️  Municipios já existem no banco, pulando seed');
+      return;
+    }
+
+    const municipios = municipiosData.map((item) => ({
+      municipio: item.municipio,
+      municipioCode: item.municipioCode,
+      localidades: item.localidades || []
+    }));
+
+    await Municipio.bulkCreate(municipios, { ignoreDuplicates: true });
+    console.log(`✅ ${municipios.length} municipios inseridos no banco de dados`);
+  } catch (error) {
+    console.error('❌ Erro ao popular municipios:', error);
+  }
+};
+
 // Executar sincronização se chamado diretamente
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
@@ -139,4 +171,4 @@ const seedAdminUsuario = async () => {
   }
 };
 
-export { syncDatabase, seedEspecies, seedPetrechos, seedAdminUsuario };
+export { syncDatabase, seedEspecies, seedPetrechos, seedMunicipios, seedAdminUsuario };

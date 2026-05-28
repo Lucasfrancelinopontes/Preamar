@@ -1,9 +1,22 @@
-import municipios from './municipios.json' with { type: 'json' };
-import { Especie } from '../models/index.js';
+import { Especie, Municipio } from '../models/index.js';
 
 export const gmun = async (req,res) => {
-    console.log(municipios);
-    res.json(municipios);
+    try {
+        const municipios = await Municipio.findAll({
+            order: [['municipio', 'ASC']]
+        });
+
+        res.json(municipios.map((municipio) => ({
+            municipio: municipio.municipio,
+            municipioCode: municipio.municipioCode,
+            localidades: Array.isArray(municipio.localidades) ? municipio.localidades : []
+        })));
+    } catch (error) {
+        console.error('Erro ao buscar municipios no banco:', error);
+        res.status(500).json({
+            message: 'Erro ao buscar municipios'
+        });
+    }
 }
 
 export const gesp = async (req,res) => {

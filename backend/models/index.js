@@ -2,6 +2,7 @@ import { Pescador } from './Pescador.js';
 import { Embarcacao } from './Embarcacao.js';
 import { Especie } from './Especie.js';
 import { Petrecho } from './Petrecho.js';
+import { Municipio } from './Municipio.js';
 import { Desembarque } from './Desembarque.js';
 import { DesembarqueArte } from './DesembarqueArte.js';
 import { Captura } from './Captura.js';
@@ -126,6 +127,7 @@ export {
   Embarcacao,
   Especie,
   Petrecho,
+  Municipio,
   Desembarque,
   DesembarqueArte,
   Captura,
