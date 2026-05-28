@@ -10,6 +10,9 @@ import {
   confirmarImportacaoEmbarcacoes as confirmarImportacaoArquivo
 } from '../utils/embarcacaoImportUtils.js';
 
+const TIPOS_PERMITIDOS = new Set(TIPOS_VALIDOS);
+const POSSUI_PERMITIDOS = new Set(POSSUI_VALIDOS);
+
 const normalizarTexto = (value) => {
   if (value === null || value === undefined) return null;
   const texto = String(value).trim();
