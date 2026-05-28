@@ -7,6 +7,7 @@ export const gmun = async (req,res) => {
         });
 
         res.json(municipios.map((municipio) => ({
+            ID_municipio: municipio.ID_municipio,
             municipio: municipio.municipio,
             municipioCode: municipio.municipioCode,
             localidades: Array.isArray(municipio.localidades) ? municipio.localidades : []

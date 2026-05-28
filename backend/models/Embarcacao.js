@@ -28,9 +28,22 @@ export const Embarcacao = sequelize.define('Embarcacao', {
   rgp: {
     type: DataTypes.STRING(50)
   },
+  ID_municipio: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'municipios',
+      key: 'ID_municipio'
+    }
+  },
   comprimento: {
     type: DataTypes.DECIMAL(5, 2),
     comment: 'Comprimento em metros'
+  },
+  numero_tripulantes: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'Número de tripulantes da embarcação'
   },
   capacidade: {
     type: DataTypes.DECIMAL(8, 2),

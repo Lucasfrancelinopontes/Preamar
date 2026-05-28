@@ -32,6 +32,16 @@ export const defineAssociations = () => {
     as: 'desembarques'
   });
 
+  // Embarcacao pertence a Municipio (local-1)
+  Embarcacao.belongsTo(Municipio, {
+    foreignKey: 'ID_municipio',
+    as: 'municipioInfo'
+  });
+  Municipio.hasMany(Embarcacao, {
+    foreignKey: 'ID_municipio',
+    as: 'embarcacoes'
+  });
+
   // Desembarque pertence a Usuario (autor do envio)
   Desembarque.belongsTo(Usuario, {
     foreignKey: 'ID_usuario',

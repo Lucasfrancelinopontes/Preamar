@@ -426,6 +426,7 @@ function DesembarqueContent() {
 
         const carregarEmbarcacoesPorMunicipio = async () => {
             const municipio = (formData.municipio || "").trim();
+            const municipioResolvido = municipios.find((m) => m.municipio === municipio) || null;
 
             setEmbarcacaoSelecionadaId("");
             setErroEmbarcacoes("");
@@ -437,7 +438,17 @@ function DesembarqueContent() {
 
             setCarregandoEmbarcacoes(true);
             try {
-                const response = await api.listarEmbarcacoes({ municipio, limit: 200 });
+                const filtros = municipioResolvido && municipioResolvido.ID_municipio
+                    ? { municipioId: municipioResolvido.ID_municipio, limit: 200 }
+                    : { municipio, limit: 200 };
+
+                console.info("[desembarque] carregando embarcacoes", {
+                    municipioDigitado: municipio,
+                    municipioResolvido,
+                    filtros
+                });
+
+                const response = await api.listarEmbarcacoes(filtros);
                 setEmbarcacoesDoMunicipio(mapToArray(response));
             } catch (error) {
                 setEmbarcacoesDoMunicipio([]);

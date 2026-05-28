@@ -49,21 +49,59 @@ export const listarEmbarcacoes = async (req, res) => {
       codigo,
       tipo,
       municipio,
+      municipioId,
       page = 1, 
       limit = 50 
     } = req.query;
+
+    console.info('[listarEmbarcacoes] query recebida', {
+      nome,
+      codigo,
+      tipo,
+      municipio,
+      municipioId,
+      page,
+      limit
+    });
 
     const where = {};
     if (nome) where.nome_embarcacao = { [Op.like]: `%${nome}%` };
     if (codigo) where.codigo_embarcacao = codigo;
     if (tipo) where.tipo = tipo;
-    if (municipio) where.municipio = municipio;
+    // Filtrar por ID do município quando fornecido (prioriza municipioId)
+    const mid = municipioId || (municipio && /^\d+$/.test(String(municipio).trim()) ? String(municipio).trim() : null);
+    console.info('[listarEmbarcacoes] filtro municipio resolvido', {
+      municipioIdRecebido: municipioId || null,
+      municipioTextoRecebido: municipio || null,
+      municipioIdUsado: mid ? Number(mid) : null
+    });
+
+    if (mid) {
+      where.ID_municipio = Number(mid);
+    } else if (municipio) {
+      // fallback: filtrar pelo texto do município (antigo comportamento)
+      where.municipio = municipio;
+    }
+
+    console.info('[listarEmbarcacoes] where montado', where);
 
     const { count, rows } = await Embarcacao.findAndCountAll({
       where,
       limit: parseInt(limit),
       offset: (page - 1) * limit,
       order: [['nome_embarcacao', 'ASC']]
+    });
+
+    console.info('[listarEmbarcacoes] resultado da busca', {
+      total: count,
+      retornadas: rows.length,
+      ids: rows.slice(0, 10).map((row) => ({
+        ID_embarcacao: row.ID_embarcacao,
+        nome_embarcacao: row.nome_embarcacao,
+        ID_municipio: row.ID_municipio,
+        municipio: row.municipio,
+        localidade: row.localidade
+      }))
     });
 
     res.json({
@@ -77,6 +115,7 @@ export const listarEmbarcacoes = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Erro ao listar embarcacoes:', error);
     res.status(500).json({
       success: false,
       message: 'Erro ao listar embarcações',
