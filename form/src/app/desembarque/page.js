@@ -1329,7 +1329,7 @@ function DesembarqueContent() {
                                                     <InputGroup
                                                         label="Tamanho (m)"
                                                         name={`tamanhoArte-${index}`}
-                                                        type="number"
+                                                        type="text"
                                                         value={item.tamanho}
                                                         onChange={(e) => setFormData((prev) => ({
                                                             ...prev,
@@ -1451,13 +1451,6 @@ function DesembarqueContent() {
                                     <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
                                         <div className="mb-4 flex items-center justify-between gap-3">
                                             <h3 className="text-base font-bold text-black">Registro Geral das Especies</h3>
-                                            <button
-                                                type="button"
-                                                onClick={adicionarCaptura}
-                                                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                                            >
-                                                + Adicionar especie
-                                            </button>
                                         </div>
 
                                         <div className="space-y-4">
@@ -1560,18 +1553,21 @@ function DesembarqueContent() {
                                                 </div>
                                             ))}
                                         </div>
+
+                                        <div className="mt-4 flex justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={adicionarCaptura}
+                                                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                                            >
+                                                + Adicionar especie
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                                         <div className="mb-2 flex items-center justify-between gap-3">
                                             <h3 className="text-base font-bold text-black">Biometria (Dados Individuais)</h3>
-                                            <button
-                                                type="button"
-                                                onClick={adicionarIndividuo}
-                                                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                                            >
-                                                + Adicionar individuo
-                                            </button>
                                         </div>
                                         <p className="mb-4 text-sm text-black">Adicione peso e comprimento de peixes individuais, se houver.</p>
 
@@ -1640,6 +1636,16 @@ function DesembarqueContent() {
                                                     </div>
                                                 </div>
                                             ))}
+                                        </div>
+
+                                        <div className="mt-4 flex justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={adicionarIndividuo}
+                                                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                                            >
+                                                + Adicionar individuo
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
