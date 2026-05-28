@@ -242,6 +242,12 @@ const mapToArray = (response) => {
     return [];
 };
 
+const normalizeBuscaTexto = (value) =>
+    String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
 const extractDestinoApelido = (raw, destino) => {
     if (!raw) return "";
     const texto = String(raw).trim();
@@ -367,9 +373,14 @@ function DesembarqueContent() {
     const [municipios, setMunicipios] = useState([]);
     const [especies, setEspecies] = useState([]);
     const [embarcacoesDoMunicipio, setEmbarcacoesDoMunicipio] = useState([]);
+    const [embarcacoesTodosMunicipios, setEmbarcacoesTodosMunicipios] = useState([]);
     const [embarcacaoSelecionadaId, setEmbarcacaoSelecionadaId] = useState("");
+    const [usarEmbarcacaoOutroMunicipio, setUsarEmbarcacaoOutroMunicipio] = useState(false);
+    const [filtroEmbarcacaoOutroMunicipio, setFiltroEmbarcacaoOutroMunicipio] = useState("");
     const [carregandoEmbarcacoes, setCarregandoEmbarcacoes] = useState(false);
+    const [carregandoEmbarcacoesOutroMunicipio, setCarregandoEmbarcacoesOutroMunicipio] = useState(false);
     const [erroEmbarcacoes, setErroEmbarcacoes] = useState("");
+    const [erroEmbarcacoesOutroMunicipio, setErroEmbarcacoesOutroMunicipio] = useState("");
     const [carregandoInicial, setCarregandoInicial] = useState(true);
     const [carregandoEdicao, setCarregandoEdicao] = useState(false);
     const [erroInicial, setErroInicial] = useState("");
@@ -414,6 +425,42 @@ function DesembarqueContent() {
 
         carregarEdicao();
     }, [editId]);
+
+    useEffect(() => {
+        if (editId || !usarEmbarcacaoOutroMunicipio) return;
+
+        if (embarcacoesTodosMunicipios.length > 0) return;
+
+        const carregarEmbarcacoesDeTodosMunicipios = async () => {
+            setCarregandoEmbarcacoesOutroMunicipio(true);
+            setErroEmbarcacoesOutroMunicipio("");
+
+            try {
+                const limite = 200;
+                let pagina = 1;
+                let totalPaginas = 1;
+                const embarcacoesCarregadas = [];
+
+                do {
+                    const response = await api.listarEmbarcacoes({ page: pagina, limit: limite });
+                    const registros = mapToArray(response);
+                    embarcacoesCarregadas.push(...registros);
+
+                    totalPaginas = Number(response?.pagination?.pages || pagina);
+                    pagina += 1;
+                } while (pagina <= totalPaginas);
+
+                setEmbarcacoesTodosMunicipios(embarcacoesCarregadas);
+            } catch (error) {
+                setEmbarcacoesTodosMunicipios([]);
+                setErroEmbarcacoesOutroMunicipio(error?.message || "Nao foi possivel carregar embarcacoes de outros municipios");
+            } finally {
+                setCarregandoEmbarcacoesOutroMunicipio(false);
+            }
+        };
+
+        carregarEmbarcacoesDeTodosMunicipios();
+    }, [editId, embarcacoesTodosMunicipios.length, usarEmbarcacaoOutroMunicipio]);
 
     useEffect(() => {
         if (editId) {
@@ -610,6 +657,75 @@ function DesembarqueContent() {
             cpfProprietario: prev.cpfProprietario || embarcacao.cpf_proprietario || "",
             naturalidadeProprietario: prev.naturalidadeProprietario || embarcacao.localidade || ""
         }));
+    };
+
+    const aplicarEmbarcacaoSelecionada = (embarcacao) => {
+        if (!embarcacao) return;
+
+        setFormData((prev) => ({
+            ...prev,
+            ID_embarcacao: embarcacao.ID_embarcacao || prev.ID_embarcacao || null,
+            nomeEmbarcacao: embarcacao.nome_embarcacao || "",
+            codigoEmbarcacao: embarcacao.codigo_embarcacao || "",
+            tipoEmbarcacao: embarcacao.tipo || "",
+            tipoEmbarcacaoOutro: embarcacao.tipo_outro || "",
+            comprimento: embarcacao.comprimento != null ? String(embarcacao.comprimento) : "",
+            capacidadeEstocagem: embarcacao.capacidade != null ? String(embarcacao.capacidade) : "",
+            forcaMotor: embarcacao.hp != null ? String(embarcacao.hp) : "",
+            conservacao: normalizeConservacaoValue(embarcacao.possui),
+            municipioEmbarcacao: embarcacao.municipio || prev.municipioEmbarcacao || prev.municipio || "",
+            nomeProprietario: prev.nomeProprietario || embarcacao.proprietario || "",
+            apelidoProprietario: prev.apelidoProprietario || embarcacao.apelido_propietario || "",
+            cpfProprietario: prev.cpfProprietario || embarcacao.cpf_proprietario || "",
+            naturalidadeProprietario: prev.naturalidadeProprietario || embarcacao.localidade || ""
+        }));
+    };
+
+    const embarcacoesFiltradasOutroMunicipio = useMemo(() => {
+        const termo = normalizeBuscaTexto(filtroEmbarcacaoOutroMunicipio);
+        if (!termo) return embarcacoesTodosMunicipios;
+
+        return embarcacoesTodosMunicipios.filter((embarcacao) => {
+            const campos = [
+                embarcacao.nome_embarcacao,
+                embarcacao.codigo_embarcacao,
+                embarcacao.proprietario,
+                embarcacao.municipio,
+                embarcacao.localidade,
+                embarcacao.tipo
+            ]
+                .map(normalizeBuscaTexto)
+                .join(" ");
+
+            return campos.includes(termo);
+        });
+    }, [embarcacoesTodosMunicipios, filtroEmbarcacaoOutroMunicipio]);
+
+    const handleSelecionarEmbarcacaoOutroMunicipio = (e) => {
+        const selectedId = e.target.value;
+        setEmbarcacaoSelecionadaId(selectedId);
+
+        if (!selectedId) return;
+
+        const embarcacao = embarcacoesFiltradasOutroMunicipio.find(
+            (item) => String(item.ID_embarcacao) === String(selectedId)
+        );
+
+        aplicarEmbarcacaoSelecionada(embarcacao);
+    };
+
+    const handleToggleEmbarcacaoOutroMunicipio = (e) => {
+        const checked = e.target.checked;
+        setUsarEmbarcacaoOutroMunicipio(checked);
+        setEmbarcacaoSelecionadaId("");
+        setFiltroEmbarcacaoOutroMunicipio("");
+        setErroEmbarcacoesOutroMunicipio("");
+
+        if (!checked) return;
+
+        if (embarcacoesTodosMunicipios.length > 0) return;
+
+        setCarregandoEmbarcacoesOutroMunicipio(true);
     };
 
     const handleCapturaChange = (index, field, value) => {
@@ -1152,35 +1268,100 @@ function DesembarqueContent() {
                                         <>
                                             <h3 className="mb-4 text-lg font-semibold text-black">Pre-selecao de Embarcacao</h3>
                                             <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                                <label className="mb-1.5 block text-sm font-semibold text-black">
-                                                    Selecionar embarcacao ja cadastrada
-                                                </label>
-                                                <select
-                                                    value={embarcacaoSelecionadaId}
-                                                    onChange={handleSelecionarEmbarcacao}
-                                                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
-                                                    disabled={!formData.municipio || carregandoEmbarcacoes}
-                                                >
-                                                    <option value="">
-                                                        {!formData.municipio
-                                                            ? "Selecione um municipio na etapa 1"
-                                                            : carregandoEmbarcacoes
-                                                                ? "Carregando embarcacoes..."
-                                                                : "Selecione uma embarcacao (opcional)"}
-                                                    </option>
-                                                    {embarcacoesDoMunicipio.map((embarcacao) => (
-                                                        <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
-                                                            {embarcacao.nome_embarcacao || "Sem nome"}
-                                                            {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
-                                                            {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {erroEmbarcacoes && (
-                                                    <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoes}</p>
-                                                )}
-                                                {!carregandoEmbarcacoes && formData.municipio && embarcacoesDoMunicipio.length === 0 && !erroEmbarcacoes && (
-                                                    <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para este municipio.</p>
+                                                <div className="mb-4 flex items-center gap-2">
+                                                    <input
+                                                        id="usarEmbarcacaoOutroMunicipio"
+                                                        type="checkbox"
+                                                        checked={usarEmbarcacaoOutroMunicipio}
+                                                        onChange={handleToggleEmbarcacaoOutroMunicipio}
+                                                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                                                    />
+                                                    <label htmlFor="usarEmbarcacaoOutroMunicipio" className="text-sm font-semibold text-black">
+                                                        Selecionar embarcacao de outro municipio
+                                                    </label>
+                                                </div>
+
+                                                {!usarEmbarcacaoOutroMunicipio ? (
+                                                    <>
+                                                        <label className="mb-1.5 block text-sm font-semibold text-black">
+                                                            Selecionar embarcacao ja cadastrada
+                                                        </label>
+                                                        <select
+                                                            value={embarcacaoSelecionadaId}
+                                                            onChange={handleSelecionarEmbarcacao}
+                                                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
+                                                            disabled={!formData.municipio || carregandoEmbarcacoes}
+                                                        >
+                                                            <option value="">
+                                                                {!formData.municipio
+                                                                    ? "Selecione um municipio na etapa 1"
+                                                                    : carregandoEmbarcacoes
+                                                                        ? "Carregando embarcacoes..."
+                                                                        : "Selecione uma embarcacao (opcional)"}
+                                                            </option>
+                                                            {embarcacoesDoMunicipio.map((embarcacao) => (
+                                                                <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
+                                                                    {embarcacao.nome_embarcacao || "Sem nome"}
+                                                                    {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
+                                                                    {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        {erroEmbarcacoes && (
+                                                            <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoes}</p>
+                                                        )}
+                                                        {!carregandoEmbarcacoes && formData.municipio && embarcacoesDoMunicipio.length === 0 && !erroEmbarcacoes && (
+                                                            <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para este municipio.</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <label className="mb-1.5 block text-sm font-semibold text-black">
+                                                            Buscar embarcacao em outros municipios
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={filtroEmbarcacaoOutroMunicipio}
+                                                            onChange={(e) => setFiltroEmbarcacaoOutroMunicipio(e.target.value)}
+                                                            placeholder="Digite nome, codigo, proprietario ou municipio..."
+                                                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600"
+                                                        />
+
+                                                        <div className="mt-3">
+                                                            <label className="mb-1.5 block text-sm font-semibold text-black">
+                                                                Selecione a embarcacao
+                                                            </label>
+                                                            <select
+                                                                value={embarcacaoSelecionadaId}
+                                                                onChange={handleSelecionarEmbarcacaoOutroMunicipio}
+                                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
+                                                                disabled={carregandoEmbarcacoesOutroMunicipio}
+                                                            >
+                                                                <option value="">
+                                                                    {carregandoEmbarcacoesOutroMunicipio
+                                                                        ? "Carregando embarcacoes..."
+                                                                        : embarcacoesFiltradasOutroMunicipio.length > 0
+                                                                            ? "Selecione uma embarcacao (opcional)"
+                                                                            : "Nenhuma embarcacao encontrada"}
+                                                                </option>
+                                                                {embarcacoesFiltradasOutroMunicipio.map((embarcacao) => (
+                                                                    <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
+                                                                        {embarcacao.nome_embarcacao || "Sem nome"}
+                                                                        {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
+                                                                        {embarcacao.municipio ? ` - ${embarcacao.municipio}` : ""}
+                                                                        {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+
+                                                        {erroEmbarcacoesOutroMunicipio && (
+                                                            <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoesOutroMunicipio}</p>
+                                                        )}
+                                                        {!carregandoEmbarcacoesOutroMunicipio && embarcacoesTodosMunicipios.length === 0 && !erroEmbarcacoesOutroMunicipio && (
+                                                            <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao carregada.</p>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         </>
