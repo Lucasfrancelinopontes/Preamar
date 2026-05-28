@@ -51,6 +51,7 @@ export default function EmbarcacoesPage() {
     const [modalAberto, setModalAberto] = useState(false)
     const [embarcacaoEditando, setEmbarcacaoEditando] = useState(null)
     const [busca, setBusca] = useState('')
+    const [municipioFiltro, setMunicipioFiltro] = useState('')
     const [paginaAtual, setPaginaAtual] = useState(1)
 
     const [formData, setFormData] = useState({
@@ -267,12 +268,22 @@ export default function EmbarcacoesPage() {
         }
     }
 
-    const embarcacoesFiltradas = embarcacoes.filter(embarcacao =>
-        embarcacao.nome_embarcacao?.toLowerCase().includes(busca.toLowerCase()) ||
-        embarcacao.codigo_embarcacao?.toLowerCase().includes(busca.toLowerCase()) ||
-        embarcacao.proprietario?.toLowerCase().includes(busca.toLowerCase()) ||
-        embarcacao.tipo?.toLowerCase().includes(busca.toLowerCase())
-    )
+    const embarcacoesFiltradas = embarcacoes.filter((embarcacao) => {
+        const textoBusca = busca.toLowerCase();
+        const municipioDaEmbarcacao = (embarcacao.municipio || '').toLowerCase();
+        const municipioSelecionadoId = String(municipioFiltro).trim();
+
+        const bateBusca =
+            embarcacao.nome_embarcacao?.toLowerCase().includes(textoBusca) ||
+            embarcacao.codigo_embarcacao?.toLowerCase().includes(textoBusca) ||
+            embarcacao.proprietario?.toLowerCase().includes(textoBusca) ||
+            embarcacao.tipo?.toLowerCase().includes(textoBusca) ||
+            municipioDaEmbarcacao.includes(textoBusca);
+
+        const bateMunicipio = !municipioSelecionadoId || String(embarcacao.ID_municipio || '').trim() === municipioSelecionadoId;
+
+        return bateBusca && bateMunicipio;
+    })
     const mostrarPaginacao = embarcacoesFiltradas.length > ITENS_POR_PAGINA
     const totalPaginas = Math.max(1, Math.ceil(embarcacoesFiltradas.length / ITENS_POR_PAGINA))
     const paginaSegura = Math.min(paginaAtual, totalPaginas)
@@ -281,7 +292,7 @@ export default function EmbarcacoesPage() {
 
     useEffect(() => {
         setPaginaAtual(1)
-    }, [busca])
+    }, [busca, municipioFiltro])
 
     useEffect(() => {
         setPaginaAtual((current) => Math.min(current, totalPaginas))
@@ -334,14 +345,26 @@ export default function EmbarcacoesPage() {
                 )}
 
                 {/* Busca */}
-                <div className="mb-6">
+                <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center">
                     <input
                         type="text"
                         value={busca}
                         onChange={(e) => setBusca(e.target.value)}
-                        placeholder="Buscar embarcações por nome, código, proprietário ou tipo..."
+                        placeholder="Buscar embarcações por nome, código, proprietário, tipo ou município..."
                         className="w-full max-w-md p-3 border rounded-lg text-black placeholder:text-gray-500"
                     />
+                    <select
+                        value={municipioFiltro}
+                        onChange={(e) => setMunicipioFiltro(e.target.value)}
+                        className="w-full max-w-md p-3 border rounded-lg text-black"
+                    >
+                        <option value="">Todos os municípios</option>
+                        {municipios.map((municipio) => (
+                            <option key={municipio.ID_municipio || municipio.municipio} value={municipio.ID_municipio || municipio.municipio}>
+                                {municipio.municipio}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Lista de Embarcações */}

@@ -1722,7 +1722,7 @@ function DesembarqueContent() {
                                                         <InputGroup
                                                             label="Peso Total (kg)"
                                                             name={`pesoTotalEspecie-${index}`}
-                                                            type="number"
+                                                            type="float"
                                                             value={captura.pesoTotalEspecie}
                                                             onChange={(e) => handleCapturaChange(index, "pesoTotalEspecie", e.target.value)}
                                                         />
@@ -1730,7 +1730,7 @@ function DesembarqueContent() {
                                                         <InputGroup
                                                             label="Preco/kg (R$)"
                                                             name={`precoKg-${index}`}
-                                                            type="number"
+                                                            type="float"
                                                             value={captura.precoKg}
                                                             onChange={(e) => handleCapturaChange(index, "precoKg", e.target.value)}
                                                         />
@@ -1823,7 +1823,7 @@ function DesembarqueContent() {
                                                         <InputGroup
                                                             label="N do individuo"
                                                             name={`numeroIndividuo-${index}`}
-                                                            type="number"
+                                                            type="float"
                                                             value={individuo.numeroIndividuo}
                                                             onChange={(e) => handleIndividuoChange(index, "numeroIndividuo", e.target.value)}
                                                         />
@@ -1831,7 +1831,7 @@ function DesembarqueContent() {
                                                         <InputGroup
                                                             label="Comprimento (cm)"
                                                             name={`comprimentoIndividuo-${index}`}
-                                                            type="number"
+                                                            type="float"
                                                             value={individuo.comprimentoIndividuo}
                                                             onChange={(e) => handleIndividuoChange(index, "comprimentoIndividuo", e.target.value)}
                                                         />
@@ -1839,7 +1839,7 @@ function DesembarqueContent() {
                                                         <InputGroup
                                                             label="Peso (g)"
                                                             name={`pesoIndividuo-${index}`}
-                                                            type="number"
+                                                            type="float"
                                                             value={individuo.pesoIndividuo}
                                                             onChange={(e) => handleIndividuoChange(index, "pesoIndividuo", e.target.value)}
                                                         />
