@@ -1089,6 +1089,20 @@ function DesembarqueContent() {
         return textos.length > 0 ? textos.join("; ") : "-";
     };
 
+    const formatarArtePescaPrincipalResumo = () => {
+        const itens = Array.isArray(formData.artesPesca) ? formData.artesPesca : [];
+        const principal = itens.length > 0 ? itens[0] : null;
+        if (!principal || !possuiValor(principal?.arte)) return "-";
+
+        const arteSelecionada = ARTE_OPTIONS.find((option) => option.value === principal.arte);
+        const label = arteSelecionada?.label || String(principal.arte);
+        const nomeOutro = possuiValor(principal?.nome) ? ` (${principal.nome})` : "";
+        const tamanho = possuiValor(principal?.tamanho) ? ` - ${principal.tamanho} m` : "";
+        const quantidade = possuiValor(principal?.quantidade) ? ` - Qtd: ${principal.quantidade}` : "";
+
+        return `${label}${nomeOutro}${tamanho}${quantidade}`;
+    };
+
     const formatarDestinoResumo = (value) => {
         if (!possuiValor(value)) return "-";
         const texto = String(value).trim();
@@ -1912,7 +1926,7 @@ function DesembarqueContent() {
                                                 <p><span className="font-semibold">Capacidade de estocagem (kg):</span> {valorResumo(formData.capacidadeEstocagem)}</p>
                                                 <p><span className="font-semibold">Forca do motor (HP):</span> {valorResumo(formData.forcaMotor)}</p>
                                                 <p><span className="font-semibold">Conservacao:</span> {formatarConservacaoResumo(formData.conservacao)}</p>
-                                                <p><span className="font-semibold">Arte de pesca:</span> {formatarArtePescaResumo()}</p>
+                                                <p><span className="font-semibold">Arte de pesca:</span> {formatarArtePescaPrincipalResumo()}</p>
                                                 <p><span className="font-semibold">Artes de pesca:</span> {formatarArtePescaResumo()}</p>
                                             </div>
                                         </div>

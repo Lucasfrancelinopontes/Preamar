@@ -8,6 +8,7 @@ import { formatDatePtBr, parseApiDate } from '@/utils/date';
 
 function AnalyticsContent() {
     const router = useRouter();
+    const LIMITE_BUSCA_API = 50;
     const [desembarques, setDesembarques] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -25,10 +26,20 @@ function AnalyticsContent() {
 
     const carregarDados = async () => {
         try {
-            const data = await api.listarDesembarques();
-            if (data.data) {
-                setDesembarques(data.data);
-            }
+            let pagina = 1;
+            let totalPaginas = 1;
+            const todosDesembarques = [];
+
+            do {
+                const resposta = await api.listarDesembarques({ page: pagina, limit: LIMITE_BUSCA_API });
+                const listaPagina = Array.isArray(resposta?.data) ? resposta.data : [];
+                todosDesembarques.push(...listaPagina);
+
+                totalPaginas = Number(resposta?.pagination?.pages || 1);
+                pagina += 1;
+            } while (pagina <= totalPaginas);
+
+            setDesembarques(todosDesembarques);
             setLoading(false);
         } catch (err) {
             console.error('Erro ao carregar dados:', err);

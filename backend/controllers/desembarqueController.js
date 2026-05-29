@@ -654,8 +654,8 @@ export const buscarDesembarque = async (req, res) => {
 
     const includeArteNome = await hasArteNomeColumn();
     const artesAttributes = includeArteNome
-      ? ['ID', 'arte', 'nome', 'tamanho', 'unidade']
-      : ['ID', 'arte', 'tamanho', 'unidade'];
+      ? ['ID', 'arte', 'nome', 'tamanho', 'quantidade', 'unidade']
+      : ['ID', 'arte', 'tamanho', 'quantidade', 'unidade'];
 
     const desembarque = await Desembarque.findOne({
       where: { ID_desembarque: id },
