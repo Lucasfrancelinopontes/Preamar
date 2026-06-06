@@ -16,7 +16,9 @@ export const DesembarqueArte = sequelize.define('DesembarqueArte', {
   },
   arte: {
     type: DataTypes.ENUM(
-      'rede_boirea',
+      'rede_boiera',
+      'espinhel',
+      'mergulho',
       'espinhel_mergulho',
       'rede_fundeio',
       'linha_mao',

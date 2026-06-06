@@ -8,14 +8,27 @@ import { useAuth } from "@/app/contexts/AuthContext";
 const TOTAL_ETAPAS = 6;
 
 const ARTE_OPTIONS = [
-    { value: "rede_boirea", label: "Rede Boireia" },
-    { value: "espinhel_mergulho", label: "Espinhel/Mergulho" },
+    { value: "rede_boiera", label: "Rede Boiera" },
+    { value: "espinhel", label: "Espinhel" },
+    { value: "mergulho", label: "Mergulho" },
     { value: "rede_fundeio", label: "Rede Fundeio" },
     { value: "linha_mao", label: "Linha de Mao" },
     { value: "rede_cacoaria", label: "Rede Cacoaria" },
     { value: "covo", label: "Covo" },
     { value: "outras", label: "Outras" }
 ];
+
+const ARTE_LABELS = {
+    rede_boiera: "Rede Boiera",
+    espinhel: "Espinhel",
+    mergulho: "Mergulho",
+    rede_fundeio: "Rede Fundeio",
+    linha_mao: "Linha de Mao",
+    rede_cacoaria: "Rede Cacoaria",
+    covo: "Covo",
+    outras: "Outras",
+    espinhel_mergulho: "Espinhel/Mergulho"
+};
 
 function InputGroup({ label, name, value, onChange, type = "text", placeholder = "", colSpan = 1, step }) {
     const isCalendarInput = type === "date" || type === "datetime-local";
@@ -273,7 +286,7 @@ const mapApiToFormData = (data) => {
     const individuosApi = Array.isArray(data?.individuos) ? data.individuos : [];
     const arte = Array.isArray(data?.artes) && data.artes.length > 0 ? data.artes[0] : null;
     const arteRaw = arte?.arte || "";
-    const arteIsKnown = ARTE_OPTIONS.some((item) => item.value === arteRaw);
+    const arteIsKnown = Object.prototype.hasOwnProperty.call(ARTE_LABELS, arteRaw);
 
     const destino = data?.destino_pescado
         ? String(data.destino_pescado).split(",")[0].trim().toLowerCase()
@@ -1079,8 +1092,7 @@ function DesembarqueContent() {
         const textos = itens
             .filter((item) => possuiValor(item?.arte))
             .map((item) => {
-                const arteSelecionada = ARTE_OPTIONS.find((option) => option.value === item.arte);
-                const label = arteSelecionada?.label || String(item.arte);
+                const label = ARTE_LABELS[item.arte] || String(item.arte);
                 const nomeOutro = possuiValor(item?.nome) ? ` (${item.nome})` : "";
                 const tamanho = possuiValor(item?.tamanho) ? ` - ${item.tamanho} m` : "";
                 const quantidade = possuiValor(item?.quantidade) ? ` - Qtd: ${item.quantidade}` : "";
@@ -1094,8 +1106,7 @@ function DesembarqueContent() {
         const principal = itens.length > 0 ? itens[0] : null;
         if (!principal || !possuiValor(principal?.arte)) return "-";
 
-        const arteSelecionada = ARTE_OPTIONS.find((option) => option.value === principal.arte);
-        const label = arteSelecionada?.label || String(principal.arte);
+        const label = ARTE_LABELS[principal.arte] || String(principal.arte);
         const nomeOutro = possuiValor(principal?.nome) ? ` (${principal.nome})` : "";
         const tamanho = possuiValor(principal?.tamanho) ? ` - ${principal.tamanho} m` : "";
         const quantidade = possuiValor(principal?.quantidade) ? ` - Qtd: ${principal.quantidade}` : "";
@@ -1533,6 +1544,9 @@ function DesembarqueContent() {
                                                             {ARTE_OPTIONS.map((option) => (
                                                                 <option key={option.value} value={option.value}>{option.label}</option>
                                                             ))}
+                                                            {item.arte === "espinhel_mergulho" && (
+                                                                <option value="espinhel_mergulho" hidden>Espinhel/Mergulho</option>
+                                                            )}
                                                         </select>
                                                     </div>
 
