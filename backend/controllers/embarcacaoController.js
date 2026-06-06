@@ -132,13 +132,6 @@ export const criarEmbarcacao = async (req, res) => {
     const dados = sanitizarEmbarcacao(req.body || {});
 
     // Validar dados obrigatórios
-    if (!dados.nome_embarcacao) {
-      return res.status(400).json({
-        success: false,
-        message: 'Nome da embarcação é obrigatório'
-      });
-    }
-
     if (!dados.tipo) {
       return res.status(400).json({
         success: false,
@@ -204,12 +197,7 @@ export const atualizarEmbarcacao = async (req, res) => {
       });
     }
 
-    if (Object.prototype.hasOwnProperty.call(dados, 'nome_embarcacao') && !dados.nome_embarcacao) {
-      return res.status(400).json({
-        success: false,
-        message: 'Nome da embarcação é obrigatório'
-      });
-    }
+    // nome_embarcacao pode ser nulo — não exigir no update
 
     if (Object.prototype.hasOwnProperty.call(dados, 'tipo')) {
       if (!dados.tipo) {
