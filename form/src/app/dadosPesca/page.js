@@ -5,8 +5,7 @@ import { useFormContext } from '../contexts/FormContext';
 import { validarCPF, formatarCPF, validarDataSaidaChegada } from '@/utils/validations';
 
 export default function DadosPesca() {
-                                    { value: 'espinhel', label: 'Espinhel' },
-                                    { value: 'mergulho', label: 'Mergulho' },
+    const router = useRouter();
     const { formData, updateFormData, errors, addError, clearErrors } = useFormContext();
     const [artesSelecionadas, setArtesSelecionadas] = useState(formData.arteSelecionadas || []);
 
