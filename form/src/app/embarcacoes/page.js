@@ -529,7 +529,6 @@ export default function EmbarcacoesPage() {
                                         value={formData.nome_embarcacao}
                                         onChange={(e) => setFormData({...formData, nome_embarcacao: e.target.value})}
                                         className="w-full p-2 border rounded-lg text-black"
-                                        required
                                     />
                                 </div>
 

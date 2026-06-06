@@ -2,14 +2,14 @@ import XLSX from 'xlsx';
 import { Op } from 'sequelize';
 import { Embarcacao, Municipio } from '../models/index.js';
 
-export const TIPOS_VALIDOS = ['catraia', 'caico', 'jangada', 'boteLancha', 'canoa', 'barco', 'outro'];
+export const TIPOS_VALIDOS = ['catraia', 'caico', 'jangada', 'bote', 'lancha', 'canoa', 'barco', 'outro'];
 export const POSSUI_VALIDOS = ['urna', 'caixaTermica', 'pescadoInNatura'];
 
 const TIPO_ALIASES = {
-  bote: 'boteLancha',
-  lancha: 'boteLancha',
-  'lancha pequena': 'boteLancha',
-  'lancha grande': 'boteLancha',
+  bote: 'bote',
+  lancha: 'lancha',
+  'lancha pequena': 'lancha',
+  'lancha grande': 'lancha',
   janga: 'jangada',
   jangaa: 'jangada',
   outros: 'outro',
@@ -248,7 +248,8 @@ const normalizarTipoBase = (value) => {
   }
 
   const heuristicas = [
-    { chave: 'boteLancha', termos: ['lancha', 'bote', 'lanche'] },
+    { chave: 'lancha', termos: ['lancha', 'lanche'] },
+    { chave: 'bote', termos: ['bote'] },
     { chave: 'jangada', termos: ['janga', 'jangad'] },
     { chave: 'caico', termos: ['caic'] },
     { chave: 'catraia', termos: ['catrai'] },

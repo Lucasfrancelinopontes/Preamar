@@ -149,7 +149,7 @@ export const criarEmbarcacao = async (req, res) => {
     if (!TIPOS_PERMITIDOS.has(dados.tipo)) {
       return res.status(400).json({
         success: false,
-        message: 'Tipo de embarcação inválido. Use: catraia, caico, jangada, boteLancha, canoa, barco ou outro'
+        message: 'Tipo de embarcação inválido. Use: catraia, caico, jangada, bote, lancha, canoa, barco ou outro'
       });
     }
 
@@ -222,7 +222,7 @@ export const atualizarEmbarcacao = async (req, res) => {
       if (!TIPOS_PERMITIDOS.has(dados.tipo)) {
         return res.status(400).json({
           success: false,
-          message: 'Tipo de embarcação inválido. Use: catraia, caico, jangada, boteLancha, canoa, barco ou outro'
+          message: 'Tipo de embarcação inválido. Use: catraia, caico, jangada, bote, lancha, canoa, barco ou outro'
         });
       }
     }
