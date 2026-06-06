@@ -5,7 +5,7 @@ import { useAuth } from '@/app/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import api from '@/services/api'
 
-const TIPOS_VALIDOS = ['catraia', 'caico', 'jangada', 'Bote','lancha', 'canoa', 'barco', 'outro']
+const TIPOS_VALIDOS = ['catraia', 'caico', 'jangada', 'bote','lancha', 'canoa', 'barco', 'outro']
 const POSSUI_VALIDOS = ['urna', 'caixaTermica', 'pescadoInNatura']
 
 const normalizarTipo = (tipo) => {
