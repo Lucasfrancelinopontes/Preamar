@@ -54,7 +54,7 @@ export const Embarcacao = sequelize.define('Embarcacao', {
     comment: 'Força do motor em HP'
   },
   tipo: {
-    type: DataTypes.ENUM('catraia', 'caico', 'jangada', 'boteLancha', 'canoa', 'barco', 'outro'),
+    type: DataTypes.ENUM('catraia', 'caico', 'jangada', 'bote', 'lancha', 'canoa', 'barco', 'outro'),
     allowNull: false
   },
   tipo_outro: {

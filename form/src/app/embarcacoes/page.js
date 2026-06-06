@@ -5,13 +5,14 @@ import { useAuth } from '@/app/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import api from '@/services/api'
 
-const TIPOS_VALIDOS = ['catraia', 'caico', 'jangada', 'boteLancha', 'canoa', 'barco', 'outro']
+const TIPOS_VALIDOS = ['catraia', 'caico', 'jangada', 'Bote','lancha', 'canoa', 'barco', 'outro']
 const POSSUI_VALIDOS = ['urna', 'caixaTermica', 'pescadoInNatura']
 
 const normalizarTipo = (tipo) => {
     const valor = (tipo || '').trim()
     const map = {
-        bote: 'boteLancha',
+        bote: 'bote',
+        lancha: 'lancha',
         outros: 'outro',
         traineira: 'outro',
         chalana: 'outro'
@@ -605,7 +606,8 @@ export default function EmbarcacoesPage() {
                                         <option value="catraia">Catraia</option>
                                         <option value="caico">Caico</option>
                                         <option value="jangada">Jangada</option>
-                                        <option value="boteLancha">Bote/Lancha</option>
+                                        <option value="bote">Bote</option>
+                                        <option value="lancha">Lancha</option>
                                         <option value="canoa">Canoa</option>
                                         <option value="barco">Barco</option>
                                         <option value="outro">Outro</option>
