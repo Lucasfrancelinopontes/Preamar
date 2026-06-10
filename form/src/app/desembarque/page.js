@@ -251,6 +251,27 @@ const normalizeConservacaoValue = (value) => {
     return raw;
 };
 
+const normalizeTipoEmbarcacao = (value) => {
+    const raw = String(value || "").trim().toLowerCase();
+    if (!raw) return "";
+
+    const map = {
+        "bote":        "bote",
+        "lancha":      "lancha",
+        "Bote": "bote",
+        "Lancha": "lancha",
+        "BOTE":   "bote",
+        "LANCHA": "lancha",
+        "catraia":     "catraia",
+        "caico":       "caico",
+        "jangada":     "jangada",
+        "canoa":       "canoa",
+        "barco":       "barco",
+    };
+
+    return map[raw] ?? "outro";
+};
+
 const mapToArray = (response) => {
     if (Array.isArray(response)) return response;
     if (Array.isArray(response?.data)) return response.data;
@@ -318,7 +339,11 @@ const mapApiToFormData = (data) => {
         codigoEmbarcacao: data?.embarcacao?.codigo_embarcacao || "",
         numTripulantes: data?.numero_tripulantes != null ? String(data.numero_tripulantes) : "",
         numPesqueiros: data?.pesqueiros != null ? String(data.pesqueiros) : "",
-        tipoEmbarcacao: data?.embarcacao?.tipo || "",
+        tipoEmbarcacao: normalizeTipoEmbarcacao(data?.embarcacao?.tipo),
+        tipoEmbarcacaoOutro: (() => {
+        const tipo = normalizeTipoEmbarcacao(data?.embarcacao?.tipo);
+        return tipo === "outro" ? (data?.embarcacao?.tipo || "") : (data?.embarcacao?.tipo_outro || "");
+        })(),
         tipoEmbarcacaoOutro: data?.embarcacao?.tipo_outro || "",
         comprimento: data?.embarcacao?.comprimento != null ? String(data.embarcacao.comprimento) : "",
         capacidadeEstocagem: data?.embarcacao?.capacidade != null ? String(data.embarcacao.capacidade) : "",
@@ -660,8 +685,12 @@ function DesembarqueContent() {
             ID_embarcacao: embarcacao.ID_embarcacao || prev.ID_embarcacao || null,
             nomeEmbarcacao: embarcacao.nome_embarcacao || "",
             codigoEmbarcacao: embarcacao.codigo_embarcacao || "",
-            tipoEmbarcacao: embarcacao.tipo || "",
-            tipoEmbarcacaoOutro: embarcacao.tipo_outro || "",
+            // depois
+            tipoEmbarcacao: normalizeTipoEmbarcacao(embarcacao.tipo),
+            tipoEmbarcacaoOutro: (() => {
+            const tipo = normalizeTipoEmbarcacao(embarcacao.tipo);
+            return tipo === "outro" ? (embarcacao.tipo || "") : (embarcacao.tipo_outro || "");
+            })(),
             comprimento: embarcacao.comprimento != null ? String(embarcacao.comprimento) : "",
             capacidadeEstocagem: embarcacao.capacidade != null ? String(embarcacao.capacidade) : "",
             forcaMotor: embarcacao.hp != null ? String(embarcacao.hp) : "",
@@ -1472,7 +1501,9 @@ function DesembarqueContent() {
                                                 <option value="catraia">Catraia</option>
                                                 <option value="caico">Caico</option>
                                                 <option value="jangada">Jangada</option>
-                                                <option value="boteLancha">Bote/Lancha</option>
+                                                <option value="bote">Bote</option>
+                                                <option value="lancha">Lancha</option>
+                                                {/* <option value="boteLancha">Bote/Lancha</option> */}
                                                 <option value="canoa">Canoa</option>
                                                 <option value="barco">Barco</option>
                                                 <option value="outro">Outro</option>
