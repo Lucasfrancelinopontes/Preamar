@@ -5,7 +5,7 @@ import { useAuth } from '@/app/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import api from '@/services/api'
 
-const TIPOS_VALIDOS = ['catraia', 'caico', 'jangada', 'bote','lancha', 'canoa', 'barco', 'outro']
+const TIPOS_VALIDOS = ['catraia', 'caico', 'jangada', 'bote', 'lancha', 'canoa', 'barco', 'outro']
 const POSSUI_VALIDOS = ['urna', 'caixaTermica', 'pescadoInNatura']
 
 const normalizarTipo = (tipo) => {
@@ -60,7 +60,7 @@ export default function EmbarcacoesPage() {
         codigo_embarcacao: '',
         proprietario: '',
         apelido_propietario: '',
-        municipio: '',
+        ID_municipio: '',        // ← agora armazena o ID, não o nome
         tipo: '',
         tipo_outro: '',
         comprimento: '',
@@ -101,7 +101,6 @@ export default function EmbarcacoesPage() {
             console.log('Iniciando carregamento da lista de embarcações')
             const response = await api.getEmbarcacoes()
             console.log('Resposta bruta da API:', response)
-            // Se a resposta tem a estrutura { success: true, data: [...] }
             const data = response.data || response
             console.log('Payload normalizado:', data)
             console.log('Quantidade carregada:', Array.isArray(data) ? data.length : 0)
@@ -116,7 +115,7 @@ export default function EmbarcacoesPage() {
             })
             console.groupEnd()
             setErro('Erro ao carregar embarcações')
-            setEmbarcacoes([]) // Definir como array vazio em caso de erro
+            setEmbarcacoes([])
         } finally {
             setLoading(false)
         }
@@ -128,7 +127,7 @@ export default function EmbarcacoesPage() {
             codigo_embarcacao: '',
             proprietario: '',
             apelido_propietario: '',
-            municipio: '',
+            ID_municipio: '',    // ← resetar o ID
             tipo: '',
             tipo_outro: '',
             comprimento: '',
@@ -146,7 +145,7 @@ export default function EmbarcacoesPage() {
                 codigo_embarcacao: embarcacao.codigo_embarcacao || '',
                 proprietario: embarcacao.proprietario || '',
                 apelido_propietario: embarcacao.apelido_propietario || '',
-                municipio: embarcacao.municipio || '',
+                ID_municipio: embarcacao.ID_municipio || '',   // ← popular com o ID vindo da API
                 tipo: embarcacao.tipo || '',
                 tipo_outro: embarcacao.tipo_outro || '',
                 comprimento: embarcacao.comprimento || '',
@@ -206,19 +205,18 @@ export default function EmbarcacoesPage() {
                 possui: possuiNormalizado || null,
                 comprimento: formData.comprimento ? parseFloat(formData.comprimento) : null,
                 capacidade: formData.capacidade ? parseFloat(formData.capacidade) : null,
-                hp: parseNumeroDecimal(formData.hp)
+                hp: parseNumeroDecimal(formData.hp),
+                ID_municipio: formData.ID_municipio ? Number(formData.ID_municipio) : null  // ← converte para número
             }
 
             console.log('Payload final enviado ao backend:', dadosEnvio)
 
             if (embarcacaoEditando) {
-                // Editar embarcação existente
                 console.log('Atualizando embarcação ID:', embarcacaoEditando.ID_embarcacao)
                 const response = await api.atualizarEmbarcacao(embarcacaoEditando.ID_embarcacao, dadosEnvio)
                 console.log('Resposta da atualização:', response)
                 setSucesso('Embarcação atualizada com sucesso!')
             } else {
-                // Criar nova embarcação
                 console.log('Criando nova embarcação')
                 const response = await api.criarEmbarcacao(dadosEnvio)
                 console.log('Resposta da criação:', response)
@@ -226,7 +224,7 @@ export default function EmbarcacoesPage() {
             }
 
             console.groupEnd()
-            
+
             fecharModal()
             carregarEmbarcacoes()
         } catch (error) {
@@ -270,21 +268,27 @@ export default function EmbarcacoesPage() {
     }
 
     const embarcacoesFiltradas = embarcacoes.filter((embarcacao) => {
-        const textoBusca = busca.toLowerCase();
-        const municipioDaEmbarcacao = (embarcacao.municipio || '').toLowerCase();
-        const municipioSelecionadoId = String(municipioFiltro).trim();
+        const textoBusca = busca.toLowerCase()
+        const municipioSelecionadoId = String(municipioFiltro).trim()
+
+        // Para exibição do nome do município na busca textual, busca pelo nome no array de municípios
+        const municipioObj = municipios.find(m => m.ID_municipio === embarcacao.ID_municipio)
+        const nomeMunicipio = (municipioObj?.municipio || '').toLowerCase()
 
         const bateBusca =
             embarcacao.nome_embarcacao?.toLowerCase().includes(textoBusca) ||
             embarcacao.codigo_embarcacao?.toLowerCase().includes(textoBusca) ||
             embarcacao.proprietario?.toLowerCase().includes(textoBusca) ||
             embarcacao.tipo?.toLowerCase().includes(textoBusca) ||
-            municipioDaEmbarcacao.includes(textoBusca);
+            nomeMunicipio.includes(textoBusca)
 
-        const bateMunicipio = !municipioSelecionadoId || String(embarcacao.ID_municipio || '').trim() === municipioSelecionadoId;
+        const bateMunicipio =
+            !municipioSelecionadoId ||
+            String(embarcacao.ID_municipio || '').trim() === municipioSelecionadoId
 
-        return bateBusca && bateMunicipio;
+        return bateBusca && bateMunicipio
     })
+
     const mostrarPaginacao = embarcacoesFiltradas.length > ITENS_POR_PAGINA
     const totalPaginas = Math.max(1, Math.ceil(embarcacoesFiltradas.length / ITENS_POR_PAGINA))
     const paginaSegura = Math.min(paginaAtual, totalPaginas)
@@ -298,6 +302,12 @@ export default function EmbarcacoesPage() {
     useEffect(() => {
         setPaginaAtual((current) => Math.min(current, totalPaginas))
     }, [totalPaginas])
+
+    // Helper para exibir nome do município na tabela a partir do ID
+    const getNomeMunicipio = (id_municipio) => {
+        const municipioObj = municipios.find(m => m.ID_municipio === id_municipio)
+        return municipioObj?.municipio || '-'
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 text-black">
@@ -361,7 +371,7 @@ export default function EmbarcacoesPage() {
                     >
                         <option value="">Todos os municípios</option>
                         {municipios.map((municipio) => (
-                            <option key={municipio.ID_municipio || municipio.municipio} value={municipio.ID_municipio || municipio.municipio}>
+                            <option key={municipio.ID_municipio} value={municipio.ID_municipio}>
                                 {municipio.municipio}
                             </option>
                         ))}
@@ -418,6 +428,9 @@ export default function EmbarcacoesPage() {
                                             Proprietário
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                                            Município
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                                             Tipo
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
@@ -438,10 +451,13 @@ export default function EmbarcacoesPage() {
                                                 {embarcacao.nome_embarcacao}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                                {embarcacao.codigo_embarcacao}
+                                                {embarcacao.codigo_embarcacao || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                                {embarcacao.proprietario}
+                                                {embarcacao.proprietario || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                                                {getNomeMunicipio(embarcacao.ID_municipio)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                                                 {embarcacao.tipo}
@@ -527,8 +543,9 @@ export default function EmbarcacoesPage() {
                                     <input
                                         type="text"
                                         value={formData.nome_embarcacao}
-                                        onChange={(e) => setFormData({...formData, nome_embarcacao: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, nome_embarcacao: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
+                                        required
                                     />
                                 </div>
 
@@ -539,7 +556,7 @@ export default function EmbarcacoesPage() {
                                     <input
                                         type="text"
                                         value={formData.codigo_embarcacao}
-                                        onChange={(e) => setFormData({...formData, codigo_embarcacao: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, codigo_embarcacao: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
                                         placeholder="Ex: JP-001"
                                     />
@@ -552,7 +569,7 @@ export default function EmbarcacoesPage() {
                                     <input
                                         type="text"
                                         value={formData.proprietario}
-                                        onChange={(e) => setFormData({...formData, proprietario: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, proprietario: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
@@ -564,7 +581,7 @@ export default function EmbarcacoesPage() {
                                     <input
                                         type="text"
                                         value={formData.apelido_propietario}
-                                        onChange={(e) => setFormData({...formData, apelido_propietario: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, apelido_propietario: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
                                         placeholder="Ex: Zé do Mar"
                                     />
@@ -574,17 +591,15 @@ export default function EmbarcacoesPage() {
                                     <label className="block text-sm font-medium text-black mb-1">
                                         Município da Embarcação
                                     </label>
+                                    {/* value agora é o ID_municipio; o texto exibido é o nome */}
                                     <select
-                                        value={formData.municipio}
-                                        onChange={(e) => setFormData({...formData, municipio: e.target.value})}
+                                        value={formData.ID_municipio}
+                                        onChange={(e) => setFormData({ ...formData, ID_municipio: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value="">Selecione o município</option>
-                                        {formData.municipio && !municipios.some((municipio) => municipio.municipio === formData.municipio) && (
-                                            <option value={formData.municipio}>{formData.municipio}</option>
-                                        )}
                                         {municipios.map((municipio) => (
-                                            <option key={municipio.ID_municipio || municipio.municipio} value={municipio.municipio}>
+                                            <option key={municipio.ID_municipio} value={municipio.ID_municipio}>
                                                 {municipio.municipio}
                                             </option>
                                         ))}
@@ -597,7 +612,7 @@ export default function EmbarcacoesPage() {
                                     </label>
                                     <select
                                         value={formData.tipo}
-                                        onChange={(e) => setFormData({...formData, tipo: e.target.value, tipo_outro: e.target.value === 'outro' ? formData.tipo_outro : ''})}
+                                        onChange={(e) => setFormData({ ...formData, tipo: e.target.value, tipo_outro: e.target.value === 'outro' ? formData.tipo_outro : '' })}
                                         className="w-full p-2 border rounded-lg text-black"
                                         required
                                     >
@@ -615,7 +630,7 @@ export default function EmbarcacoesPage() {
                                         <input
                                             type="text"
                                             value={formData.tipo_outro}
-                                            onChange={(e) => setFormData({...formData, tipo_outro: e.target.value})}
+                                            onChange={(e) => setFormData({ ...formData, tipo_outro: e.target.value })}
                                             className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500 mt-2"
                                             placeholder="Informe o tipo da embarcação"
                                         />
@@ -630,7 +645,7 @@ export default function EmbarcacoesPage() {
                                         type="number"
                                         step="0.1"
                                         value={formData.comprimento}
-                                        onChange={(e) => setFormData({...formData, comprimento: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, comprimento: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
                                         placeholder="Ex: 8.5"
                                     />
@@ -643,7 +658,7 @@ export default function EmbarcacoesPage() {
                                     <input
                                         type="number"
                                         value={formData.capacidade}
-                                        onChange={(e) => setFormData({...formData, capacidade: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, capacidade: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
                                         placeholder="Ex: 500"
                                     />
@@ -657,7 +672,7 @@ export default function EmbarcacoesPage() {
                                         type="text"
                                         inputMode="decimal"
                                         value={formData.hp}
-                                        onChange={(e) => setFormData({...formData, hp: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, hp: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black placeholder:text-gray-500"
                                         placeholder="Ex: 6,5"
                                     />
@@ -669,7 +684,7 @@ export default function EmbarcacoesPage() {
                                     </label>
                                     <select
                                         value={formData.possui}
-                                        onChange={(e) => setFormData({...formData, possui: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, possui: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value="">Selecione</option>
