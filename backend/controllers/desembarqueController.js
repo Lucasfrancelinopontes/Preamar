@@ -329,15 +329,6 @@ export const criarDesembarque = async (req, res) => {
       });
     }
 
-    // Pescador é obrigatório e deve ser persistido
-    if (!pescador?.nome) {
-      await t.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Dados do pescador (nome) são obrigatórios'
-      });
-    }
-
     // Validar CPF do pescador se fornecido
     const cpfNorm = normalizeCpf(pescador?.cpf);
     if (cpfNorm && !validarCPF(cpfNorm)) {

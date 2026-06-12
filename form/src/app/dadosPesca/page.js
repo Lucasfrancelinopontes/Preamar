@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useFormContext } from '../contexts/FormContext';
-import { validarCPF, formatarCPF, validarDataSaidaChegada } from '@/utils/validations';
+import { formatarCPF, validarDataSaidaChegada } from '@/utils/validations';
 
 export default function DadosPesca() {
     const router = useRouter();
@@ -40,52 +40,12 @@ export default function DadosPesca() {
         clearErrors();
         let isValid = true;
 
-        // Validar identificação do pescador (nome OU apelido)
-        const hasNomePescador = !!String(formData.nomePescador || '').trim();
-        const hasApelidoPescador = !!String(formData.apelidoPescador || '').trim();
-        if (!hasNomePescador && !hasApelidoPescador) {
-            addError('nomePescador', 'Nome ou apelido do pescador é obrigatório');
-            isValid = false;
-        }
-
-        // Validar CPF
-        if (!formData.cpf) {
-            addError('cpf', 'CPF é obrigatório');
-            isValid = false;
-        } else if (!validarCPF(formData.cpf)) {
-            addError('cpf', 'CPF inválido');
-            isValid = false;
-        }
-
-        // Validar embarcação
-        if (!formData.nomeEmbarcacao) {
-            addError('nomeEmbarcacao', 'Nome da embarcação é obrigatório');
-            isValid = false;
-        }
-
-        if (!formData.codigoEmbarcacao) {
-            addError('codigoEmbarcacao', 'Código da embarcação é obrigatório');
-            isValid = false;
-        }
-
-        // Validar tipo de embarcação
-        if (!formData.tipoPetrecho) {
-            addError('tipoPetrecho', 'Tipo de embarcação é obrigatório');
-            isValid = false;
-        }
-
-        // Validar datas
+        // Apenas valida lógica de datas se ambas forem preenchidas
         if (formData.dataSaida && formData.dataChegada) {
             if (!validarDataSaidaChegada(formData.dataSaida, formData.dataChegada)) {
                 addError('dataChegada', 'Data de chegada deve ser posterior à data de saída');
                 isValid = false;
             }
-        }
-
-        // Validar número de tripulantes
-        if (formData.numeroTripulantes && parseInt(formData.numeroTripulantes) < 1) {
-            addError('numeroTripulantes', 'Número de tripulantes deve ser maior que zero');
-            isValid = false;
         }
 
         return isValid;
@@ -127,7 +87,7 @@ export default function DadosPesca() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="flex flex-col">
                                 <label htmlFor="nomePescador" className="mb-2 text-sm font-medium text-gray-700">
-                                    Nome <span className="text-red-500">*</span>
+                                    Nome
                                 </label>
                                 <input 
                                     id="nomePescador" 
@@ -136,11 +96,8 @@ export default function DadosPesca() {
                                     placeholder="Nome completo"
                                     value={formData.nomePescador}
                                     onChange={handleInputChange}
-                                    className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                                        errors.nomePescador ? 'border-red-500 focus:ring-red-300' : 'border-gray-200 focus:ring-amber-300'
-                                    }`}
+                                    className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
                                 />
-                                {errors.nomePescador && <span className="text-red-500 text-sm mt-1">{errors.nomePescador}</span>}
                             </div>
 
                             <div className="flex flex-col">
@@ -158,7 +115,7 @@ export default function DadosPesca() {
 
                             <div className="flex flex-col">
                                 <label htmlFor="cpf" className="mb-2 text-sm font-medium text-gray-700">
-                                    CPF <span className="text-red-500">*</span>
+                                    CPF
                                 </label>
                                 <input 
                                     id="cpf" 
@@ -168,11 +125,8 @@ export default function DadosPesca() {
                                     maxLength="14"
                                     value={formData.cpf}
                                     onChange={handleInputChange}
-                                    className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                                        errors.cpf ? 'border-red-500 focus:ring-red-300' : 'border-gray-200 focus:ring-amber-300'
-                                    }`}
+                                    className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
                                 />
-                                {errors.cpf && <span className="text-red-500 text-sm mt-1">{errors.cpf}</span>}
                             </div>
                         </div>
                     </div>
@@ -183,7 +137,7 @@ export default function DadosPesca() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div className="flex flex-col">
                                 <label htmlFor="nomeEmbarcacao" className="mb-2 text-sm font-medium text-gray-700">
-                                    Nome da Embarcação <span className="text-red-500">*</span>
+                                    Nome da Embarcação
                                 </label>
                                 <input 
                                     id="nomeEmbarcacao" 
@@ -192,16 +146,13 @@ export default function DadosPesca() {
                                     placeholder="Nome da embarcação"
                                     value={formData.nomeEmbarcacao}
                                     onChange={handleInputChange}
-                                    className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                                        errors.nomeEmbarcacao ? 'border-red-500 focus:ring-red-300' : 'border-gray-200 focus:ring-amber-300'
-                                    }`}
+                                    className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
                                 />
-                                {errors.nomeEmbarcacao && <span className="text-red-500 text-sm mt-1">{errors.nomeEmbarcacao}</span>}
                             </div>
 
                             <div className="flex flex-col">
                                 <label htmlFor="codigoEmbarcacao" className="mb-2 text-sm font-medium text-gray-700">
-                                    Código da Embarcação <span className="text-red-500">*</span>
+                                    Código da Embarcação
                                 </label>
                                 <input 
                                     id="codigoEmbarcacao" 
@@ -210,27 +161,22 @@ export default function DadosPesca() {
                                     placeholder="Ex: JP-001"
                                     value={formData.codigoEmbarcacao}
                                     onChange={handleInputChange}
-                                    className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                                        errors.codigoEmbarcacao ? 'border-red-500 focus:ring-red-300' : 'border-gray-200 focus:ring-amber-300'
-                                    }`}
+                                    className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
                                 />
-                                {errors.codigoEmbarcacao && <span className="text-red-500 text-sm mt-1">{errors.codigoEmbarcacao}</span>}
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                             <div className="flex flex-col">
                                 <label htmlFor="tipoPetrecho" className="mb-2 text-sm font-medium text-gray-700">
-                                    Tipo <span className="text-red-500">*</span>
+                                    Tipo
                                 </label>
                                 <select 
                                     id="tipoPetrecho" 
                                     name="tipoPetrecho"
                                     value={formData.tipoPetrecho}
                                     onChange={handleInputChange}
-                                    className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                                        errors.tipoPetrecho ? 'border-red-500 focus:ring-red-300' : 'border-gray-200 focus:ring-amber-300'
-                                    }`}
+                                    className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
                                 >
                                     <option value="">Selecione</option>
                                     <option value="catraia">Catraia</option>
@@ -241,7 +187,6 @@ export default function DadosPesca() {
                                     <option value="barco">Barco</option>
                                     <option value="outro">Outro</option>
                                 </select>
-                                {errors.tipoPetrecho && <span className="text-red-500 text-sm mt-1">{errors.tipoPetrecho}</span>}
                             </div>
 
                             <div className="flex flex-col">
@@ -316,11 +261,8 @@ export default function DadosPesca() {
                                     placeholder="Ex: 3"
                                     value={formData.numeroTripulantes}
                                     onChange={handleInputChange}
-                                    className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                                        errors.numeroTripulantes ? 'border-red-500 focus:ring-red-300' : 'border-gray-200 focus:ring-amber-300'
-                                    }`}
+                                    className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
                                 />
-                                {errors.numeroTripulantes && <span className="text-red-500 text-sm mt-1">{errors.numeroTripulantes}</span>}
                             </div>
 
                             <div className="flex flex-col">
