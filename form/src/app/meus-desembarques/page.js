@@ -1,141 +1,109 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import api from '@/services/api';
 import { formatDatePtBr, formatDateTimePtBr, parseApiDate } from '@/utils/date';
 
+const LIMITE_BUSCA_API = 50;
+
 function MeusDesembarquesContent() {
     const router = useRouter();
     const { user } = useAuth();
-    const LIMITE_BUSCA_API = 50;
+
     const [desembarques, setDesembarques] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [temaEscuro, setTemaEscuro] = useState(false);
+    const [desembarqueSelecionado, setDesembarqueSelecionado] = useState(null);
+
+    // Filtros — input imediato vs. termo confirmado (com debounce)
+    const [inputCodigo, setInputCodigo] = useState('');
     const [pesquisaCodigoColeta, setPesquisaCodigoColeta] = useState('');
     const [mostrarFiltrosData, setMostrarFiltrosData] = useState(false);
     const [dataInicio, setDataInicio] = useState('');
     const [dataFim, setDataFim] = useState('');
-    const [desembarqueSelecionado, setDesembarqueSelecionado] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [temaEscuro, setTemaEscuro] = useState(false);
 
-    const desembarquesFiltrados = desembarques.filter((desembarque) => {
-        const termo = (pesquisaCodigoColeta || '').trim().toLowerCase();
-        const codigo = (desembarque?.cod_desembarque || '').toString().toLowerCase();
-        const passouFiltroCodigo = !termo || codigo.includes(termo);
+    // Paginação server-side
+    const [paginaAtual, setPaginaAtual] = useState(1);
+    const [totalPaginas, setTotalPaginas] = useState(1);
+    const [totalRegistros, setTotalRegistros] = useState(0);
 
-        const dataColetaRaw = desembarque?.data_coleta;
-        const dataColeta = parseApiDate(dataColetaRaw);
-        const dataColetaValida = dataColeta instanceof Date && !Number.isNaN(dataColeta?.getTime());
+    // ─── Carga de dados ───────────────────────────────────────────────────────
 
-        let passouFiltroData = true;
-
-        if ((dataInicio || dataFim) && !dataColetaValida) {
-            passouFiltroData = false;
-        }
-
-        if (dataInicio && dataColetaValida) {
-            const inicio = parseApiDate(dataInicio);
-            if (inicio) {
-                inicio.setHours(0, 0, 0, 0);
-                passouFiltroData = passouFiltroData && dataColeta >= inicio;
-            }
-        }
-
-        if (dataFim && dataColetaValida) {
-            const fim = parseApiDate(dataFim);
-            if (fim) {
-                fim.setHours(23, 59, 59, 999);
-                passouFiltroData = passouFiltroData && dataColeta <= fim;
-            }
-        }
-
-        return passouFiltroCodigo && passouFiltroData;
-    });
-
-    useEffect(() => {
-        carregarDesembarques();
-    }, []);
-
-    const carregarDesembarques = async () => {
+    const carregarDesembarques = useCallback(async (pagina = 1, filtros = {}) => {
         try {
-            let pagina = 1;
-            let totalPaginas = 1;
-            const todosDesembarques = [];
+            setLoading(true);
+            setError(null);
 
-            do {
-                const resposta = await api.listarDesembarques({ page: pagina, limit: LIMITE_BUSCA_API });
-                const listaPagina = Array.isArray(resposta?.data) ? resposta.data : [];
-                todosDesembarques.push(...listaPagina);
+            const params = {
+                page: pagina,
+                limit: LIMITE_BUSCA_API,
+                ...(filtros.cod_desembarque ? { cod_desembarque: filtros.cod_desembarque } : {}),
+                ...(filtros.data_inicio     ? { data_inicio:     filtros.data_inicio }     : {}),
+                ...(filtros.data_fim        ? { data_fim:        filtros.data_fim }        : {}),
+            };
 
-                totalPaginas = Number(resposta?.pagination?.pages || 1);
-                pagina += 1;
-            } while (pagina <= totalPaginas);
+            const resposta = await api.listarDesembarques(params);
 
-            if (todosDesembarques.length > 0) {
-                // Ordenar por data mais recente
-                const desembarquesOrdenados = [...todosDesembarques].sort((a, b) => 
-                    (parseApiDate(b.data_coleta)?.getTime() || 0) - (parseApiDate(a.data_coleta)?.getTime() || 0)
-                );
-                setDesembarques(desembarquesOrdenados);
-            } else {
-                setDesembarques([]);
-            }
-            
-            setLoading(false);
+            setDesembarques(Array.isArray(resposta?.data) ? resposta.data : []);
+            setTotalPaginas(Number(resposta?.pagination?.pages || 1));
+            setTotalRegistros(Number(resposta?.pagination?.total || 0));
         } catch (err) {
             console.error('Erro ao carregar desembarques:', err);
             setError(err.message || 'Erro ao carregar desembarques');
+        } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const formatarData = (dataString) => {
-        return formatDatePtBr(dataString);
-    };
+    // Dispara quando muda página ou filtros confirmados
+    useEffect(() => {
+        carregarDesembarques(paginaAtual, {
+            cod_desembarque: pesquisaCodigoColeta,
+            data_inicio: dataInicio,
+            data_fim: dataFim,
+        });
+    }, [paginaAtual, pesquisaCodigoColeta, dataInicio, dataFim, carregarDesembarques]);
 
-    const formatarDataHora = (dataString, timeString = null) => {
-        return formatDateTimePtBr(dataString, timeString);
-    };
+    // Debounce 400ms no campo de código
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setPaginaAtual(1);
+            setPesquisaCodigoColeta(inputCodigo);
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [inputCodigo]);
 
-    const formatarValor = (valor) => {
-        if (!valor) return 'R$ 0,00';
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(valor);
-    };
+    // Volta para p.1 quando datas mudam
+    useEffect(() => {
+        setPaginaAtual(1);
+    }, [dataInicio, dataFim]);
 
-    const formatarResponsavelCadastro = (desembarque) => {
-        const nome = desembarque?.responsavel_cadastro?.nome || desembarque?.usuario?.nome;
-        if (!nome) return '-';
-
-        const funcao = desembarque?.responsavel_cadastro?.funcao || desembarque?.usuario?.funcao;
-        return funcao ? `${nome} (${funcao})` : nome;
-    };
+    // ─── Handlers ─────────────────────────────────────────────────────────────
 
     const handleDelete = async (id, e) => {
         e.stopPropagation();
         if (!confirm('Tem certeza que deseja excluir este desembarque? Esta ação não pode ser desfeita.')) return;
-        
+
         try {
             await api.deletarDesembarque(id);
-            setDesembarques(prev => prev.filter(d => d.ID_desembarque !== id));
-            alert('Desembarque excluído com sucesso!');
+            // Se era o único item da página e não é a primeira, recua uma página
+            const novaPagina = desembarques.length === 1 && paginaAtual > 1
+                ? paginaAtual - 1
+                : paginaAtual;
+            setPaginaAtual(novaPagina);
+            carregarDesembarques(novaPagina, {
+                cod_desembarque: pesquisaCodigoColeta,
+                data_inicio: dataInicio,
+                data_fim: dataFim,
+            });
         } catch (err) {
             console.error(err);
             alert('Erro ao excluir desembarque: ' + (err.message || 'Erro desconhecido'));
         }
-    };
-
-    const abrirDetalhes = (desembarque) => {
-        setDesembarqueSelecionado(desembarque);
-    };
-
-    const fecharDetalhes = () => {
-        setDesembarqueSelecionado(null);
     };
 
     const limparFiltrosData = () => {
@@ -143,13 +111,34 @@ function MeusDesembarquesContent() {
         setDataFim('');
     };
 
+    // ─── Formatadores ─────────────────────────────────────────────────────────
+
+    const formatarData = (dataString) => formatDatePtBr(dataString);
+
+    const formatarDataHora = (dataString, timeString = null) =>
+        formatDateTimePtBr(dataString, timeString);
+
+    const formatarValor = (valor) => {
+        if (!valor) return 'R$ 0,00';
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+    };
+
+    const formatarResponsavelCadastro = (desembarque) => {
+        const nome = desembarque?.responsavel_cadastro?.nome || desembarque?.usuario?.nome;
+        if (!nome) return '-';
+        const funcao = desembarque?.responsavel_cadastro?.funcao || desembarque?.usuario?.funcao;
+        return funcao ? `${nome} (${funcao})` : nome;
+    };
+
+    // ─── Render ───────────────────────────────────────────────────────────────
+
     return (
         <div className={`min-h-screen p-4 ${temaEscuro ? 'bg-gray-900' : 'bg-gray-50'}`}>
             {/* Header */}
             <div className="max-w-6xl mx-auto mb-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <button 
+                        <button
                             onClick={() => router.push('/')}
                             className={`p-2 rounded-full ${temaEscuro ? 'hover:bg-gray-800' : 'hover:bg-gray-200'}`}
                         >
@@ -161,7 +150,7 @@ function MeusDesembarquesContent() {
                             Meus Desembarques
                         </h1>
                     </div>
-                    <button 
+                    <button
                         onClick={() => setTemaEscuro(!temaEscuro)}
                         className={`p-2 rounded-full ${temaEscuro ? 'hover:bg-gray-800' : 'hover:bg-gray-200'}`}
                     >
@@ -194,7 +183,7 @@ function MeusDesembarquesContent() {
                     </div>
                 )}
 
-                {!loading && !error && desembarques.length === 0 && (
+                {!loading && !error && totalRegistros === 0 && !pesquisaCodigoColeta && !dataInicio && !dataFim && (
                     <div className={`text-center py-12 ${temaEscuro ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow`}>
                         <svg className={`w-16 h-16 mx-auto mb-4 ${temaEscuro ? 'text-gray-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
@@ -211,13 +200,13 @@ function MeusDesembarquesContent() {
                     </div>
                 )}
 
-                {!loading && !error && desembarques.length > 0 && (
+                {!loading && !error && (totalRegistros > 0 || pesquisaCodigoColeta || dataInicio || dataFim) && (
                     <div className="space-y-4">
                         {/* Barra de pesquisa */}
                         <div className={`p-4 rounded-lg shadow ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}>
                             <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                                 <label className={`block text-sm font-medium ${temaEscuro ? 'text-gray-200' : 'text-gray-700'}`}>
-                                Pesquisar por código de coleta
+                                    Pesquisar por código de coleta
                                 </label>
                                 <button
                                     type="button"
@@ -234,23 +223,14 @@ function MeusDesembarquesContent() {
                             </div>
                             <div className="relative">
                                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <svg
-                                        className={`h-5 w-5 ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M9 3a6 6 0 104.472 10.03l2.249 2.249a1 1 0 001.414-1.414l-2.249-2.249A6 6 0 009 3zm-4 6a4 4 0 118 0 4 4 0 01-8 0z"
-                                            clipRule="evenodd"
-                                        />
+                                    <svg className={`h-5 w-5 ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`} viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M9 3a6 6 0 104.472 10.03l2.249 2.249a1 1 0 001.414-1.414l-2.249-2.249A6 6 0 009 3zm-4 6a4 4 0 118 0 4 4 0 01-8 0z" clipRule="evenodd"/>
                                     </svg>
                                 </div>
                                 <input
                                     type="text"
-                                    value={pesquisaCodigoColeta}
-                                    onChange={(e) => setPesquisaCodigoColeta(e.target.value)}
+                                    value={inputCodigo}
+                                    onChange={(e) => setInputCodigo(e.target.value)}
                                     placeholder="Ex.: CÓDIGO-123"
                                     className={`w-full pl-10 pr-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-brand/30 ${
                                         temaEscuro
@@ -277,7 +257,6 @@ function MeusDesembarquesContent() {
                                             }`}
                                         />
                                     </div>
-
                                     <div>
                                         <label className={`mb-1 block text-xs font-medium ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}>
                                             Data final
@@ -293,7 +272,6 @@ function MeusDesembarquesContent() {
                                             }`}
                                         />
                                     </div>
-
                                     <div className="flex items-end">
                                         <button
                                             type="button"
@@ -311,116 +289,129 @@ function MeusDesembarquesContent() {
                             )}
                         </div>
 
-                        {desembarquesFiltrados.length === 0 ? (
+                        {/* Lista */}
+                        {!loading && desembarques.length === 0 ? (
                             <div className={`text-center py-10 ${temaEscuro ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-600'} rounded-lg shadow`}>
-                                Nenhum desembarque encontrado para este código de coleta.
+                                Nenhum desembarque encontrado para os filtros aplicados.
                             </div>
                         ) : (
-                            desembarquesFiltrados.map((desembarque) => (
-                            <div 
-                                key={desembarque.cod_desembarque}
-                                className={`p-6 rounded-lg shadow hover:shadow-lg transition-all ${
-                                    temaEscuro ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'
-                                }`}
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        {/* Código do Desembarque */}
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className={`text-sm font-mono px-3 py-1 rounded ${
-                                                temaEscuro ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'
-                                            }`}>
-                                                {desembarque.cod_desembarque}
-                                            </div>
-                                            <div className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                {formatarData(desembarque.data_coleta)}
-                                            </div>
-                                        </div>
-
-                                        {/* Grid de Informações */}
-                                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                                            <div>
-                                                <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    Município
-                                                </p>
-                                                <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                    {desembarque.municipio || '-'}
-                                                </p>
+                            desembarques.map((desembarque) => (
+                                <div
+                                    key={desembarque.cod_desembarque}
+                                    className={`p-6 rounded-lg shadow hover:shadow-lg transition-all ${
+                                        temaEscuro ? 'bg-gray-800 hover:bg-gray-750' : 'bg-white hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            {/* Código e data */}
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className={`text-sm font-mono px-3 py-1 rounded ${
+                                                    temaEscuro ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'
+                                                }`}>
+                                                    {desembarque.cod_desembarque}
+                                                </div>
+                                                <div className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    {formatarData(desembarque.data_coleta)}
+                                                </div>
                                             </div>
 
-                                            <div>
-                                                <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    Localidade
-                                                </p>
-                                                <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                    {desembarque.localidade || '-'}
-                                                </p>
+                                            {/* Grid de informações */}
+                                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                                <div>
+                                                    <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Município</p>
+                                                    <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarque.municipio || '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Localidade</p>
+                                                    <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarque.localidade || '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Pescador</p>
+                                                    <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarque.pescador?.nome || '-'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Responsável</p>
+                                                    <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{formatarResponsavelCadastro(desembarque)}</p>
+                                                </div>
+                                                <div>
+                                                    <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Valor Total</p>
+                                                    <p className={`font-bold text-lg ${temaEscuro ? 'text-green-400' : 'text-green-600'}`}>{formatarValor(desembarque.total_desembarque)}</p>
+                                                </div>
                                             </div>
 
-                                            <div>
-                                                <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    Pescador
-                                                </p>
-                                                <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                    {desembarque.pescador?.nome || '-'}
-                                                </p>
-                                            </div>
-
-                                            <div>
-                                                <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    Responsável
-                                                </p>
-                                                <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                    {formatarResponsavelCadastro(desembarque)}
-                                                </p>
-                                            </div>
-
-                                            <div>
-                                                <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    Valor Total
-                                                </p>
-                                                <p className={`font-bold text-lg ${temaEscuro ? 'text-green-400' : 'text-green-600'}`}>
-                                                    {formatarValor(desembarque.total_desembarque)}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* Botões de Ação */}
-                                        <div className="flex gap-3 mt-4">
-                                            <button
-                                                onClick={() => router.push(`/meus-desembarques/${desembarque.ID_desembarque}`)}
-                                                className="flex-1 bg-brand hover:bg-brand-dark text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                                            >
-                                                <span>📄</span> Ver Detalhes Completos
-                                            </button>
-                                            <button
-                                                onClick={() => abrirDetalhes(desembarque)}
-                                                className={`px-4 py-2 rounded-lg transition-colors ${
-                                                    temaEscuro 
-                                                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' 
-                                                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                                                }`}
-                                            >
-                                                <span>👁️</span> Prévia
-                                            </button>
-                                            {user?.funcao === 'admin' && (
+                                            {/* Botões de ação */}
+                                            <div className="flex gap-3 mt-4">
                                                 <button
-                                                    onClick={(e) => handleDelete(desembarque.ID_desembarque, e)}
-                                                    className={`px-4 py-2 rounded-lg transition-colors ${
-                                                        temaEscuro 
-                                                            ? 'bg-red-900/50 hover:bg-red-900 text-red-200' 
-                                                            : 'bg-red-100 hover:bg-red-200 text-red-800'
-                                                    }`}
-                                                    title="Excluir Desembarque"
+                                                    onClick={() => router.push(`/meus-desembarques/${desembarque.ID_desembarque}`)}
+                                                    className="flex-1 bg-brand hover:bg-brand-dark text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
                                                 >
-                                                    <span>🗑️</span>
+                                                    <span>📄</span> Ver Detalhes Completos
                                                 </button>
-                                            )}
+                                                <button
+                                                    onClick={() => setDesembarqueSelecionado(desembarque)}
+                                                    className={`px-4 py-2 rounded-lg transition-colors ${
+                                                        temaEscuro
+                                                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                                                            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                                                    }`}
+                                                >
+                                                    <span>👁️</span> Prévia
+                                                </button>
+                                                {user?.funcao === 'admin' && (
+                                                    <button
+                                                        onClick={(e) => handleDelete(desembarque.ID_desembarque, e)}
+                                                        className={`px-4 py-2 rounded-lg transition-colors ${
+                                                            temaEscuro
+                                                                ? 'bg-red-900/50 hover:bg-red-900 text-red-200'
+                                                                : 'bg-red-100 hover:bg-red-200 text-red-800'
+                                                        }`}
+                                                        title="Excluir Desembarque"
+                                                    >
+                                                        <span>🗑️</span>
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
                             ))
+                        )}
+
+                        {/* Paginação */}
+                        {totalPaginas > 1 && (
+                            <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 py-3 rounded-lg shadow ${
+                                temaEscuro ? 'bg-gray-800' : 'bg-white'
+                            }`}>
+                                <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    {totalRegistros} desembarque{totalRegistros !== 1 ? 's' : ''} encontrado{totalRegistros !== 1 ? 's' : ''}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaginaAtual((p) => Math.max(1, p - 1))}
+                                        disabled={paginaAtual <= 1}
+                                        className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                            temaEscuro ? 'bg-gray-700 text-gray-100 hover:bg-gray-600' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        Anterior
+                                    </button>
+                                    <span className={`text-sm font-medium ${temaEscuro ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        Página {paginaAtual} de {totalPaginas}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
+                                        disabled={paginaAtual >= totalPaginas}
+                                        className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                            temaEscuro ? 'bg-gray-700 text-gray-100 hover:bg-gray-600' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        Próxima
+                                    </button>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}
@@ -428,11 +419,9 @@ function MeusDesembarquesContent() {
 
             {/* Modal de Detalhes */}
             {desembarqueSelecionado && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={fecharDetalhes}>
-                    <div 
-                        className={`max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-lg shadow-xl ${
-                            temaEscuro ? 'bg-gray-800' : 'bg-white'
-                        }`}
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setDesembarqueSelecionado(null)}>
+                    <div
+                        className={`max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-lg shadow-xl ${temaEscuro ? 'bg-gray-800' : 'bg-white'}`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header do Modal */}
@@ -442,11 +431,9 @@ function MeusDesembarquesContent() {
                             <h2 className={`text-xl font-bold ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
                                 Detalhes do Desembarque
                             </h2>
-                            <button 
-                                onClick={fecharDetalhes}
-                                className={`p-2 rounded-full hover:bg-opacity-10 hover:bg-gray-500 ${
-                                    temaEscuro ? 'text-gray-300' : 'text-gray-600'
-                                }`}
+                            <button
+                                onClick={() => setDesembarqueSelecionado(null)}
+                                className={`p-2 rounded-full hover:bg-opacity-10 hover:bg-gray-500 ${temaEscuro ? 'text-gray-300' : 'text-gray-600'}`}
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
@@ -457,110 +444,70 @@ function MeusDesembarquesContent() {
                         {/* Conteúdo do Modal */}
                         <div className="p-6 space-y-6">
                             {/* Código e Data */}
-                            <div className={`p-4 rounded-lg ${
-                                temaEscuro ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'
-                            }`}>
+                            <div className={`p-4 rounded-lg ${temaEscuro ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className={`text-sm ${temaEscuro ? 'text-blue-300' : 'text-blue-700'}`}>
-                                            Código de Desembarque
-                                        </p>
-                                        <p className={`text-lg font-mono font-bold ${temaEscuro ? 'text-blue-200' : 'text-blue-900'}`}>
-                                            {desembarqueSelecionado.cod_desembarque}
-                                        </p>
+                                        <p className={`text-sm ${temaEscuro ? 'text-blue-300' : 'text-blue-700'}`}>Código de Desembarque</p>
+                                        <p className={`text-lg font-mono font-bold ${temaEscuro ? 'text-blue-200' : 'text-blue-900'}`}>{desembarqueSelecionado.cod_desembarque}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className={`text-sm ${temaEscuro ? 'text-blue-300' : 'text-blue-700'}`}>
-                                            Data de Coleta
-                                        </p>
-                                        <p className={`text-lg font-semibold ${temaEscuro ? 'text-blue-200' : 'text-blue-900'}`}>
-                                            {formatarData(desembarqueSelecionado.data_coleta)}
-                                        </p>
+                                        <p className={`text-sm ${temaEscuro ? 'text-blue-300' : 'text-blue-700'}`}>Data de Coleta</p>
+                                        <p className={`text-lg font-semibold ${temaEscuro ? 'text-blue-200' : 'text-blue-900'}`}>{formatarData(desembarqueSelecionado.data_coleta)}</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Local */}
                             <div>
-                                <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                    📍 Local
-                                </h3>
-                                <div className={`grid grid-cols-2 gap-4 p-4 rounded-lg ${
-                                    temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
-                                }`}>
+                                <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>📍 Local</h3>
+                                <div className={`grid grid-cols-2 gap-4 p-4 rounded-lg ${temaEscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Município</p>
-                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                            {desembarqueSelecionado.municipio || '-'}
-                                        </p>
+                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.municipio || '-'}</p>
                                     </div>
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Localidade</p>
-                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                            {desembarqueSelecionado.localidade || '-'}
-                                        </p>
+                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.localidade || '-'}</p>
                                     </div>
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Data de Saída</p>
-                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                            {formatarDataHora(desembarqueSelecionado.data_saida, desembarqueSelecionado.hora_saida)}
-                                        </p>
+                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{formatarDataHora(desembarqueSelecionado.data_saida, desembarqueSelecionado.hora_saida)}</p>
                                     </div>
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Data de Chegada</p>
-                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                            {formatarDataHora(desembarqueSelecionado.data_chegada, desembarqueSelecionado.hora_desembarque)}
-                                        </p>
+                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{formatarDataHora(desembarqueSelecionado.data_chegada, desembarqueSelecionado.hora_desembarque)}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Responsável pelo Cadastro */}
+                            {/* Responsável */}
                             <div>
-                                <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                    🧾 Responsável pelo Cadastro
-                                </h3>
-                                <div className={`p-4 rounded-lg ${
-                                    temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
-                                }`}>
-                                    <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                        {formatarResponsavelCadastro(desembarqueSelecionado)}
-                                    </p>
+                                <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>🧾 Responsável pelo Cadastro</h3>
+                                <div className={`p-4 rounded-lg ${temaEscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                    <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{formatarResponsavelCadastro(desembarqueSelecionado)}</p>
                                 </div>
                             </div>
 
                             {/* Pescador */}
                             {desembarqueSelecionado.pescador && (
                                 <div>
-                                    <h3 className="heading-secondary">
-                                        👤 Pescador
-                                    </h3>
-                                    <div className={`grid grid-cols-2 gap-4 p-4 rounded-lg ${
-                                        temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
-                                    }`}>
+                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>👤 Pescador</h3>
+                                    <div className={`grid grid-cols-2 gap-4 p-4 rounded-lg ${temaEscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
                                         <div>
                                             <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Nome</p>
-                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                {desembarqueSelecionado.pescador.nome || '-'}
-                                            </p>
+                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.pescador.nome || '-'}</p>
                                         </div>
                                         <div>
                                             <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>CPF</p>
-                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                {desembarqueSelecionado.pescador.cpf || '-'}
-                                            </p>
+                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.pescador.cpf || '-'}</p>
                                         </div>
                                         <div>
                                             <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Apelido</p>
-                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                {desembarqueSelecionado.pescador.apelido || '-'}
-                                            </p>
+                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.pescador.apelido || '-'}</p>
                                         </div>
                                         <div>
                                             <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Nascimento</p>
-                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                {formatarData(desembarqueSelecionado.pescador.nascimento)}
-                                            </p>
+                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{formatarData(desembarqueSelecionado.pescador.nascimento)}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -569,47 +516,31 @@ function MeusDesembarquesContent() {
                             {/* Embarcação */}
                             {desembarqueSelecionado.embarcacao && (
                                 <div>
-                                    <h3 className="heading-secondary">
-                                        ⛵ Embarcação
-                                    </h3>
-                                    <div className={`grid grid-cols-2 gap-4 p-4 rounded-lg ${
-                                        temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
-                                    }`}>
+                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>⛵ Embarcação</h3>
+                                    <div className={`grid grid-cols-2 gap-4 p-4 rounded-lg ${temaEscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
                                         <div>
                                             <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Nome</p>
-                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                {desembarqueSelecionado.embarcacao.nome_embarcacao || '-'}
-                                            </p>
+                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.embarcacao.nome_embarcacao || '-'}</p>
                                         </div>
                                         <div>
                                             <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Código</p>
-                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                {desembarqueSelecionado.embarcacao.codigo_embarcacao || '-'}
-                                            </p>
+                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.embarcacao.codigo_embarcacao || '-'}</p>
                                         </div>
                                         <div>
                                             <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Tipo</p>
-                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                {desembarqueSelecionado.embarcacao.tipo || '-'}
-                                            </p>
+                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.embarcacao.tipo || '-'}</p>
                                         </div>
                                         <div>
                                             <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Comprimento</p>
-                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                {desembarqueSelecionado.embarcacao.comprimento ? `${desembarqueSelecionado.embarcacao.comprimento}m` : '-'}
-                                            </p>
+                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.embarcacao.comprimento ? `${desembarqueSelecionado.embarcacao.comprimento}m` : '-'}</p>
                                         </div>
                                         <div>
                                             <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Proprietário</p>
-                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                {desembarqueSelecionado.proprietario || '-'}
-                                            </p>
+                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.proprietario || '-'}</p>
                                         </div>
                                         <div>
                                             <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Tripulantes</p>
-                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                                {desembarqueSelecionado.numero_tripulantes || '-'}
-                                            </p>
+                                            <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.numero_tripulantes || '-'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -618,27 +549,11 @@ function MeusDesembarquesContent() {
                             {/* Quadrantes */}
                             {(desembarqueSelecionado.quadrante1 || desembarqueSelecionado.quadrante2 || desembarqueSelecionado.quadrante3) && (
                                 <div>
-                                    <h3 className="heading-secondary">
-                                        🗺️ Quadrantes de Pesca
-                                    </h3>
-                                    <div className={`flex gap-4 p-4 rounded-lg ${
-                                        temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
-                                    }`}>
-                                        {desembarqueSelecionado.quadrante1 && (
-                                            <div className="badge-brand font-mono">
-                                                {desembarqueSelecionado.quadrante1}
-                                            </div>
-                                        )}
-                                        {desembarqueSelecionado.quadrante2 && (
-                                            <div className="badge-brand font-mono">
-                                                {desembarqueSelecionado.quadrante2}
-                                            </div>
-                                        )}
-                                        {desembarqueSelecionado.quadrante3 && (
-                                            <div className="badge-brand font-mono">
-                                                {desembarqueSelecionado.quadrante3}
-                                            </div>
-                                        )}
+                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>🗺️ Quadrantes de Pesca</h3>
+                                    <div className={`flex gap-4 p-4 rounded-lg ${temaEscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                        {desembarqueSelecionado.quadrante1 && <div className="badge-brand font-mono">{desembarqueSelecionado.quadrante1}</div>}
+                                        {desembarqueSelecionado.quadrante2 && <div className="badge-brand font-mono">{desembarqueSelecionado.quadrante2}</div>}
+                                        {desembarqueSelecionado.quadrante3 && <div className="badge-brand font-mono">{desembarqueSelecionado.quadrante3}</div>}
                                     </div>
                                 </div>
                             )}
@@ -646,12 +561,8 @@ function MeusDesembarquesContent() {
                             {/* Artes de Pesca */}
                             {desembarqueSelecionado.artes && desembarqueSelecionado.artes.length > 0 && (
                                 <div>
-                                    <h3 className="heading-secondary">
-                                        🎣 Artes de Pesca
-                                    </h3>
-                                    <div className={`p-4 rounded-lg ${
-                                        temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
-                                    }`}>
+                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>🎣 Artes de Pesca</h3>
+                                    <div className={`p-4 rounded-lg ${temaEscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
                                         {desembarqueSelecionado.artes.map((arte, index) => (
                                             <div key={index} className={`py-2 ${index > 0 ? 'border-t border-gray-600' : ''}`}>
                                                 <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
@@ -666,43 +577,29 @@ function MeusDesembarquesContent() {
                             {/* Capturas */}
                             {desembarqueSelecionado.capturas && desembarqueSelecionado.capturas.length > 0 && (
                                 <div>
-                                    <h3 className="heading-secondary">
-                                        🐟 Espécies Capturadas
-                                    </h3>
-                                    <div className={`p-4 rounded-lg space-y-3 ${
-                                        temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
-                                    }`}>
+                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>🐟 Espécies Capturadas</h3>
+                                    <div className={`p-4 rounded-lg space-y-3 ${temaEscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
                                         {desembarqueSelecionado.capturas.map((captura, index) => (
-                                            <div key={index} className={`p-3 rounded ${
-                                                temaEscuro ? 'bg-gray-600' : 'bg-white'
-                                            }`}>
+                                            <div key={index} className={`p-3 rounded ${temaEscuro ? 'bg-gray-600' : 'bg-white'}`}>
                                                 <div className="flex justify-between items-start mb-2">
                                                     <p className={`font-semibold ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
                                                         {captura.especie?.Nome_popular || `Espécie #${captura.ID_especie}`}
                                                     </p>
-                                                    <p className={`font-bold text-lg ${temaEscuro ? 'text-green-400' : 'text-green-600'}`}>
-                                                        {formatarValor(captura.preco_total)}
-                                                    </p>
+                                                    <p className={`font-bold text-lg ${temaEscuro ? 'text-green-400' : 'text-green-600'}`}>{formatarValor(captura.preco_total)}</p>
                                                 </div>
                                                 <div className="grid grid-cols-3 gap-2 text-sm">
                                                     <div>
                                                         <p className={temaEscuro ? 'text-gray-400' : 'text-gray-500'}>Peso</p>
-                                                        <p className={temaEscuro ? 'text-gray-200' : 'text-gray-700'}>
-                                                            {captura.peso_kg} kg
-                                                        </p>
+                                                        <p className={temaEscuro ? 'text-gray-200' : 'text-gray-700'}>{captura.peso_kg} kg</p>
                                                     </div>
                                                     <div>
                                                         <p className={temaEscuro ? 'text-gray-400' : 'text-gray-500'}>Preço/kg</p>
-                                                        <p className={temaEscuro ? 'text-gray-200' : 'text-gray-700'}>
-                                                            {formatarValor(captura.preco_kg)}
-                                                        </p>
+                                                        <p className={temaEscuro ? 'text-gray-200' : 'text-gray-700'}>{formatarValor(captura.preco_kg)}</p>
                                                     </div>
                                                     {captura.comprimento_cm && (
                                                         <div>
                                                             <p className={temaEscuro ? 'text-gray-400' : 'text-gray-500'}>Comprimento</p>
-                                                            <p className={temaEscuro ? 'text-gray-200' : 'text-gray-700'}>
-                                                                {captura.comprimento_cm} cm
-                                                            </p>
+                                                            <p className={temaEscuro ? 'text-gray-200' : 'text-gray-700'}>{captura.comprimento_cm} cm</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -714,32 +611,20 @@ function MeusDesembarquesContent() {
 
                             {/* Despesas */}
                             <div>
-                                <h3 className="heading-secondary">
-                                    💰 Despesas
-                                </h3>
-                                <div className={`grid grid-cols-3 gap-4 p-4 rounded-lg ${
-                                    temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
-                                }`}>
+                                <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>💰 Despesas</h3>
+                                <div className={`grid grid-cols-3 gap-4 p-4 rounded-lg ${temaEscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Combustível</p>
-                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                            {desembarqueSelecionado.litros ? `${desembarqueSelecionado.litros}L` : '-'}
-                                        </p>
-                                        <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                                            {desembarqueSelecionado.desp_diesel ? 'Diesel' : desembarqueSelecionado.desp_gasolina ? 'Gasolina' : ''}
-                                        </p>
+                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.litros ? `${desembarqueSelecionado.litros}L` : '-'}</p>
+                                        <p className={`text-xs ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>{desembarqueSelecionado.desp_diesel ? 'Diesel' : desembarqueSelecionado.desp_gasolina ? 'Gasolina' : ''}</p>
                                     </div>
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Gelo</p>
-                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                            {desembarqueSelecionado.gelo_kg ? `${desembarqueSelecionado.gelo_kg} kg` : '-'}
-                                        </p>
+                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{desembarqueSelecionado.gelo_kg ? `${desembarqueSelecionado.gelo_kg} kg` : '-'}</p>
                                     </div>
                                     <div>
                                         <p className={`text-sm ${temaEscuro ? 'text-gray-400' : 'text-gray-500'}`}>Rancho</p>
-                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
-                                            {formatarValor(desembarqueSelecionado.rancho_valor)}
-                                        </p>
+                                        <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>{formatarValor(desembarqueSelecionado.rancho_valor)}</p>
                                     </div>
                                 </div>
                             </div>
@@ -747,12 +632,8 @@ function MeusDesembarquesContent() {
                             {/* Destino do Pescado */}
                             {desembarqueSelecionado.destino_pescado && (
                                 <div>
-                                    <h3 className="heading-secondary">
-                                        🎯 Destino do Pescado
-                                    </h3>
-                                    <div className={`p-4 rounded-lg ${
-                                        temaEscuro ? 'bg-gray-700' : 'bg-gray-50'
-                                    }`}>
+                                    <h3 className={`text-lg font-semibold mb-3 ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>🎯 Destino do Pescado</h3>
+                                    <div className={`p-4 rounded-lg ${temaEscuro ? 'bg-gray-700' : 'bg-gray-50'}`}>
                                         <p className={`font-medium ${temaEscuro ? 'text-white' : 'text-gray-900'}`}>
                                             {desembarqueSelecionado.destino_pescado.charAt(0).toUpperCase() + desembarqueSelecionado.destino_pescado.slice(1)}
                                         </p>
@@ -768,24 +649,15 @@ function MeusDesembarquesContent() {
                             {/* Total */}
                             <div className="alert-success">
                                 <div className="flex items-center justify-between">
-                                    <p className={`text-lg font-semibold ${temaEscuro ? 'text-green-300' : 'text-green-800'}`}>
-                                        Total do Desembarque:
-                                    </p>
-                                    <p className={`text-3xl font-bold ${temaEscuro ? 'text-green-400' : 'text-green-600'}`}>
-                                        {formatarValor(desembarqueSelecionado.total_desembarque)}
-                                    </p>
+                                    <p className={`text-lg font-semibold ${temaEscuro ? 'text-green-300' : 'text-green-800'}`}>Total do Desembarque:</p>
+                                    <p className={`text-3xl font-bold ${temaEscuro ? 'text-green-400' : 'text-green-600'}`}>{formatarValor(desembarqueSelecionado.total_desembarque)}</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Footer do Modal */}
-                        <div className={`sticky bottom-0 px-6 py-4 border-t ${
-                            temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-                        }`}>
-                            <button
-                                onClick={fecharDetalhes}
-                                className="btn-primary w-full"
-                            >
+                        <div className={`sticky bottom-0 px-6 py-4 border-t ${temaEscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                            <button onClick={() => setDesembarqueSelecionado(null)} className="btn-primary w-full">
                                 Fechar
                             </button>
                         </div>

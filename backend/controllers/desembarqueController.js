@@ -91,12 +91,10 @@ const upsertPescador = async (pescador, transaction) => {
       transaction
     });
 
-    // Atualiza com os dados mais recentes (sem criar duplicado)
     await pescadorDb.update(payload, { transaction });
     return pescadorDb;
   }
 
-  // Sem CPF: permite nomes repetidos; cria novo registro
   const pescadorDb = await Pescador.create(payload, { transaction });
   return pescadorDb;
 };
@@ -285,7 +283,6 @@ const toPositiveIntOrNull = (value) => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
-// Helper para gerar cod_desembarque a partir de município/localidade/data/consecutivo
 const gerarCodigoDesembarque = (municipio, localidade, data_coleta, consecutivo) => {
   if (!municipio || !localidade || !data_coleta || !consecutivo) return null;
   const raw = String(data_coleta).trim();
@@ -297,7 +294,8 @@ const gerarCodigoDesembarque = (municipio, localidade, data_coleta, consecutivo)
   return `${municipio}-${localidade}-${dia}-${mes}-${ano}-${consec}`;
 };
 
-// Criar novo desembarque completo com transação
+// ─── CRIAR ────────────────────────────────────────────────────────────────────
+
 export const criarDesembarque = async (req, res) => {
   const t = await sequelize.transaction();
   
@@ -320,7 +318,6 @@ export const criarDesembarque = async (req, res) => {
       total_individuos: individuos?.length || 0
     });
 
-    // Validar dados obrigatórios
     if (!desembarque) {
       await t.rollback();
       return res.status(400).json({
@@ -329,7 +326,6 @@ export const criarDesembarque = async (req, res) => {
       });
     }
 
-    // Validar CPF do pescador se fornecido
     const cpfNorm = normalizeCpf(pescador?.cpf);
     if (cpfNorm && !validarCPF(cpfNorm)) {
       await t.rollback();
@@ -339,11 +335,9 @@ export const criarDesembarque = async (req, res) => {
       });
     }
 
-    // 1. Criar ou encontrar pescador (sempre)
     let pescadorDb = await upsertPescador({ ...pescador, cpf: cpfNorm }, t);
     console.log('✅ Pescador:', pescadorDb?.nome, `(ID: ${pescadorDb?.ID_pescador})`);
 
-    // 2. Criar, encontrar ou vincular embarcação
     let embarcacaoDb = null;
     const embarcacaoPayload = buildEmbarcacaoPayload(embarcacao);
 
@@ -372,19 +366,16 @@ export const criarDesembarque = async (req, res) => {
       console.log('✅ Embarcação:', embarcacaoDb.nome_embarcacao, `(ID: ${embarcacaoDb.ID_embarcacao})`);
     }
 
-    // 3. Gerar cod_desembarque se não enviado
     if (!desembarque.cod_desembarque) {
       const generated = gerarCodigoDesembarque(desembarque.municipio, desembarque.localidade, desembarque.data_coleta || desembarque.data_saida || null, desembarque.consecutivo || 1);
       if (generated) desembarque.cod_desembarque = generated;
     }
 
-    // Normalizar campos que agora suportam múltiplos valores
     if (desembarque) {
       desembarque.destino_pescado = normalizeDestinoPescado(desembarque.destino_pescado);
       desembarque.destino_apelido = normalizeDestinoApelido(desembarque.destino_apelido);
     }
 
-    // 4. Criar desembarque (com ID do pescador e embarcação)
     const desembarquePayload = {
       ...desembarque,
       ID_pescador: pescadorDb?.ID_pescador || null,
@@ -398,7 +389,6 @@ export const criarDesembarque = async (req, res) => {
 
     console.log('✅ Desembarque criado:', desembarqueDb.cod_desembarque, `(ID: ${desembarqueDb.ID_desembarque})`);
 
-    // 4. Criar artes de pesca
     if (artes && artes.length > 0) {
       const includeArteNome = await hasArteNomeColumn();
       const artesData = artes
@@ -426,12 +416,10 @@ export const criarDesembarque = async (req, res) => {
       }
     }
 
-    // 5. Processar capturas e indivíduos
     let totalDesembarque = 0;
     let totalCapturas = 0;
     let totalIndividuos = 0;
 
-    // 5.1 Criar capturas
     if (capturas && capturas.length > 0) {
       for (const captura of capturas) {
         if (!captura?.ID_especie) continue;
@@ -457,7 +445,6 @@ export const criarDesembarque = async (req, res) => {
       console.log(`✅ ${totalCapturas} captura(s) salva(s)`);
     }
 
-    // 5.2 Criar indivíduos (biometria)
     if (individuos && individuos.length > 0) {
       const individuosData = individuos.map(ind => ({
         ID_desembarque: desembarqueDb.ID_desembarque,
@@ -476,13 +463,11 @@ export const criarDesembarque = async (req, res) => {
       console.log(`✅ ${totalIndividuos} indivíduo(s) salvo(s)`);
     }
 
-    // 6. Atualizar total do desembarque
     await desembarqueDb.update(
       { total_desembarque: totalDesembarque },
       { transaction: t }
     );
 
-    // Commit da transação
     await t.commit();
 
     console.log('✨ Transação concluída com sucesso!');
@@ -504,7 +489,6 @@ export const criarDesembarque = async (req, res) => {
     });
 
   } catch (error) {
-    // Rollback em caso de erro
     await t.rollback();
     
     console.error('❌ Erro ao criar desembarque:', {
@@ -524,29 +508,39 @@ export const criarDesembarque = async (req, res) => {
   }
 };
 
-// Listar desembarques com filtros
+// ─── LISTAR ───────────────────────────────────────────────────────────────────
+
 export const listarDesembarques = async (req, res) => {
   try {
     const { 
-      municipio, 
-      localidade, 
-      data_inicio, 
+      municipio,
+      localidade,
+      data_inicio,
       data_fim,
       pescador_id,
+      cod_desembarque, // ← ADICIONADO
       page = 1,
       limit = 50
     } = req.query;
 
     const where = {};
-    
-    if (municipio) where.municipio = municipio;
-    if (localidade) where.localidade = localidade;
-    if (pescador_id) where.ID_pescador = pescador_id;
-    
+
+    if (municipio)      where.municipio   = municipio;
+    if (localidade)     where.localidade  = localidade;
+    if (pescador_id)    where.ID_pescador = pescador_id;
+
+    // ← ADICIONADO: busca parcial por código
+    if (cod_desembarque) {
+      where.cod_desembarque = { [Op.like]: `%${cod_desembarque}%` };
+    }
+
+    // ← CORRIGIDO: datas avulsas agora funcionam (antes exigia as duas)
     if (data_inicio && data_fim) {
-      where.data_coleta = {
-        [Op.between]: [data_inicio, data_fim]
-      };
+      where.data_coleta = { [Op.between]: [data_inicio, data_fim] };
+    } else if (data_inicio) {
+      where.data_coleta = { [Op.gte]: data_inicio };
+    } else if (data_fim) {
+      where.data_coleta = { [Op.lte]: data_fim };
     }
 
     const offset = (page - 1) * limit;
@@ -636,7 +630,8 @@ export const listarDesembarques = async (req, res) => {
   }
 };
 
-// Buscar desembarque por ID com todos os relacionamentos (Eager Loading)
+// ─── BUSCAR POR ID ────────────────────────────────────────────────────────────
+
 export const buscarDesembarque = async (req, res) => {
   try {
     const { id } = req.params;
@@ -651,38 +646,15 @@ export const buscarDesembarque = async (req, res) => {
     const desembarque = await Desembarque.findOne({
       where: { ID_desembarque: id },
       include: [
-        // Pescador
         { 
           model: Pescador, 
           as: 'pescador',
-          attributes: [
-            'ID_pescador',
-            'nome',
-            'apelido',
-            'cpf',
-            'nascimento',
-            'municipio'
-          ]
+          attributes: ['ID_pescador', 'nome', 'apelido', 'cpf', 'nascimento', 'municipio']
         },
-        // Embarcação
         { 
           model: Embarcacao, 
           as: 'embarcacao',
-          attributes: [
-            'ID_embarcacao',
-            'nome_embarcacao',
-            'codigo_embarcacao',
-            'tipo',
-            'tipo_outro',
-            'comprimento',
-            'capacidade',
-            'hp',
-            'proprietario',
-            'cpf_proprietario',
-            'rgp',
-            'possui',
-            'localidade'
-          ]
+          attributes: ['ID_embarcacao', 'nome_embarcacao', 'codigo_embarcacao', 'tipo', 'tipo_outro', 'comprimento', 'capacidade', 'hp', 'proprietario', 'cpf_proprietario', 'rgp', 'possui', 'localidade']
         },
         {
           model: Usuario,
@@ -704,62 +676,32 @@ export const buscarDesembarque = async (req, res) => {
           as: 'digitadorUsuario',
           attributes: ['ID_usuario', 'nome', 'funcao']
         },
-        // Artes de Pesca
         { 
           model: DesembarqueArte, 
           as: 'artes',
           attributes: artesAttributes
         },
-        // Capturas com Espécie
         {
           model: Captura,
           as: 'capturas',
-          attributes: [
-            'ID_captura',
-            'ID_especie',
-            'peso_kg',
-            'preco_kg',
-            'preco_total',
-            'com_tripa'
-          ],
+          attributes: ['ID_captura', 'ID_especie', 'peso_kg', 'preco_kg', 'preco_total', 'com_tripa'],
           include: [{
             model: Especie,
             as: 'especie',
-            attributes: [
-              'ID_especie',
-              'nome_popular',
-              'nome_cientifico',
-              'familia'
-            ]
+            attributes: ['ID_especie', 'nome_popular', 'nome_cientifico', 'familia']
           }]
         },
-        // Indivíduos (Biometria) com Espécie
         {
           model: Individuo,
           as: 'individuos',
-          attributes: [
-            'ID_individuo',
-            'ID_especie',
-            'numero_individuo',
-            'comprimento_padrao_cm',
-            'comprimento_total_cm',
-            'comprimento_forquilha_cm',
-            'peso_g',
-            'sexo',
-            'estadio_gonadal'
-          ],
+          attributes: ['ID_individuo', 'ID_especie', 'numero_individuo', 'comprimento_padrao_cm', 'comprimento_total_cm', 'comprimento_forquilha_cm', 'peso_g', 'sexo', 'estadio_gonadal'],
           include: [{
             model: Especie,
             as: 'especie',
-            attributes: [
-              'ID_especie',
-              'nome_popular',
-              'nome_cientifico'
-            ]
+            attributes: ['ID_especie', 'nome_popular', 'nome_cientifico']
           }]
         }
       ],
-      // Ordenar individuos por espécie e número
       order: [
         [{ model: Individuo, as: 'individuos' }, 'ID_especie', 'ASC'],
         [{ model: Individuo, as: 'individuos' }, 'numero_individuo', 'ASC']
@@ -781,7 +723,6 @@ export const buscarDesembarque = async (req, res) => {
       artes: desembarque.artes?.length || 0
     });
 
-    // Enriquecer dados com estatísticas
     const estatisticas = {
       total_especies: desembarque.capturas?.length || 0,
       peso_total_kg: desembarque.capturas?.reduce((sum, c) => sum + (parseFloat(c.peso_kg) || 0), 0) || 0,
@@ -813,7 +754,8 @@ export const buscarDesembarque = async (req, res) => {
   }
 };
 
-// Atualizar desembarque
+// ─── ATUALIZAR ────────────────────────────────────────────────────────────────
+
 export const atualizarDesembarque = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -867,24 +809,20 @@ export const atualizarDesembarque = async (req, res) => {
       }
     }
 
-    // Validar CPF do pescador se fornecido
     const cpfNorm = normalizeCpf(pescador?.cpf);
     if (cpfNorm && !validarCPF(cpfNorm)) {
       await t.rollback();
       return res.status(400).json({ success: false, message: 'CPF inválido' });
     }
 
-    // Atualizar ou criar pescador
     let pescadorDb = null;
     const pescadorIdToUpdate = pescador?.ID_pescador || pescador?.ID || desembarqueDados?.ID_pescador || desembarqueDb.ID_pescador || null;
     const pescadorPayload = pescador ? buildPescadorPayload({ ...pescador, cpf: cpfNorm }) : null;
     if (pescadorPayload && !cpfNorm) {
-      // Evita apagar CPF existente quando o campo não foi preenchido
       delete pescadorPayload.cpf;
     }
 
     if (cpfNorm && (pescadorPayload?.nome || pescadorPayload?.apelido)) {
-      // Com CPF: deduplica por CPF (não cria duplicado)
       const [pDb] = await Pescador.findOrCreate({
         where: { cpf: cpfNorm },
         defaults: pescadorPayload,
@@ -893,17 +831,14 @@ export const atualizarDesembarque = async (req, res) => {
       await pDb.update(pescadorPayload, { transaction: t });
       pescadorDb = pDb;
     } else if (pescadorIdToUpdate && pescadorPayload) {
-      // Sem CPF: se já existe pescador associado ao desembarque, apenas atualiza ele
       pescadorDb = await Pescador.findByPk(pescadorIdToUpdate, { transaction: t });
       if (pescadorDb) {
         await pescadorDb.update(pescadorPayload, { transaction: t });
       }
     } else if (pescadorPayload?.nome || pescadorPayload?.apelido) {
-      // Sem CPF e sem pescador associado: cria novo registro (permite nomes repetidos)
       pescadorDb = await Pescador.create(pescadorPayload, { transaction: t });
     }
 
-    // Atualizar, criar ou apenas vincular embarcação
     let embarcacaoDb = null;
     const embarcacaoPayload = buildEmbarcacaoPayload(embarcacao);
     if (embarcacaoPayload) {
@@ -929,16 +864,13 @@ export const atualizarDesembarque = async (req, res) => {
       }
     }
 
-    // Atualizar dados do desembarque
     const updatePayload = {
       ...(desembarqueDados || {}),
       ID_pescador: pescadorDb?.ID_pescador ?? desembarqueDb.ID_pescador,
       ID_embarcacao: embarcacaoDb?.ID_embarcacao ?? desembarqueDados?.ID_embarcacao ?? desembarqueDb.ID_embarcacao
     };
 
-    // A autoria do envio nao deve ser alterada via endpoint de edicao.
     delete updatePayload.ID_usuario;
-    // Metadados de responsavel sao preenchidos no backend com base no usuario logado.
     delete updatePayload.ID_coletor;
     delete updatePayload.ID_revisor;
     delete updatePayload.ID_digitador;
@@ -949,7 +881,6 @@ export const atualizarDesembarque = async (req, res) => {
     delete updatePayload.data_revisor;
     delete updatePayload.data_digitador;
 
-    // Normalizar campos que agora suportam múltiplos valores
     if ('destino_pescado' in updatePayload) {
       updatePayload.destino_pescado = normalizeDestinoPescado(updatePayload.destino_pescado);
     }
@@ -959,7 +890,6 @@ export const atualizarDesembarque = async (req, res) => {
 
     preencherResponsavelComUsuario(updatePayload, req.usuario, desembarqueDb);
 
-    // Gerar cod_desembarque se não fornecido, usando valores novos ou existentes
     if (!updatePayload.cod_desembarque) {
       const municipio = updatePayload.municipio || desembarqueDb.municipio;
       const localidade = updatePayload.localidade || desembarqueDb.localidade;
@@ -967,11 +897,10 @@ export const atualizarDesembarque = async (req, res) => {
       const consecutivo = updatePayload.consecutivo || desembarqueDb.consecutivo || 1;
       const generated = gerarCodigoDesembarque(municipio, localidade, data_coleta, consecutivo);
       if (generated) {
-        // garantir unicidade (incremental simples se necessário)
         let candidate = generated;
         let suffix = 1;
         while (true) {
-          const exists = await Desembarque.findOne({ where: { cod_desembarque: candidate } , transaction: t});
+          const exists = await Desembarque.findOne({ where: { cod_desembarque: candidate }, transaction: t });
           if (!exists || exists.ID_desembarque === desembarqueDb.ID_desembarque) break;
           suffix += 1;
           candidate = `${generated}-v${suffix}`;
@@ -982,14 +911,12 @@ export const atualizarDesembarque = async (req, res) => {
 
     await desembarqueDb.update(updatePayload, { transaction: t });
 
-    // Sincronizar artes (incremental): atualizar existentes, criar novos, apagar removidos
     const includeArteNome = await hasArteNomeColumn();
     const existingArtes = await DesembarqueArte.findAll({ where: { ID_desembarque: id }, transaction: t });
     const incomingArteIds = [];
     if (Array.isArray(artes)) {
       for (const arte of artes) {
         const arteId = arte.ID || arte.id || null;
-
         const arteValue = arte?.arte != null ? String(arte.arte).trim() : null;
         if (!arteValue) continue;
 
@@ -1021,10 +948,8 @@ export const atualizarDesembarque = async (req, res) => {
         }
       }
     }
-    // Apagar artes removidas
     await DesembarqueArte.destroy({ where: { ID_desembarque: id, ID: { [Op.notIn]: incomingArteIds.length ? incomingArteIds : [0] } }, transaction: t });
 
-    // Sincronizar capturas (incremental)
     const existingCapturas = await Captura.findAll({ where: { ID_desembarque: id }, transaction: t });
     const incomingCapturaIds = [];
     if (Array.isArray(capturas)) {
@@ -1034,21 +959,12 @@ export const atualizarDesembarque = async (req, res) => {
         if (capId) {
           const capDb = existingCapturas.find(c => c.ID_captura === capId);
           if (capDb) {
-            const precoKg = Object.prototype.hasOwnProperty.call(captura, 'preco_kg')
-              ? toNullableDecimal(captura.preco_kg)
-              : capDb.preco_kg;
-            const pesoKg = Object.prototype.hasOwnProperty.call(captura, 'peso_kg')
-              ? toNullableDecimal(captura.peso_kg)
-              : capDb.peso_kg;
-
+            const precoKg = Object.prototype.hasOwnProperty.call(captura, 'preco_kg') ? toNullableDecimal(captura.preco_kg) : capDb.preco_kg;
+            const pesoKg = Object.prototype.hasOwnProperty.call(captura, 'peso_kg') ? toNullableDecimal(captura.peso_kg) : capDb.peso_kg;
             const pesoF = toFloatOrNull(pesoKg);
             const precoF = toFloatOrNull(precoKg);
             const precoTotal = (pesoF != null && precoF != null) ? (pesoF * precoF) : null;
-
-            await capDb.update(
-              { ID_especie: especieId || capDb.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
-              { transaction: t }
-            );
+            await capDb.update({ ID_especie: especieId || capDb.ID_especie, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa }, { transaction: t });
             incomingCapturaIds.push(capDb.ID_captura);
           } else {
             if (!especieId) continue;
@@ -1057,11 +973,7 @@ export const atualizarDesembarque = async (req, res) => {
             const pesoF = toFloatOrNull(pesoKg);
             const precoF = toFloatOrNull(precoKg);
             const precoTotal = (pesoF != null && precoF != null) ? (pesoF * precoF) : null;
-
-            const created = await Captura.create(
-              { ID_desembarque: id, ID_especie: especieId, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
-              { transaction: t }
-            );
+            const created = await Captura.create({ ID_desembarque: id, ID_especie: especieId, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa }, { transaction: t });
             incomingCapturaIds.push(created.ID_captura);
           }
         } else {
@@ -1071,48 +983,41 @@ export const atualizarDesembarque = async (req, res) => {
           const pesoF = toFloatOrNull(pesoKg);
           const precoF = toFloatOrNull(precoKg);
           const precoTotal = (pesoF != null && precoF != null) ? (pesoF * precoF) : null;
-
-          const created = await Captura.create(
-            { ID_desembarque: id, ID_especie: especieId, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa },
-            { transaction: t }
-          );
+          const created = await Captura.create({ ID_desembarque: id, ID_especie: especieId, peso_kg: pesoKg, preco_kg: precoKg, preco_total: precoTotal, com_tripa: captura.com_tripa }, { transaction: t });
           incomingCapturaIds.push(created.ID_captura);
         }
       }
     }
-    // Apagar capturas removidas
     await Captura.destroy({ where: { ID_desembarque: id, ID_captura: { [Op.notIn]: incomingCapturaIds.length ? incomingCapturaIds : [0] } }, transaction: t });
 
-    // Sincronizar indivíduos (incremental)
     const existingIndividuos = await Individuo.findAll({ where: { ID_desembarque: id }, transaction: t });
     const incomingIndividuoIds = [];
     if (Array.isArray(individuos)) {
       for (const ind of individuos) {
         const indId = ind.ID_individuo || ind.id || null;
         const especieId = toPositiveIntOrNull(ind?.ID_especie);
+        const indPayload = { ID_especie: especieId, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null };
         if (indId) {
           const indDb = existingIndividuos.find(x => x.ID_individuo === indId);
           if (indDb) {
-            await indDb.update({ ID_especie: especieId || indDb.ID_especie, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
+            await indDb.update({ ...indPayload, ID_especie: especieId || indDb.ID_especie }, { transaction: t });
             incomingIndividuoIds.push(indDb.ID_individuo);
           } else {
             if (!especieId) continue;
-            const created = await Individuo.create({ ID_desembarque: id, ID_especie: especieId, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
+            const created = await Individuo.create({ ID_desembarque: id, ...indPayload }, { transaction: t });
             incomingIndividuoIds.push(created.ID_individuo);
           }
         } else {
           if (!especieId) continue;
-          const created = await Individuo.create({ ID_desembarque: id, ID_especie: especieId, numero_individuo: ind.numero_individuo || null, comprimento_padrao_cm: ind.comprimento_cm || ind.comprimento || null, comprimento_total_cm: ind.comprimento_total_cm || ind.comprimento_total || null, comprimento_forquilha_cm: ind.comprimento_forquilha_cm || ind.comprimento_forquilha || null, peso_g: ind.peso_g || ind.peso || null, sexo: ind.sexo || null, estadio_gonadal: ind.estadio_gonadal || null }, { transaction: t });
+          const created = await Individuo.create({ ID_desembarque: id, ...indPayload }, { transaction: t });
           incomingIndividuoIds.push(created.ID_individuo);
         }
       }
     }
-    // Apagar indivíduos removidos
     await Individuo.destroy({ where: { ID_desembarque: id, ID_individuo: { [Op.notIn]: incomingIndividuoIds.length ? incomingIndividuoIds : [0] } }, transaction: t });
 
-    // Recalcular total do desembarque a partir das capturas atuais
     const capturasAfter = await Captura.findAll({ where: { ID_desembarque: id }, transaction: t });
-    let totalDesembarque = capturasAfter.reduce((sum, c) => sum + (parseFloat(c.preco_total) || 0), 0);
+    const totalDesembarque = capturasAfter.reduce((sum, c) => sum + (parseFloat(c.preco_total) || 0), 0);
     const totalCapturas = capturasAfter.length;
     const totalIndividuos = await Individuo.count({ where: { ID_desembarque: id }, transaction: t });
 
@@ -1136,11 +1041,7 @@ export const atualizarDesembarque = async (req, res) => {
     });
 
   } catch (error) {
-    try {
-      await t.rollback();
-    } catch (rbErr) {
-      console.error('Erro ao dar rollback na transação:', rbErr);
-    }
+    try { await t.rollback(); } catch (rbErr) { console.error('Erro ao dar rollback na transação:', rbErr); }
 
     console.error('❌ Erro ao atualizar desembarque:', error);
 
@@ -1153,13 +1054,13 @@ export const atualizarDesembarque = async (req, res) => {
   }
 };
 
-// Deletar desembarque
+// ─── DELETAR ──────────────────────────────────────────────────────────────────
+
 export const deletarDesembarque = async (req, res) => {
   try {
     const { id } = req.params;
 
     const desembarque = await Desembarque.findByPk(id);
-    
     if (!desembarque) {
       return res.status(404).json({
         success: false,
@@ -1167,14 +1068,12 @@ export const deletarDesembarque = async (req, res) => {
       });
     }
 
-    // Deletar registros relacionados em paralelo
     await Promise.all([
       DesembarqueArte.destroy({ where: { ID_desembarque: id } }),
       Captura.destroy({ where: { ID_desembarque: id } }),
       Individuo.destroy({ where: { ID_desembarque: id } })
     ]);
-    
-    // Deletar desembarque
+
     await desembarque.destroy();
 
     res.json({
@@ -1192,7 +1091,8 @@ export const deletarDesembarque = async (req, res) => {
   }
 };
 
-// Estatísticas de desembarques
+// ─── ESTATÍSTICAS ─────────────────────────────────────────────────────────────
+
 export const estatisticasDesembarques = async (req, res) => {
   try {
     const { municipio, data_inicio, data_fim } = req.query;
@@ -1200,22 +1100,17 @@ export const estatisticasDesembarques = async (req, res) => {
     const where = {};
     if (municipio) where.municipio = municipio;
     if (data_inicio && data_fim) {
-      where.data_coleta = {
-        [Op.between]: [data_inicio, data_fim]
-      };
+      where.data_coleta = { [Op.between]: [data_inicio, data_fim] };
     }
 
-    // Total de desembarques
     const totalDesembarques = await Desembarque.count({ where });
 
-    // Total de pescadores únicos
     const pescadoresUnicos = await Desembarque.count({
       where,
       distinct: true,
       col: 'ID_pescador'
     });
 
-    // Total de capturas por espécie
     const capturasPorEspecie = await Captura.findAll({
       attributes: [
         'ID_especie',

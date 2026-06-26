@@ -1,14 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/app/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import api from '@/services/api'
 
+const ITENS_POR_PAGINA = 50
+
 export default function EspeciesPage() {
     const { estaAutenticado, ehAdmin } = useAuth()
     const router = useRouter()
-    const ITENS_POR_PAGINA = 50
+
     const [especies, setEspecies] = useState([])
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState('')
@@ -16,7 +18,12 @@ export default function EspeciesPage() {
     const [modalAberto, setModalAberto] = useState(false)
     const [especieEditando, setEspecieEditando] = useState(null)
     const [busca, setBusca] = useState('')
+    const [buscaInput, setBuscaInput] = useState('') // valor do input, antes do debounce
+
+    // Paginação vinda do servidor
     const [paginaAtual, setPaginaAtual] = useState(1)
+    const [totalPaginas, setTotalPaginas] = useState(1)
+    const [totalEspecies, setTotalEspecies] = useState(0)
 
     const [formData, setFormData] = useState({
         idd: '',
@@ -34,50 +41,64 @@ export default function EspeciesPage() {
         pesca: 0
     })
 
-    // Verificar permissões
     useEffect(() => {
-        if (!estaAutenticado()) {
-            router.push('/login')
-            return
-        }
-        if (!ehAdmin()) {
-            router.push('/')
-            return
-        }
-        carregarEspecies()
+        if (!estaAutenticado()) { router.push('/login'); return }
+        if (!ehAdmin()) { router.push('/'); return }
     }, [estaAutenticado, ehAdmin, router])
 
-    const carregarEspecies = async () => {
+    const carregarEspecies = useCallback(async (pagina = 1, termoBusca = '') => {
         try {
             setLoading(true)
-            const response = await api.listarEspeciesAdmin()
-            // Se a resposta tem a estrutura { success: true, data: [...] }
-            const data = response.data || response
-            setEspecies(Array.isArray(data) ? data : [])
+            setErro('')
+            const response = await api.listarEspeciesAdmin({
+                page: pagina,
+                limit: ITENS_POR_PAGINA,
+                busca: termoBusca
+            })
+
+            // Suporta { data: [], pagination: { total, pages } } ou array direto
+            if (response?.data && response?.pagination) {
+                setEspecies(response.data)
+                setTotalPaginas(response.pagination.pages || 1)
+                setTotalEspecies(response.pagination.total || 0)
+            } else {
+                // fallback: API ainda não suporta paginação server-side
+                const lista = Array.isArray(response?.data ?? response) ? (response?.data ?? response) : []
+                setEspecies(lista)
+                setTotalPaginas(Math.max(1, Math.ceil(lista.length / ITENS_POR_PAGINA)))
+                setTotalEspecies(lista.length)
+            }
         } catch (error) {
             console.error('Erro ao carregar espécies:', error)
             setErro('Erro ao carregar espécies')
-            setEspecies([]) // Definir como array vazio em caso de erro
+            setEspecies([])
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
+
+    // Carrega quando muda página ou termo de busca
+    useEffect(() => {
+        carregarEspecies(paginaAtual, busca)
+    }, [paginaAtual, busca, carregarEspecies])
+
+    // Debounce no input de busca: aguarda 400ms antes de disparar
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setPaginaAtual(1)   // volta à p.1 sempre que o filtro muda
+            setBusca(buscaInput)
+        }, 400)
+        return () => clearTimeout(timer)
+    }, [buscaInput])
+
+    // ---------- helpers de form ----------
 
     const resetForm = () => {
         setFormData({
-            idd: '',
-            familia: '',
-            nome_cientifico: '',
-            nome_popular: '',
-            genero: '',
-            habitat: '',
-            grau_ameaca: 'NA',
-            nivel_trofico: '',
-            valor_comercial: 1,
-            mercado: 0,
-            comprimento_max_cm: '',
-            inicio_maturacao_cm: '',
-            pesca: 0
+            idd: '', familia: '', nome_cientifico: '', nome_popular: '',
+            genero: '', habitat: '', grau_ameaca: 'NA', nivel_trofico: '',
+            valor_comercial: 1, mercado: 0, comprimento_max_cm: '',
+            inicio_maturacao_cm: '', pesca: 0
         })
         setEspecieEditando(null)
     }
@@ -106,16 +127,12 @@ export default function EspeciesPage() {
         setModalAberto(true)
     }
 
-    const fecharModal = () => {
-        setModalAberto(false)
-        resetForm()
-    }
+    const fecharModal = () => { setModalAberto(false); resetForm() }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setErro('')
         setSucesso('')
-
         try {
             const dadosEnvio = {
                 ...formData,
@@ -129,55 +146,34 @@ export default function EspeciesPage() {
             }
 
             if (especieEditando) {
-                // Editar espécie existente
                 await api.atualizarEspecie(especieEditando.ID, dadosEnvio)
                 setSucesso('Espécie atualizada com sucesso!')
             } else {
-                // Criar nova espécie
                 await api.criarEspecie(dadosEnvio)
                 setSucesso('Espécie criada com sucesso!')
             }
-            
             fecharModal()
-            carregarEspecies()
+            carregarEspecies(paginaAtual, busca)
         } catch (error) {
-            console.error('Erro ao salvar espécie:', error)
             setErro('Erro ao salvar espécie: ' + (error.message || 'Erro desconhecido'))
         }
     }
 
     const excluirEspecie = async (id) => {
-        if (!confirm('Tem certeza que deseja excluir esta espécie?')) {
-            return
-        }
-
+        if (!confirm('Tem certeza que deseja excluir esta espécie?')) return
         try {
             await api.excluirEspecie(id)
             setSucesso('Espécie excluída com sucesso!')
-            carregarEspecies()
+            // Se era o único item da página, volta uma página
+            const novaPagina = especies.length === 1 && paginaAtual > 1 ? paginaAtual - 1 : paginaAtual
+            carregarEspecies(novaPagina, busca)
+            setPaginaAtual(novaPagina)
         } catch (error) {
-            console.error('Erro ao excluir espécie:', error)
             setErro('Erro ao excluir espécie: ' + (error.message || 'Erro desconhecido'))
         }
     }
 
-    const especiesFiltradas = especies.filter(especie =>
-        especie.Nome_popular?.toLowerCase().includes(busca.toLowerCase()) ||
-        especie.Nome_cientifico?.toLowerCase().includes(busca.toLowerCase()) ||
-        especie.Familia?.toLowerCase().includes(busca.toLowerCase())
-    )
-    const totalPaginas = Math.max(1, Math.ceil(especiesFiltradas.length / ITENS_POR_PAGINA))
-    const paginaSegura = Math.min(paginaAtual, totalPaginas)
-    const indiceInicial = (paginaSegura - 1) * ITENS_POR_PAGINA
-    const especiesExibidas = especiesFiltradas.slice(indiceInicial, indiceInicial + ITENS_POR_PAGINA)
-
-    useEffect(() => {
-        setPaginaAtual(1)
-    }, [busca])
-
-    useEffect(() => {
-        setPaginaAtual((current) => Math.min(current, totalPaginas))
-    }, [totalPaginas])
+    const indiceInicial = (paginaAtual - 1) * ITENS_POR_PAGINA
 
     return (
         <div className="min-h-screen bg-gray-50 text-black">
@@ -185,10 +181,7 @@ export default function EspeciesPage() {
             <header className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => router.push('/')}
-                            className="p-2 text-black hover:text-black/80"
-                        >
+                        <button onClick={() => router.push('/')} className="p-2 text-black hover:text-black/80">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                             </svg>
@@ -205,33 +198,28 @@ export default function EspeciesPage() {
             </header>
 
             <div className="max-w-7xl mx-auto px-4 py-8">
-                {/* Mensagens */}
                 {erro && (
-                    <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-                        {erro}
-                    </div>
+                    <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">{erro}</div>
                 )}
                 {sucesso && (
-                    <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
-                        {sucesso}
-                    </div>
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">{sucesso}</div>
                 )}
 
                 {/* Busca */}
                 <div className="mb-6">
                     <input
                         type="text"
-                        value={busca}
-                        onChange={(e) => setBusca(e.target.value)}
+                        value={buscaInput}
+                        onChange={(e) => setBuscaInput(e.target.value)}
                         placeholder="Buscar espécies por nome popular, científico ou família..."
                         className="w-full max-w-md p-3 border rounded-lg text-black placeholder:text-gray-500"
                     />
                 </div>
 
-                {/* Lista de Espécies */}
+                {/* Tabela */}
                 {loading ? (
                     <div className="text-center py-8">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
                         <p className="mt-2 text-black">Carregando espécies...</p>
                     </div>
                 ) : (
@@ -240,57 +228,24 @@ export default function EspeciesPage() {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                                            Nome Popular
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                                            Nome Científico
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                                            Família
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                                            Habitat
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                                            Valor Comercial
-                                        </th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-black uppercase tracking-wider">
-                                            Ações
-                                        </th>
+                                        {['Nome Popular', 'Nome Científico', 'Família', 'Habitat', 'Valor Comercial', 'Ações'].map(h => (
+                                            <th key={h} className={`px-6 py-3 text-xs font-medium text-black uppercase tracking-wider ${h === 'Ações' ? 'text-right' : 'text-left'}`}>
+                                                {h}
+                                            </th>
+                                        ))}
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {especiesExibidas.map((especie) => (
+                                    {especies.map((especie) => (
                                         <tr key={especie.ID} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                                                {especie.Nome_popular}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                                <em>{especie.Nome_cientifico}</em>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                                {especie.Familia}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                                {especie.Habitat}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                                {especie.Valor_comercial}
-                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">{especie.Nome_popular}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black"><em>{especie.Nome_cientifico}</em></td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{especie.Familia}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{especie.Habitat}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{especie.Valor_comercial}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    onClick={() => abrirModal(especie)}
-                                                    className="text-blue-600 hover:text-blue-900 mr-4"
-                                                >
-                                                    Editar
-                                                </button>
-                                                <button
-                                                    onClick={() => excluirEspecie(especie.ID)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Excluir
-                                                </button>
+                                                <button onClick={() => abrirModal(especie)} className="text-blue-600 hover:text-blue-900 mr-4">Editar</button>
+                                                <button onClick={() => excluirEspecie(especie.ID)} className="text-red-600 hover:text-red-900">Excluir</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -298,28 +253,29 @@ export default function EspeciesPage() {
                             </table>
                         </div>
 
-                        {especiesFiltradas.length > ITENS_POR_PAGINA && (
+                        {/* Paginação */}
+                        {totalPaginas > 1 && (
                             <div className="flex flex-col gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                                 <p className="text-sm text-gray-600">
-                                    Mostrando {indiceInicial + 1}-{Math.min(indiceInicial + ITENS_POR_PAGINA, especiesFiltradas.length)} de {especiesFiltradas.length} espécies
+                                    Mostrando {indiceInicial + 1}–{Math.min(indiceInicial + especies.length, totalEspecies)} de {totalEspecies} espécies
                                 </p>
                                 <div className="flex items-center gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => setPaginaAtual((current) => Math.max(1, current - 1))}
-                                        disabled={paginaSegura <= 1}
-                                        className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                        onClick={() => setPaginaAtual(p => Math.max(1, p - 1))}
+                                        disabled={paginaAtual <= 1}
+                                        className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         Anterior
                                     </button>
                                     <span className="text-sm font-medium text-gray-700">
-                                        Página {paginaSegura} de {totalPaginas}
+                                        Página {paginaAtual} de {totalPaginas}
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={() => setPaginaAtual((current) => Math.min(totalPaginas, current + 1))}
-                                        disabled={paginaSegura >= totalPaginas}
-                                        className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                        onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))}
+                                        disabled={paginaAtual >= totalPaginas}
+                                        className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         Próxima
                                     </button>
@@ -327,7 +283,7 @@ export default function EspeciesPage() {
                             </div>
                         )}
 
-                        {especiesFiltradas.length === 0 && (
+                        {especies.length === 0 && (
                             <div className="text-center py-8 text-black">
                                 {busca ? 'Nenhuma espécie encontrada para a busca.' : 'Nenhuma espécie cadastrada.'}
                             </div>
@@ -354,7 +310,7 @@ export default function EspeciesPage() {
                                         type="number"
                                         min="1"
                                         value={formData.idd}
-                                        onChange={(e) => setFormData({...formData, idd: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, idd: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                         placeholder="Ex.: 30002"
                                     />
@@ -367,7 +323,7 @@ export default function EspeciesPage() {
                                     <input
                                         type="text"
                                         value={formData.nome_popular}
-                                        onChange={(e) => setFormData({...formData, nome_popular: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, nome_popular: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                         required
                                     />
@@ -380,7 +336,7 @@ export default function EspeciesPage() {
                                     <input
                                         type="text"
                                         value={formData.nome_cientifico}
-                                        onChange={(e) => setFormData({...formData, nome_cientifico: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, nome_cientifico: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                         required
                                     />
@@ -393,7 +349,7 @@ export default function EspeciesPage() {
                                     <input
                                         type="text"
                                         value={formData.familia}
-                                        onChange={(e) => setFormData({...formData, familia: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, familia: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
@@ -405,7 +361,7 @@ export default function EspeciesPage() {
                                     <input
                                         type="text"
                                         value={formData.genero}
-                                        onChange={(e) => setFormData({...formData, genero: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
@@ -416,7 +372,7 @@ export default function EspeciesPage() {
                                     </label>
                                     <select
                                         value={formData.habitat}
-                                        onChange={(e) => setFormData({...formData, habitat: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, habitat: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value="">Selecione</option>
@@ -434,7 +390,7 @@ export default function EspeciesPage() {
                                     </label>
                                     <select
                                         value={formData.grau_ameaca}
-                                        onChange={(e) => setFormData({...formData, grau_ameaca: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, grau_ameaca: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value="NA">NA (Não Avaliado)</option>
@@ -455,7 +411,7 @@ export default function EspeciesPage() {
                                         type="number"
                                         step="0.1"
                                         value={formData.nivel_trofico}
-                                        onChange={(e) => setFormData({...formData, nivel_trofico: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, nivel_trofico: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
@@ -466,7 +422,7 @@ export default function EspeciesPage() {
                                     </label>
                                     <select
                                         value={formData.valor_comercial}
-                                        onChange={(e) => setFormData({...formData, valor_comercial: parseInt(e.target.value)})}
+                                        onChange={(e) => setFormData({ ...formData, valor_comercial: parseInt(e.target.value) })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value={1}>1 - Baixo</option>
@@ -483,7 +439,7 @@ export default function EspeciesPage() {
                                         type="number"
                                         step="0.1"
                                         value={formData.comprimento_max_cm}
-                                        onChange={(e) => setFormData({...formData, comprimento_max_cm: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, comprimento_max_cm: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
@@ -496,7 +452,7 @@ export default function EspeciesPage() {
                                         type="number"
                                         step="0.1"
                                         value={formData.inicio_maturacao_cm}
-                                        onChange={(e) => setFormData({...formData, inicio_maturacao_cm: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, inicio_maturacao_cm: e.target.value })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     />
                                 </div>
@@ -507,7 +463,7 @@ export default function EspeciesPage() {
                                     </label>
                                     <select
                                         value={formData.mercado}
-                                        onChange={(e) => setFormData({...formData, mercado: parseInt(e.target.value)})}
+                                        onChange={(e) => setFormData({ ...formData, mercado: parseInt(e.target.value) })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value={0}>Não</option>
@@ -521,7 +477,7 @@ export default function EspeciesPage() {
                                     </label>
                                     <select
                                         value={formData.pesca}
-                                        onChange={(e) => setFormData({...formData, pesca: parseInt(e.target.value)})}
+                                        onChange={(e) => setFormData({ ...formData, pesca: parseInt(e.target.value) })}
                                         className="w-full p-2 border rounded-lg text-black"
                                     >
                                         <option value={0}>Não</option>
@@ -552,3 +508,4 @@ export default function EspeciesPage() {
         </div>
     )
 }
+

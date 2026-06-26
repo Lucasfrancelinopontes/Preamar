@@ -314,17 +314,23 @@ const api = {
     }
   },
 
-  listarEspeciesAdmin: async () => {
-    try {
-      const response = await fetch(`${API_URL}/admin/especies`, {
-        headers: getAuthHeaders()
-      });
-      return handleResponse(response);
-    } catch (error) {
-      console.error('Erro ao listar espécies (admin):', error);
-      throw error;
-    }
-  },
+  listarEspeciesAdmin: async (params = {}) => {
+  try {
+    const query = new URLSearchParams({
+      page: params.page || 1,
+      limit: params.limit || 50,
+      ...(params.busca ? { busca: params.busca } : {})
+    });
+
+    const response = await fetch(`${API_URL}/admin/especies?${query}`, {
+      headers: getAuthHeaders()
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Erro ao listar espécies (admin):', error);
+    throw error;
+  }
+},
 
   criarEspecie: async (dados) => {
     try {
