@@ -36,7 +36,6 @@ function InputGroup({ label, name, value, onChange, type = "text", placeholder =
 
     const handleNumberWheel = (event) => {
         if (!isNumberInput) return;
-        // Evita que o scroll altere valores (ex.: 400 virar 399)
         event.currentTarget.blur();
     };
 
@@ -73,6 +72,7 @@ const createIndividuoItem = () => ({
     comprimentoIndividuo: "",
     pesoIndividuo: ""
 });
+
 const createArtePescaItem = () => ({
     ID: null,
     arte: "",
@@ -81,6 +81,7 @@ const createArtePescaItem = () => ({
     quantidade: "",
     unidade: "m"
 });
+
 const normalizeArtesPesca = (artes) => {
     if (!Array.isArray(artes) || artes.length === 0) {
         return [createArtePescaItem()];
@@ -161,43 +162,32 @@ const formatTimeForInput = (value) => {
 
 const toDateInput = (value) => {
     if (!value) return "";
-
     if (value instanceof Date) return formatDateForInput(value);
-
     const raw = String(value).trim();
     if (!raw) return "";
-
     if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
     if (/^\d{4}-\d{2}-\d{2}[ T]/.test(raw)) return raw.slice(0, 10);
-
     if (raw.includes("T")) {
         const datePart = raw.split("T")[0];
         if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return datePart;
     }
-
     const parsed = new Date(raw);
     return formatDateForInput(parsed);
 };
 
 const toTimeInput = (value) => {
     if (!value) return "";
-
     if (value instanceof Date) return formatTimeForInput(value);
-
     const raw = String(value).trim().replace(/Z$/, "");
     if (!raw) return "";
-
     if (raw.includes("T")) {
         const t = raw.split("T")[1] || "";
         return t.slice(0, 5);
     }
-
     if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return "";
     if (/^\d{2}:\d{2}/.test(raw)) return raw.slice(0, 5);
-
     const dateTimeWithSpace = raw.match(/\s(\d{2}:\d{2})(?::\d{2})?/);
     if (dateTimeWithSpace) return dateTimeWithSpace[1];
-
     const parsed = new Date(raw);
     return formatTimeForInput(parsed);
 };
@@ -208,10 +198,8 @@ const isValidTimeInput = (value) => /^\d{2}:\d{2}$/.test(value);
 const toDatetimeLocal = (dateValue, timeValue) => {
     const date = toDateInput(dateValue);
     if (!isValidDateInput(date)) return "";
-
     const time = toTimeInput(timeValue || dateValue);
     if (!isValidTimeInput(time)) return "";
-
     return `${date}T${time}`;
 };
 
@@ -235,40 +223,26 @@ const parseCoord = (raw, kind) => {
     const normalized = String(raw).trim().replace(",", ".");
     if (!normalized) return null;
     const numeric = Number(normalized);
-    if (Number.isFinite(numeric) && Math.abs(numeric) <= max) {
-        return numeric;
-    }
+    if (Number.isFinite(numeric) && Math.abs(numeric) <= max) return numeric;
     return null;
 };
 
 const normalizeConservacaoValue = (value) => {
     const raw = String(value || "").trim();
     if (!raw) return "";
-
     if (raw === "caixa") return "caixaTermica";
     if (raw === "in_natura") return "pescadoInNatura";
-
     return raw;
 };
 
 const normalizeTipoEmbarcacao = (value) => {
     const raw = String(value || "").trim().toLowerCase();
     if (!raw) return "";
-
     const map = {
-        "bote":        "bote",
-        "lancha":      "lancha",
-        "Bote": "bote",
-        "Lancha": "lancha",
-        "BOTE":   "bote",
-        "LANCHA": "lancha",
-        "catraia":     "catraia",
-        "caico":       "caico",
-        "jangada":     "jangada",
-        "canoa":       "canoa",
-        "barco":       "barco",
+        bote: "bote", lancha: "lancha",
+        catraia: "catraia", caico: "caico",
+        jangada: "jangada", canoa: "canoa", barco: "barco",
     };
-
     return map[raw] ?? "outro";
 };
 
@@ -288,16 +262,12 @@ const extractDestinoApelido = (raw, destino) => {
     if (!raw) return "";
     const texto = String(raw).trim();
     if (!texto) return "";
-
     if (!texto.includes(":")) return texto;
-
     const destinoKey = String(destino || "").trim().toLowerCase();
     if (!destinoKey) return texto;
-
     const entries = texto.split(",").map((item) => item.trim()).filter(Boolean);
     const match = entries.find((item) => item.toLowerCase().startsWith(`${destinoKey}:`));
     if (!match) return texto;
-
     const [, ...rest] = match.split(":");
     return rest.join(":").trim();
 };
@@ -340,10 +310,6 @@ const mapApiToFormData = (data) => {
         numTripulantes: data?.numero_tripulantes != null ? String(data.numero_tripulantes) : "",
         numPesqueiros: data?.pesqueiros != null ? String(data.pesqueiros) : "",
         tipoEmbarcacao: normalizeTipoEmbarcacao(data?.embarcacao?.tipo),
-        tipoEmbarcacaoOutro: (() => {
-        const tipo = normalizeTipoEmbarcacao(data?.embarcacao?.tipo);
-        return tipo === "outro" ? (data?.embarcacao?.tipo || "") : (data?.embarcacao?.tipo_outro || "");
-        })(),
         tipoEmbarcacaoOutro: data?.embarcacao?.tipo_outro || "",
         comprimento: data?.embarcacao?.comprimento != null ? String(data.embarcacao.comprimento) : "",
         capacidadeEstocagem: data?.embarcacao?.capacidade != null ? String(data.embarcacao.capacidade) : "",
@@ -426,6 +392,7 @@ function DesembarqueContent() {
     const [erroInicial, setErroInicial] = useState("");
     const [formData, setFormData] = useState(createInitialFormData);
 
+    // ── Carrega municipios e especies ──────────────────────────────────────────
     useEffect(() => {
         const carregarListas = async () => {
             setCarregandoInicial(true);
@@ -443,10 +410,10 @@ function DesembarqueContent() {
                 setCarregandoInicial(false);
             }
         };
-
         carregarListas();
     }, []);
 
+    // ── Carrega dados para edicao ──────────────────────────────────────────────
     useEffect(() => {
         const carregarEdicao = async () => {
             if (!editId) return;
@@ -462,34 +429,29 @@ function DesembarqueContent() {
                 setCarregandoEdicao(false);
             }
         };
-
         carregarEdicao();
     }, [editId]);
 
+    // ── Carrega embarcacoes de todos os municipios (checkbox "outro municipio") ─
     useEffect(() => {
-        if (editId || !usarEmbarcacaoOutroMunicipio) return;
-
+        if (!usarEmbarcacaoOutroMunicipio) return;
         if (embarcacoesTodosMunicipios.length > 0) return;
 
         const carregarEmbarcacoesDeTodosMunicipios = async () => {
             setCarregandoEmbarcacoesOutroMunicipio(true);
             setErroEmbarcacoesOutroMunicipio("");
-
             try {
                 const limite = 200;
                 let pagina = 1;
                 let totalPaginas = 1;
                 const embarcacoesCarregadas = [];
-
                 do {
                     const response = await api.listarEmbarcacoes({ page: pagina, limit: limite });
                     const registros = mapToArray(response);
                     embarcacoesCarregadas.push(...registros);
-
                     totalPaginas = Number(response?.pagination?.pages || pagina);
                     pagina += 1;
                 } while (pagina <= totalPaginas);
-
                 setEmbarcacoesTodosMunicipios(embarcacoesCarregadas);
             } catch (error) {
                 setEmbarcacoesTodosMunicipios([]);
@@ -498,19 +460,11 @@ function DesembarqueContent() {
                 setCarregandoEmbarcacoesOutroMunicipio(false);
             }
         };
-
         carregarEmbarcacoesDeTodosMunicipios();
-    }, [editId, embarcacoesTodosMunicipios.length, usarEmbarcacaoOutroMunicipio]);
+    }, [embarcacoesTodosMunicipios.length, usarEmbarcacaoOutroMunicipio]);
 
+    // ── Carrega embarcacoes pelo municipio selecionado (criacao E edicao) ──────
     useEffect(() => {
-        if (editId) {
-            setEmbarcacoesDoMunicipio([]);
-            setEmbarcacaoSelecionadaId("");
-            setErroEmbarcacoes("");
-            setCarregandoEmbarcacoes(false);
-            return;
-        }
-
         const carregarEmbarcacoesPorMunicipio = async () => {
             const municipio = (formData.municipio || "").trim();
             const municipioResolvido = municipios.find((m) => m.municipio === municipio) || null;
@@ -525,15 +479,9 @@ function DesembarqueContent() {
 
             setCarregandoEmbarcacoes(true);
             try {
-                const filtros = municipioResolvido && municipioResolvido.ID_municipio
+                const filtros = municipioResolvido?.ID_municipio
                     ? { municipioId: municipioResolvido.ID_municipio, limit: 200 }
                     : { municipio, limit: 200 };
-
-                console.info("[desembarque] carregando embarcacoes", {
-                    municipioDigitado: municipio,
-                    municipioResolvido,
-                    filtros
-                });
 
                 const response = await api.listarEmbarcacoes(filtros);
                 setEmbarcacoesDoMunicipio(mapToArray(response));
@@ -544,9 +492,8 @@ function DesembarqueContent() {
                 setCarregandoEmbarcacoes(false);
             }
         };
-
         carregarEmbarcacoesPorMunicipio();
-    }, [editId, formData.municipio]);
+    }, [formData.municipio, municipios]);
 
     const municipioSelecionado = useMemo(
         () => municipios.find((m) => m.municipio === formData.municipio) || null,
@@ -567,14 +514,11 @@ function DesembarqueContent() {
         const municipioCode = municipioSelecionado?.municipioCode?.trim();
         const localidadeCode = localidadeSelecionada?.localidadeCode?.trim();
         if (!municipioCode || !localidadeCode || !formData.dataColeta) return "";
-
         const partesData = formData.dataColeta.split("-");
         if (partesData.length !== 3) return "";
-
         const [ano, mes, dia] = partesData;
         const consecutivoNumero = Number(formData.numConsecutivo || 1);
         if (!Number.isInteger(consecutivoNumero) || consecutivoNumero <= 0) return "";
-
         const consecutivo = String(consecutivoNumero).padStart(2, "0");
         return `${municipioCode} ${localidadeCode} ${dia} ${mes} ${ano.slice(-2)} ${consecutivo}`;
     }, [municipioSelecionado, localidadeSelecionada, formData.dataColeta, formData.numConsecutivo]);
@@ -585,7 +529,6 @@ function DesembarqueContent() {
                 .map((captura) => String(captura.especieId || "").trim())
                 .filter(Boolean)
         );
-
         return especies.filter((esp) => especiesSelecionadas.has(String(esp.ID)));
     }, [especies, formData.capturas]);
 
@@ -609,28 +552,21 @@ function DesembarqueContent() {
 
     useEffect(() => {
         if (especies.length === 0) return;
-
         setFormData((prev) => {
             const capturas = Array.isArray(prev.capturas) ? prev.capturas : [];
             if (capturas.length === 0) return prev;
-
             let changed = false;
             const normalizadas = capturas.map((captura) => {
                 const especieId = String(captura.especieId || "").trim();
                 if (!especieId) return captura;
-
                 const especie = especiesPorId.get(especieId);
                 if (!especie) return captura;
-
                 const iddCorreto = String(especie.IDD ?? especie.ID ?? "").trim();
                 const iddAtual = String(captura.especieIdd || "").trim();
-
                 if (!iddCorreto || iddAtual === iddCorreto) return captura;
-
                 changed = true;
                 return { ...captura, especieIdd: iddCorreto };
             });
-
             return changed ? { ...prev, capturas: normalizadas } : prev;
         });
     }, [especies, especiesPorId]);
@@ -671,48 +607,26 @@ function DesembarqueContent() {
     const handleSelecionarEmbarcacao = (e) => {
         const selectedId = e.target.value;
         setEmbarcacaoSelecionadaId(selectedId);
-
         if (!selectedId) return;
-
         const embarcacao = embarcacoesDoMunicipio.find(
             (item) => String(item.ID_embarcacao) === String(selectedId)
         );
-
         if (!embarcacao) return;
-
-        setFormData((prev) => ({
-            ...prev,
-            ID_embarcacao: embarcacao.ID_embarcacao || prev.ID_embarcacao || null,
-            nomeEmbarcacao: embarcacao.nome_embarcacao || "",
-            codigoEmbarcacao: embarcacao.codigo_embarcacao || "",
-            // depois
-            tipoEmbarcacao: normalizeTipoEmbarcacao(embarcacao.tipo),
-            tipoEmbarcacaoOutro: (() => {
-            const tipo = normalizeTipoEmbarcacao(embarcacao.tipo);
-            return tipo === "outro" ? (embarcacao.tipo || "") : (embarcacao.tipo_outro || "");
-            })(),
-            comprimento: embarcacao.comprimento != null ? String(embarcacao.comprimento) : "",
-            capacidadeEstocagem: embarcacao.capacidade != null ? String(embarcacao.capacidade) : "",
-            forcaMotor: embarcacao.hp != null ? String(embarcacao.hp) : "",
-            conservacao: normalizeConservacaoValue(embarcacao.possui),
-            municipioEmbarcacao: embarcacao.municipio || prev.municipioEmbarcacao || prev.municipio || "",
-            nomeProprietario: prev.nomeProprietario || embarcacao.proprietario || "",
-            apelidoProprietario: prev.apelidoProprietario || embarcacao.apelido_propietario || "",
-            cpfProprietario: prev.cpfProprietario || embarcacao.cpf_proprietario || "",
-            naturalidadeProprietario: prev.naturalidadeProprietario || embarcacao.localidade || ""
-        }));
+        aplicarEmbarcacaoSelecionada(embarcacao);
     };
 
     const aplicarEmbarcacaoSelecionada = (embarcacao) => {
         if (!embarcacao) return;
-
         setFormData((prev) => ({
             ...prev,
             ID_embarcacao: embarcacao.ID_embarcacao || prev.ID_embarcacao || null,
             nomeEmbarcacao: embarcacao.nome_embarcacao || "",
             codigoEmbarcacao: embarcacao.codigo_embarcacao || "",
-            tipoEmbarcacao: embarcacao.tipo || "",
-            tipoEmbarcacaoOutro: embarcacao.tipo_outro || "",
+            tipoEmbarcacao: normalizeTipoEmbarcacao(embarcacao.tipo),
+            tipoEmbarcacaoOutro: (() => {
+                const tipo = normalizeTipoEmbarcacao(embarcacao.tipo);
+                return tipo === "outro" ? (embarcacao.tipo || "") : (embarcacao.tipo_outro || "");
+            })(),
             comprimento: embarcacao.comprimento != null ? String(embarcacao.comprimento) : "",
             capacidadeEstocagem: embarcacao.capacidade != null ? String(embarcacao.capacidade) : "",
             forcaMotor: embarcacao.hp != null ? String(embarcacao.hp) : "",
@@ -728,7 +642,6 @@ function DesembarqueContent() {
     const embarcacoesFiltradasOutroMunicipio = useMemo(() => {
         const termo = normalizeBuscaTexto(filtroEmbarcacaoOutroMunicipio);
         if (!termo) return embarcacoesTodosMunicipios;
-
         return embarcacoesTodosMunicipios.filter((embarcacao) => {
             const campos = [
                 embarcacao.nome_embarcacao,
@@ -737,10 +650,7 @@ function DesembarqueContent() {
                 embarcacao.municipio,
                 embarcacao.localidade,
                 embarcacao.tipo
-            ]
-                .map(normalizeBuscaTexto)
-                .join(" ");
-
+            ].map(normalizeBuscaTexto).join(" ");
             return campos.includes(termo);
         });
     }, [embarcacoesTodosMunicipios, filtroEmbarcacaoOutroMunicipio]);
@@ -748,13 +658,10 @@ function DesembarqueContent() {
     const handleSelecionarEmbarcacaoOutroMunicipio = (e) => {
         const selectedId = e.target.value;
         setEmbarcacaoSelecionadaId(selectedId);
-
         if (!selectedId) return;
-
         const embarcacao = embarcacoesFiltradasOutroMunicipio.find(
             (item) => String(item.ID_embarcacao) === String(selectedId)
         );
-
         aplicarEmbarcacaoSelecionada(embarcacao);
     };
 
@@ -764,11 +671,8 @@ function DesembarqueContent() {
         setEmbarcacaoSelecionadaId("");
         setFiltroEmbarcacaoOutroMunicipio("");
         setErroEmbarcacoesOutroMunicipio("");
-
         if (!checked) return;
-
         if (embarcacoesTodosMunicipios.length > 0) return;
-
         setCarregandoEmbarcacoesOutroMunicipio(true);
     };
 
@@ -779,16 +683,10 @@ function DesembarqueContent() {
 
             if (field === "especieIdd") {
                 const iddInformado = String(value || "").trim();
-
                 if (!iddInformado) {
-                    capturas[index] = {
-                        ...capturaAtual,
-                        especieIdd: "",
-                        especieId: ""
-                    };
+                    capturas[index] = { ...capturaAtual, especieIdd: "", especieId: "" };
                     return { ...prev, capturas };
                 }
-
                 const especieEncontrada = especiesPorIdd.get(iddInformado);
                 capturas[index] = {
                     ...capturaAtual,
@@ -800,16 +698,10 @@ function DesembarqueContent() {
 
             if (field === "especieId") {
                 const especieId = String(value || "").trim();
-
                 if (!especieId) {
-                    capturas[index] = {
-                        ...capturaAtual,
-                        especieId: "",
-                        especieIdd: ""
-                    };
+                    capturas[index] = { ...capturaAtual, especieId: "", especieIdd: "" };
                     return { ...prev, capturas };
                 }
-
                 const especieEncontrada = especiesPorId.get(especieId);
                 capturas[index] = {
                     ...capturaAtual,
@@ -837,7 +729,6 @@ function DesembarqueContent() {
         setFormData((prev) => {
             const capturas = Array.isArray(prev.capturas) ? [...prev.capturas] : [];
             if (capturas.length <= 1) return prev;
-
             capturas.splice(index, 1);
             return { ...prev, capturas };
         });
@@ -862,7 +753,6 @@ function DesembarqueContent() {
         setFormData((prev) => {
             const individuos = Array.isArray(prev.individuos) ? [...prev.individuos] : [];
             if (individuos.length <= 1) return prev;
-
             individuos.splice(index, 1);
             return { ...prev, individuos };
         });
@@ -875,19 +765,15 @@ function DesembarqueContent() {
                     .map((captura) => String(captura.especieId || "").trim())
                     .filter(Boolean)
             );
-
             let changed = false;
             const individuos = (prev.individuos || []).map((individuo) => {
                 if (!individuo.especieId) return individuo;
-
                 if (!especiesValidas.has(String(individuo.especieId))) {
                     changed = true;
                     return { ...individuo, especieId: "" };
                 }
-
                 return individuo;
             });
-
             return changed ? { ...prev, individuos } : prev;
         });
     }, [formData.capturas]);
@@ -916,7 +802,6 @@ function DesembarqueContent() {
             .map((captura) => {
                 const especieId = Number.parseInt(String(captura.especieId || "").trim(), 10);
                 if (!Number.isInteger(especieId) || especieId <= 0) return null;
-
                 return {
                     ...(captura.ID_captura ? { ID_captura: captura.ID_captura } : {}),
                     ID_especie: especieId,
@@ -954,11 +839,7 @@ function DesembarqueContent() {
                 const especieId = Number.parseInt(String(individuo.especieId || "").trim(), 10);
                 const comprimento = toNumberOrNull(individuo.comprimentoIndividuo);
                 const peso = toNumberOrNull(individuo.pesoIndividuo);
-
-                if (!Number.isInteger(especieId) || especieId <= 0 || (comprimento == null && peso == null)) {
-                    return null;
-                }
-
+                if (!Number.isInteger(especieId) || especieId <= 0 || (comprimento == null && peso == null)) return null;
                 return {
                     ...(individuo.ID_individuo ? { ID_individuo: individuo.ID_individuo } : {}),
                     ID_especie: especieId,
@@ -1033,17 +914,12 @@ function DesembarqueContent() {
     };
 
     const handleSubmit = async () => {
-        if (etapaAtual !== TOTAL_ETAPAS) {
-            return;
-        }
-
+        if (etapaAtual !== TOTAL_ETAPAS) return;
         setErroEnvio("");
         setSucessoEnvio("");
         setCarregandoEnvio(true);
-
         try {
             const payload = montarPayload();
-
             if (formData.ID_desembarque) {
                 await api.atualizarDesembarque(formData.ID_desembarque, payload);
                 router.replace("/");
@@ -1060,19 +936,12 @@ function DesembarqueContent() {
     };
 
     const handleConfirmarEnvio = async () => {
-        if (etapaAtual !== TOTAL_ETAPAS || carregandoEnvio || carregandoInicial || carregandoEdicao) {
-            return;
-        }
-
+        if (etapaAtual !== TOTAL_ETAPAS || carregandoEnvio || carregandoInicial || carregandoEdicao) return;
         const mensagemConfirmacao = formData.ID_desembarque
             ? "Confirma a atualizacao do desembarque?"
             : "Confirma o envio do desembarque?";
-
         const confirmado = window.confirm(mensagemConfirmacao);
-        if (!confirmado) {
-            return;
-        }
-
+        if (!confirmado) return;
         await handleSubmit();
     };
 
@@ -1082,24 +951,11 @@ function DesembarqueContent() {
     };
 
     const valorResumo = (value) => (possuiValor(value) ? String(value) : "-");
-
-    const formatarDataHoraResumo = (value) => {
-        if (!possuiValor(value)) return "-";
-        return String(value).replace("T", " ");
-    };
-
-    const formatarAtuouNaPescaResumo = (value) => {
-        if (value === "sim") return "Sim";
-        if (value === "nao") return "Nao";
-        return "-";
-    };
+    const formatarDataHoraResumo = (value) => (!possuiValor(value) ? "-" : String(value).replace("T", " "));
+    const formatarAtuouNaPescaResumo = (value) => (value === "sim" ? "Sim" : value === "nao" ? "Nao" : "-");
 
     const formatarConservacaoResumo = (value) => {
-        const labels = {
-            urna: "Urna",
-            caixaTermica: "Caixa Termica",
-            pescadoInNatura: "Pescado In Natura"
-        };
+        const labels = { urna: "Urna", caixaTermica: "Caixa Termica", pescadoInNatura: "Pescado In Natura" };
         return labels[value] || valorResumo(value);
     };
 
@@ -1110,9 +966,7 @@ function DesembarqueContent() {
     };
 
     const formatarMunicipioEmbarcacaoResumo = () => {
-        if (formData.municipioEmbarcacao === "outro") {
-            return valorResumo(formData.municipioEmbarcacaoOutro);
-        }
+        if (formData.municipioEmbarcacao === "outro") return valorResumo(formData.municipioEmbarcacaoOutro);
         return valorResumo(formData.municipioEmbarcacao);
     };
 
@@ -1134,12 +988,10 @@ function DesembarqueContent() {
         const itens = Array.isArray(formData.artesPesca) ? formData.artesPesca : [];
         const principal = itens.length > 0 ? itens[0] : null;
         if (!principal || !possuiValor(principal?.arte)) return "-";
-
         const label = ARTE_LABELS[principal.arte] || String(principal.arte);
         const nomeOutro = possuiValor(principal?.nome) ? ` (${principal.nome})` : "";
         const tamanho = possuiValor(principal?.tamanho) ? ` - ${principal.tamanho} m` : "";
         const quantidade = possuiValor(principal?.quantidade) ? ` - Qtd: ${principal.quantidade}` : "";
-
         return `${label}${nomeOutro}${tamanho}${quantidade}`;
     };
 
@@ -1150,10 +1002,7 @@ function DesembarqueContent() {
     };
 
     const formatarCondicaoPeixeResumo = (value) => {
-        const labels = {
-            com_visceras: "Com visceras",
-            sem_visceras: "Sem visceras"
-        };
+        const labels = { com_visceras: "Com visceras", sem_visceras: "Sem visceras" };
         return labels[value] || valorResumo(value);
     };
 
@@ -1161,11 +1010,9 @@ function DesembarqueContent() {
         const key = possuiValor(especieId) ? String(especieId).trim() : "";
         const especie = key ? especiesPorId.get(key) : null;
         const nomePopular = especie?.Nome_popular || especie?.nome_popular || "";
-
         const idd = possuiValor(especieIdd)
             ? String(especieIdd).trim()
             : String(especie?.IDD ?? especie?.ID ?? "").trim();
-
         if (!idd && !nomePopular && !key) return "-";
         if (idd && nomePopular) return `#${idd} - ${nomePopular}`;
         if (nomePopular) return nomePopular;
@@ -1173,30 +1020,21 @@ function DesembarqueContent() {
         return `ID ${key}`;
     };
 
-    const capturasDigitadas = (formData.capturas || []).filter((captura) => {
-        return [
-            captura.especieIdd,
-            captura.especieId,
-            captura.pesoTotalEspecie,
-            captura.precoKg,
-            captura.condicaoPeixe
-        ].some(possuiValor);
-    });
+    const capturasDigitadas = (formData.capturas || []).filter((captura) =>
+        [captura.especieIdd, captura.especieId, captura.pesoTotalEspecie, captura.precoKg, captura.condicaoPeixe].some(possuiValor)
+    );
 
-    const individuosDigitados = (formData.individuos || []).filter((individuo) => {
-        return [
-            individuo.especieId,
-            individuo.numeroIndividuo,
-            individuo.comprimentoIndividuo,
-            individuo.pesoIndividuo
-        ].some(possuiValor);
-    });
+    const individuosDigitados = (formData.individuos || []).filter((individuo) =>
+        [individuo.especieId, individuo.numeroIndividuo, individuo.comprimentoIndividuo, individuo.pesoIndividuo].some(possuiValor)
+    );
 
     return (
         <div className="min-h-screen bg-slate-100 pb-10 text-black">
             <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-8 py-4 shadow-sm">
                 <h1 className="text-lg font-bold text-black">Sistema Preamar</h1>
-                <p className="text-xs text-black">Registro de Desembarque</p>
+                <p className="text-xs text-black">
+                    {editId ? "Editar Desembarque" : "Registro de Desembarque"}
+                </p>
             </header>
 
             <main className="mx-auto flex w-full max-w-5xl flex-col items-center p-4 pt-8 sm:p-6">
@@ -1225,35 +1063,31 @@ function DesembarqueContent() {
                                     Carregando municipios e especies...
                                 </div>
                             )}
-
                             {carregandoEdicao && (
                                 <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-600">
                                     Carregando dados para edicao...
                                 </div>
                             )}
-
                             {erroInicial && (
                                 <div className="mb-6 rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm font-medium text-amber-700">
                                     {erroInicial}
                                 </div>
                             )}
-
                             {erroEnvio && (
                                 <div className="mb-6 rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-medium text-red-600">
                                     {erroEnvio}
                                 </div>
                             )}
-
                             {sucessoEnvio && (
                                 <div className="mb-6 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm font-medium text-emerald-700">
                                     {sucessoEnvio}
                                 </div>
                             )}
 
+                            {/* ── ETAPA 1: Local e Identificação ── */}
                             {etapaAtual === 1 && (
                                 <div className="animate-in fade-in duration-300">
                                     <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Local e Identificacao</h2>
-
                                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                                         <div className="md:col-span-2">
                                             <label className="mb-1.5 block text-sm font-semibold text-black">Codigo do Desembarque (gerado)</label>
@@ -1265,7 +1099,6 @@ function DesembarqueContent() {
                                                 className="w-full rounded-lg border border-slate-300 bg-slate-100 px-4 py-2.5 text-black outline-none"
                                             />
                                         </div>
-
                                         <div>
                                             <label className="mb-1.5 block text-sm font-semibold text-black">Municipio</label>
                                             <select
@@ -1283,7 +1116,6 @@ function DesembarqueContent() {
                                                 ))}
                                             </select>
                                         </div>
-
                                         <div>
                                             <label className="mb-1.5 block text-sm font-semibold text-black">Localidade</label>
                                             <select
@@ -1301,7 +1133,6 @@ function DesembarqueContent() {
                                                 ))}
                                             </select>
                                         </div>
-
                                         <InputGroup label="Data da Coleta" name="dataColeta" type="date" value={formData.dataColeta} onChange={handleInputChange} />
                                         <InputGroup label="Numero Consecutivo" name="numConsecutivo" placeholder="Ex: 1, 2, 3..." value={formData.numConsecutivo} onChange={handleInputChange} />
                                         <InputGroup label="Data/Hora Saida" name="dataSaida" type="datetime-local" value={formData.dataSaida} onChange={handleInputChange} />
@@ -1311,6 +1142,7 @@ function DesembarqueContent() {
                                 </div>
                             )}
 
+                            {/* ── ETAPA 2: Pescador e Proprietário ── */}
                             {etapaAtual === 2 && (
                                 <div className="animate-in fade-in duration-300">
                                     <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Pescador e Proprietario</h2>
@@ -1322,108 +1154,103 @@ function DesembarqueContent() {
                                         <InputGroup label="CPF" name="cpfPescador" placeholder="000.000.000-00" value={formData.cpfPescador} onChange={handleInputChange} />
                                     </div>
 
-                                    {!editId && (
-                                        <>
-                                            <h3 className="mb-4 text-lg font-semibold text-black">Pre-selecao de Embarcacao</h3>
-                                            <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                                <div className="mb-4 flex items-center gap-2">
-                                                    <input
-                                                        id="usarEmbarcacaoOutroMunicipio"
-                                                        type="checkbox"
-                                                        checked={usarEmbarcacaoOutroMunicipio}
-                                                        onChange={handleToggleEmbarcacaoOutroMunicipio}
-                                                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
-                                                    />
-                                                    <label htmlFor="usarEmbarcacaoOutroMunicipio" className="text-sm font-semibold text-black">
-                                                        Selecionar embarcacao de outro municipio
-                                                    </label>
-                                                </div>
+                                    {/* Pré-seleção de embarcação — idêntica em criação E edição */}
+                                    <h3 className="mb-4 text-lg font-semibold text-black">Pre-selecao de Embarcacao</h3>
+                                    <div className="mb-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <div className="mb-4 flex items-center gap-2">
+                                            <input
+                                                id="usarEmbarcacaoOutroMunicipio"
+                                                type="checkbox"
+                                                checked={usarEmbarcacaoOutroMunicipio}
+                                                onChange={handleToggleEmbarcacaoOutroMunicipio}
+                                                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                                            />
+                                            <label htmlFor="usarEmbarcacaoOutroMunicipio" className="text-sm font-semibold text-black">
+                                                Selecionar embarcacao de outro municipio
+                                            </label>
+                                        </div>
 
-                                                {!usarEmbarcacaoOutroMunicipio ? (
-                                                    <>
-                                                        <label className="mb-1.5 block text-sm font-semibold text-black">
-                                                            Selecionar embarcacao ja cadastrada
-                                                        </label>
-                                                        <select
-                                                            value={embarcacaoSelecionadaId}
-                                                            onChange={handleSelecionarEmbarcacao}
-                                                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
-                                                            disabled={!formData.municipio || carregandoEmbarcacoes}
-                                                        >
-                                                            <option value="">
-                                                                {!formData.municipio
-                                                                    ? "Selecione um municipio na etapa 1"
-                                                                    : carregandoEmbarcacoes
-                                                                        ? "Carregando embarcacoes..."
-                                                                        : "Selecione uma embarcacao (opcional)"}
-                                                            </option>
-                                                            {embarcacoesDoMunicipio.map((embarcacao) => (
-                                                                <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
-                                                                    {embarcacao.nome_embarcacao || "Sem nome"}
-                                                                    {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
-                                                                    {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                        {erroEmbarcacoes && (
-                                                            <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoes}</p>
-                                                        )}
-                                                        {!carregandoEmbarcacoes && formData.municipio && embarcacoesDoMunicipio.length === 0 && !erroEmbarcacoes && (
-                                                            <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para este municipio.</p>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <label className="mb-1.5 block text-sm font-semibold text-black">
-                                                            Buscar embarcacao em outros municipios
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={filtroEmbarcacaoOutroMunicipio}
-                                                            onChange={(e) => setFiltroEmbarcacaoOutroMunicipio(e.target.value)}
-                                                            placeholder="Digite nome, codigo, proprietario ou municipio..."
-                                                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600"
-                                                        />
-
-                                                        <div className="mt-3">
-                                                            <label className="mb-1.5 block text-sm font-semibold text-black">
-                                                                Selecione a embarcacao
-                                                            </label>
-                                                            <select
-                                                                value={embarcacaoSelecionadaId}
-                                                                onChange={handleSelecionarEmbarcacaoOutroMunicipio}
-                                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
-                                                                disabled={carregandoEmbarcacoesOutroMunicipio}
-                                                            >
-                                                                <option value="">
-                                                                    {carregandoEmbarcacoesOutroMunicipio
-                                                                        ? "Carregando embarcacoes..."
-                                                                        : embarcacoesFiltradasOutroMunicipio.length > 0
-                                                                            ? "Selecione uma embarcacao (opcional)"
-                                                                            : "Nenhuma embarcacao encontrada"}
-                                                                </option>
-                                                                {embarcacoesFiltradasOutroMunicipio.map((embarcacao) => (
-                                                                    <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
-                                                                        {embarcacao.nome_embarcacao || "Sem nome"}
-                                                                        {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
-                                                                        {embarcacao.municipio ? ` - ${embarcacao.municipio}` : ""}
-                                                                        {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-
-                                                        {erroEmbarcacoesOutroMunicipio && (
-                                                            <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoesOutroMunicipio}</p>
-                                                        )}
-                                                        {!carregandoEmbarcacoesOutroMunicipio && embarcacoesTodosMunicipios.length === 0 && !erroEmbarcacoesOutroMunicipio && (
-                                                            <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao carregada.</p>
-                                                        )}
-                                                    </>
+                                        {!usarEmbarcacaoOutroMunicipio ? (
+                                            <>
+                                                <label className="mb-1.5 block text-sm font-semibold text-black">
+                                                    Selecionar embarcacao ja cadastrada
+                                                </label>
+                                                <select
+                                                    value={embarcacaoSelecionadaId}
+                                                    onChange={handleSelecionarEmbarcacao}
+                                                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
+                                                    disabled={!formData.municipio || carregandoEmbarcacoes}
+                                                >
+                                                    <option value="">
+                                                        {!formData.municipio
+                                                            ? "Selecione um municipio na etapa 1"
+                                                            : carregandoEmbarcacoes
+                                                                ? "Carregando embarcacoes..."
+                                                                : "Selecione uma embarcacao (opcional)"}
+                                                    </option>
+                                                    {embarcacoesDoMunicipio.map((embarcacao) => (
+                                                        <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
+                                                            {embarcacao.nome_embarcacao || "Sem nome"}
+                                                            {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
+                                                            {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {erroEmbarcacoes && (
+                                                    <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoes}</p>
                                                 )}
-                                            </div>
-                                        </>
-                                    )}
+                                                {!carregandoEmbarcacoes && formData.municipio && embarcacoesDoMunicipio.length === 0 && !erroEmbarcacoes && (
+                                                    <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao encontrada para este municipio.</p>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <label className="mb-1.5 block text-sm font-semibold text-black">
+                                                    Buscar embarcacao em outros municipios
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={filtroEmbarcacaoOutroMunicipio}
+                                                    onChange={(e) => setFiltroEmbarcacaoOutroMunicipio(e.target.value)}
+                                                    placeholder="Digite nome, codigo, proprietario ou municipio..."
+                                                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600"
+                                                />
+                                                <div className="mt-3">
+                                                    <label className="mb-1.5 block text-sm font-semibold text-black">
+                                                        Selecione a embarcacao
+                                                    </label>
+                                                    <select
+                                                        value={embarcacaoSelecionadaId}
+                                                        onChange={handleSelecionarEmbarcacaoOutroMunicipio}
+                                                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-black outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
+                                                        disabled={carregandoEmbarcacoesOutroMunicipio}
+                                                    >
+                                                        <option value="">
+                                                            {carregandoEmbarcacoesOutroMunicipio
+                                                                ? "Carregando embarcacoes..."
+                                                                : embarcacoesFiltradasOutroMunicipio.length > 0
+                                                                    ? "Selecione uma embarcacao (opcional)"
+                                                                    : "Nenhuma embarcacao encontrada"}
+                                                        </option>
+                                                        {embarcacoesFiltradasOutroMunicipio.map((embarcacao) => (
+                                                            <option key={embarcacao.ID_embarcacao} value={embarcacao.ID_embarcacao}>
+                                                                {embarcacao.nome_embarcacao || "Sem nome"}
+                                                                {embarcacao.codigo_embarcacao ? ` - ${embarcacao.codigo_embarcacao}` : ""}
+                                                                {embarcacao.municipio ? ` - ${embarcacao.municipio}` : ""}
+                                                                {embarcacao.proprietario ? ` - ${embarcacao.proprietario}` : ""}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                {erroEmbarcacoesOutroMunicipio && (
+                                                    <p className="mt-2 text-sm font-medium text-red-600">{erroEmbarcacoesOutroMunicipio}</p>
+                                                )}
+                                                {!carregandoEmbarcacoesOutroMunicipio && embarcacoesTodosMunicipios.length === 0 && !erroEmbarcacoesOutroMunicipio && (
+                                                    <p className="mt-2 text-sm text-slate-600">Nenhuma embarcacao carregada.</p>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
 
                                     <h3 className="mb-4 text-lg font-semibold text-black">Dados do Proprietario</h3>
                                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -1479,6 +1306,7 @@ function DesembarqueContent() {
                                 </div>
                             )}
 
+                            {/* ── ETAPA 3: Embarcação e Artes de Pesca ── */}
                             {etapaAtual === 3 && (
                                 <div className="animate-in fade-in duration-300">
                                     <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Embarcacao e Artes de Pesca</h2>
@@ -1503,7 +1331,6 @@ function DesembarqueContent() {
                                                 <option value="jangada">Jangada</option>
                                                 <option value="bote">Bote</option>
                                                 <option value="lancha">Lancha</option>
-                                                {/* <option value="boteLancha">Bote/Lancha</option> */}
                                                 <option value="canoa">Canoa</option>
                                                 <option value="barco">Barco</option>
                                                 <option value="outro">Outro</option>
@@ -1549,7 +1376,6 @@ function DesembarqueContent() {
                                                 + Adicionar arte
                                             </button>
                                         </div>
-
                                         <div className="space-y-3">
                                             {(Array.isArray(formData.artesPesca) ? formData.artesPesca : []).map((item, index) => (
                                                 <div key={item.ID ?? index} className="grid grid-cols-1 gap-4 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-[minmax(0,1fr)_140px_140px_auto]">
@@ -1561,11 +1387,7 @@ function DesembarqueContent() {
                                                                 ...prev,
                                                                 artesPesca: prev.artesPesca.map((arteItem, arteIndex) => (
                                                                     arteIndex === index
-                                                                        ? {
-                                                                            ...arteItem,
-                                                                            arte: e.target.value,
-                                                                            nome: e.target.value === "outras" ? arteItem.nome : ""
-                                                                        }
+                                                                        ? { ...arteItem, arte: e.target.value, nome: e.target.value === "outras" ? arteItem.nome : "" }
                                                                         : arteItem
                                                                 ))
                                                             }))}
@@ -1580,7 +1402,6 @@ function DesembarqueContent() {
                                                             )}
                                                         </select>
                                                     </div>
-
                                                     <InputGroup
                                                         label="Tamanho (m)"
                                                         name={`tamanhoArte-${index}`}
@@ -1593,7 +1414,6 @@ function DesembarqueContent() {
                                                             ))
                                                         }))}
                                                     />
-
                                                     <InputGroup
                                                         label="Quantidade"
                                                         name={`quantidadeArte-${index}`}
@@ -1607,23 +1427,21 @@ function DesembarqueContent() {
                                                             ))
                                                         }))}
                                                     />
-
                                                     <div className="flex items-end">
                                                         <button
                                                             type="button"
                                                             onClick={() => setFormData((prev) => {
-                                                                const artesAtualizadas = prev.artesPesca.filter((_, arteIndex) => arteIndex !== index)
+                                                                const artesAtualizadas = prev.artesPesca.filter((_, arteIndex) => arteIndex !== index);
                                                                 return {
                                                                     ...prev,
                                                                     artesPesca: artesAtualizadas.length > 0 ? artesAtualizadas : [createArtePescaItem()]
-                                                                }
+                                                                };
                                                             })}
                                                             className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
                                                         >
                                                             Remover
                                                         </button>
                                                     </div>
-
                                                     {item.arte === "outras" && (
                                                         <InputGroup
                                                             label="Qual arte?"
@@ -1645,6 +1463,7 @@ function DesembarqueContent() {
                                 </div>
                             )}
 
+                            {/* ── ETAPA 4: Viagem, Despesas e Destino ── */}
                             {etapaAtual === 4 && (
                                 <div className="animate-in fade-in duration-300">
                                     <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Viagem, Despesas e Destino</h2>
@@ -1713,6 +1532,7 @@ function DesembarqueContent() {
                                 </div>
                             )}
 
+                            {/* ── ETAPA 5: Captura ── */}
                             {etapaAtual === 5 && (
                                 <div className="animate-in fade-in duration-300">
                                     <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Dados de Captura</h2>
@@ -1721,19 +1541,14 @@ function DesembarqueContent() {
                                         <div className="mb-4 flex items-center justify-between gap-3">
                                             <h3 className="text-base font-bold text-black">Registro Geral das Especies</h3>
                                         </div>
-
                                         <div className="space-y-4">
                                             <datalist id="captura-especies-idd-options">
                                                 {especies.map((esp) => (
-                                                    <option
-                                                        key={`idd-option-${esp.ID}`}
-                                                        value={String(esp.IDD ?? esp.ID ?? "")}
-                                                    >
+                                                    <option key={`idd-option-${esp.ID}`} value={String(esp.IDD ?? esp.ID ?? "")}>
                                                         {esp.Nome_popular} ({esp.Nome_cientifico})
                                                     </option>
                                                 ))}
                                             </datalist>
-
                                             {(formData.capturas || []).map((captura, index) => (
                                                 <div key={`captura-${captura.ID_captura || index}`} className="rounded-lg border border-slate-200 bg-white p-4">
                                                     <div className="mb-3 flex items-center justify-between gap-3">
@@ -1747,7 +1562,6 @@ function DesembarqueContent() {
                                                             Remover
                                                         </button>
                                                     </div>
-
                                                     <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
                                                         <div>
                                                             <label className="mb-1.5 block text-sm font-semibold text-black">IDD da especie</label>
@@ -1761,7 +1575,6 @@ function DesembarqueContent() {
                                                                 className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
                                                             />
                                                         </div>
-
                                                         <div>
                                                             <label className="mb-1.5 block text-sm font-semibold text-black">Nome da especie</label>
                                                             <select
@@ -1777,7 +1590,6 @@ function DesembarqueContent() {
                                                                 ))}
                                                             </select>
                                                         </div>
-
                                                         <InputGroup
                                                             label="Peso Total (kg)"
                                                             name={`pesoTotalEspecie-${index}`}
@@ -1785,7 +1597,6 @@ function DesembarqueContent() {
                                                             value={captura.pesoTotalEspecie}
                                                             onChange={(e) => handleCapturaChange(index, "pesoTotalEspecie", e.target.value)}
                                                         />
-
                                                         <InputGroup
                                                             label="Preco/kg (R$)"
                                                             name={`precoKg-${index}`}
@@ -1794,41 +1605,21 @@ function DesembarqueContent() {
                                                             onChange={(e) => handleCapturaChange(index, "precoKg", e.target.value)}
                                                         />
                                                     </div>
-
                                                     <div className="flex flex-wrap gap-4">
                                                         <label className="flex items-center text-black">
-                                                            <input
-                                                                type="radio"
-                                                                name={`condicaoPeixe-${index}`}
-                                                                value="com_visceras"
-                                                                onChange={(e) => handleCapturaChange(index, "condicaoPeixe", e.target.value)}
-                                                                checked={captura.condicaoPeixe === "com_visceras"}
-                                                                className="mr-2"
-                                                            />
+                                                            <input type="radio" name={`condicaoPeixe-${index}`} value="com_visceras" onChange={(e) => handleCapturaChange(index, "condicaoPeixe", e.target.value)} checked={captura.condicaoPeixe === "com_visceras"} className="mr-2" />
                                                             Com visceras
                                                         </label>
                                                         <label className="flex items-center text-black">
-                                                            <input
-                                                                type="radio"
-                                                                name={`condicaoPeixe-${index}`}
-                                                                value="sem_visceras"
-                                                                onChange={(e) => handleCapturaChange(index, "condicaoPeixe", e.target.value)}
-                                                                checked={captura.condicaoPeixe === "sem_visceras"}
-                                                                className="mr-2"
-                                                            />
+                                                            <input type="radio" name={`condicaoPeixe-${index}`} value="sem_visceras" onChange={(e) => handleCapturaChange(index, "condicaoPeixe", e.target.value)} checked={captura.condicaoPeixe === "sem_visceras"} className="mr-2" />
                                                             Sem visceras
                                                         </label>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
-
                                         <div className="mt-4 flex justify-end">
-                                            <button
-                                                type="button"
-                                                onClick={adicionarCaptura}
-                                                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                                            >
+                                            <button type="button" onClick={adicionarCaptura} className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
                                                 + Adicionar especie
                                             </button>
                                         </div>
@@ -1839,13 +1630,11 @@ function DesembarqueContent() {
                                             <h3 className="text-base font-bold text-black">Biometria (Dados Individuais)</h3>
                                         </div>
                                         <p className="mb-4 text-sm text-black">Adicione peso e comprimento de peixes individuais, se houver.</p>
-
                                         {especiesSelecionadasNaCaptura.length === 0 && (
                                             <div className="mb-4 rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm font-medium text-amber-700">
                                                 Selecione ao menos uma especie em Registro Geral para vincular individuos.
                                             </div>
                                         )}
-
                                         <div className="space-y-4">
                                             {(formData.individuos || []).map((individuo, index) => (
                                                 <div key={`individuo-${individuo.ID_individuo || index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
@@ -1860,7 +1649,6 @@ function DesembarqueContent() {
                                                             Remover
                                                         </button>
                                                     </div>
-
                                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                                                         <div>
                                                             <label className="mb-1.5 block text-sm font-semibold text-black">Especie vinculada</label>
@@ -1873,46 +1661,20 @@ function DesembarqueContent() {
                                                                 <option value="">Selecione...</option>
                                                                 {especiesSelecionadasNaCaptura.map((esp) => (
                                                                     <option key={`ind-esp-${esp.ID}`} value={esp.ID}>
-                                                                            #{esp.IDD ?? esp.ID} - {esp.Nome_popular}
+                                                                        #{esp.IDD ?? esp.ID} - {esp.Nome_popular}
                                                                     </option>
                                                                 ))}
                                                             </select>
                                                         </div>
-
-                                                        <InputGroup
-                                                            label="N do individuo"
-                                                            name={`numeroIndividuo-${index}`}
-                                                            type="float"
-                                                            value={individuo.numeroIndividuo}
-                                                            onChange={(e) => handleIndividuoChange(index, "numeroIndividuo", e.target.value)}
-                                                        />
-
-                                                        <InputGroup
-                                                            label="Comprimento (cm)"
-                                                            name={`comprimentoIndividuo-${index}`}
-                                                            type="float"
-                                                            value={individuo.comprimentoIndividuo}
-                                                            onChange={(e) => handleIndividuoChange(index, "comprimentoIndividuo", e.target.value)}
-                                                        />
-
-                                                        <InputGroup
-                                                            label="Peso (g)"
-                                                            name={`pesoIndividuo-${index}`}
-                                                            type="float"
-                                                            value={individuo.pesoIndividuo}
-                                                            onChange={(e) => handleIndividuoChange(index, "pesoIndividuo", e.target.value)}
-                                                        />
+                                                        <InputGroup label="N do individuo" name={`numeroIndividuo-${index}`} type="float" value={individuo.numeroIndividuo} onChange={(e) => handleIndividuoChange(index, "numeroIndividuo", e.target.value)} />
+                                                        <InputGroup label="Comprimento (cm)" name={`comprimentoIndividuo-${index}`} type="float" value={individuo.comprimentoIndividuo} onChange={(e) => handleIndividuoChange(index, "comprimentoIndividuo", e.target.value)} />
+                                                        <InputGroup label="Peso (g)" name={`pesoIndividuo-${index}`} type="float" value={individuo.pesoIndividuo} onChange={(e) => handleIndividuoChange(index, "pesoIndividuo", e.target.value)} />
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
-
                                         <div className="mt-4 flex justify-end">
-                                            <button
-                                                type="button"
-                                                onClick={adicionarIndividuo}
-                                                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                                            >
+                                            <button type="button" onClick={adicionarIndividuo} className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
                                                 + Adicionar individuo
                                             </button>
                                         </div>
@@ -1920,10 +1682,10 @@ function DesembarqueContent() {
                                 </div>
                             )}
 
+                            {/* ── ETAPA 6: Resumo ── */}
                             {etapaAtual === 6 && (
                                 <div className="animate-in fade-in duration-300">
                                     <h2 className="mb-6 border-b border-slate-100 pb-4 text-2xl font-bold text-black">Resumo</h2>
-
                                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-sm text-black space-y-5">
                                         <h3 className="mb-2 border-b pb-2 text-lg font-bold text-black">Resumo completo antes do envio</h3>
 
@@ -2043,6 +1805,7 @@ function DesembarqueContent() {
                                 </div>
                             )}
 
+                            {/* ── Navegação ── */}
                             <div className="mt-10 flex gap-4 border-t border-slate-100 pt-6">
                                 <button
                                     type="button"
@@ -2051,9 +1814,7 @@ function DesembarqueContent() {
                                 >
                                     Voltar
                                 </button>
-
                                 <div className="flex-1" />
-
                                 {etapaAtual < TOTAL_ETAPAS ? (
                                     <button
                                         type="button"
