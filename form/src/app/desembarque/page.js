@@ -914,36 +914,47 @@ function DesembarqueContent() {
     };
 
     const handleSubmit = async () => {
-        if (etapaAtual !== TOTAL_ETAPAS) return;
-        setErroEnvio("");
-        setSucessoEnvio("");
-        setCarregandoEnvio(true);
-        try {
-            const payload = montarPayload();
-            if (formData.ID_desembarque) {
-                await api.atualizarDesembarque(formData.ID_desembarque, payload);
-                router.replace("/");
-            } else {
-                await api.criarDesembarque(payload);
-                await atualizarPerfil();
-                router.replace("/");
-            }
-        } catch (error) {
-            setErroEnvio(error?.message || "Falha ao salvar desembarque");
-        } finally {
-            setCarregandoEnvio(false);
+    if (etapaAtual !== TOTAL_ETAPAS) return;
+    setErroEnvio("");
+    setSucessoEnvio("");
+    setCarregandoEnvio(true);
+    try {
+        const payload = montarPayload();
+        if (formData.ID_desembarque) {
+            await api.atualizarDesembarque(formData.ID_desembarque, payload);
+            setSucessoEnvio("Desembarque atualizado com sucesso! Redirecionando...");
+        } else {
+            await api.criarDesembarque(payload);
+            await atualizarPerfil();
+            setSucessoEnvio("Desembarque cadastrado com sucesso! Redirecionando...");
         }
-    };
+        // Dá tempo do usuário ver a confirmação antes de sair da página
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        setTimeout(() => {
+            router.replace("/");
+        }, 1200);
+    } catch (error) {
+        const mensagemservidor = error?.response?.data?.message || error?.message;
+        setErroEnvio(
+            mensagemservidor || "Falha ao salvar desembarque. Verifique os dados e tente novamente."
+        );
+        setCarregandoEnvio(false);
+        // Garante que o usuário veja o erro, independente de onde estava na tela
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    // Não reseta carregandoEnvio no caminho de sucesso: o botão continua
+    // desabilitado/"Enviando..." até o redirect acontecer, evitando duplo clique.
+};
 
-    const handleConfirmarEnvio = async () => {
-        if (etapaAtual !== TOTAL_ETAPAS || carregandoEnvio || carregandoInicial || carregandoEdicao) return;
-        const mensagemConfirmacao = formData.ID_desembarque
-            ? "Confirma a atualizacao do desembarque?"
-            : "Confirma o envio do desembarque?";
-        const confirmado = window.confirm(mensagemConfirmacao);
-        if (!confirmado) return;
-        await handleSubmit();
-    };
+const handleConfirmarEnvio = async () => {
+    if (etapaAtual !== TOTAL_ETAPAS || carregandoEnvio || carregandoInicial || carregandoEdicao) return;
+    const mensagemConfirmacao = formData.ID_desembarque
+        ? "Confirma a atualizacao do desembarque?"
+        : "Confirma o envio do desembarque?";
+    const confirmado = window.confirm(mensagemConfirmacao);
+    if (!confirmado) return;
+    await handleSubmit();
+};
 
     const possuiValor = (value) => {
         if (value === null || value === undefined) return false;
