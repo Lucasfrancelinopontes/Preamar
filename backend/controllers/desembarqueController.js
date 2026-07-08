@@ -606,7 +606,9 @@ export const listarDesembarques = async (req, res) => {
       ],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['data_coleta', 'DESC']]
+      order: [['data_coleta', 'DESC']],
+      distinct: true,
+      col: 'ID_desembarque'
     });
 
     res.json({
