@@ -210,7 +210,6 @@ const preencherResponsavelComUsuario = (payload, usuario, registroExistente = nu
     payload[config.dataField] = normalizeDateOnly(new Date());
   }
 };
-
 const serializeDesembarque = (desembarque) => {
   if (!desembarque) return desembarque;
 
@@ -244,6 +243,38 @@ const serializeDesembarque = (desembarque) => {
     data_chegada: fillDateFromFallback(plain.data_chegada, dataColeta, plain.hora_desembarque)
   };
 };
+const serializeListaDesembarque = (d) => {
+
+    return {
+
+        ID_desembarque: d.ID_desembarque,
+
+        cod_desembarque: d.cod_desembarque,
+
+        municipio: d.municipio,
+
+        localidade: d.localidade,
+
+        data_coleta: d.data_coleta,
+
+        total_desembarque: d.total_desembarque,
+
+        pescador: d.pescador
+            ? {
+                nome: d.pescador.nome
+            }
+            : null,
+
+        usuario: d.usuario
+            ? {
+                nome: d.usuario.nome,
+                funcao: d.usuario.funcao
+            }
+            : null
+
+    };
+
+}
 
 let hasArteNomeColumnPromise = null;
 const hasArteNomeColumn = async () => {
@@ -511,127 +542,148 @@ export const criarDesembarque = async (req, res) => {
 // ─── LISTAR ───────────────────────────────────────────────────────────────────
 
 export const listarDesembarques = async (req, res) => {
-  try {
-    const { 
-      municipio,
-      localidade,
-      data_inicio,
-      data_fim,
-      pescador_id,
-      cod_desembarque, // ← ADICIONADO
-      page = 1,
-      limit = 50
-    } = req.query;
+    try {
 
-    const where = {};
+        const {
+            municipio,
+            localidade,
+            data_inicio,
+            data_fim,
+            pescador_id,
+            cod_desembarque,
+            page = 1,
+            limit = 20
+        } = req.query;
 
-    if (municipio)      where.municipio   = municipio;
-    if (localidade)     where.localidade  = localidade;
-    if (pescador_id)    where.ID_pescador = pescador_id;
+        const where = {};
 
-    // ← ADICIONADO: busca parcial por código
-    if (cod_desembarque) {
-      where.cod_desembarque = { [Op.like]: `%${cod_desembarque}%` };
-    }
+        if (municipio)
+            where.municipio = municipio;
 
-    // ← CORRIGIDO: datas avulsas agora funcionam (antes exigia as duas)
-    if (data_inicio && data_fim) {
-      where.data_coleta = { [Op.between]: [data_inicio, data_fim] };
-    } else if (data_inicio) {
-      where.data_coleta = { [Op.gte]: data_inicio };
-    } else if (data_fim) {
-      where.data_coleta = { [Op.lte]: data_fim };
-    }
+        if (localidade)
+            where.localidade = localidade;
 
-    const offset = (page - 1) * limit;
+        if (pescador_id)
+            where.ID_pescador = pescador_id;
 
-    const includeArteNome = await hasArteNomeColumn();
-    const artesAttributes = includeArteNome
-      ? ['arte', 'nome', 'tamanho', 'unidade']
-      : ['arte', 'tamanho', 'unidade'];
-
-    const { count, rows } = await Desembarque.findAndCountAll({
-      where,
-      include: [
-        { 
-          model: Pescador, 
-          as: 'pescador',
-          attributes: ['nome', 'apelido', 'cpf']
-        },
-        { 
-          model: Embarcacao, 
-          as: 'embarcacao',
-          attributes: ['nome_embarcacao', 'tipo']
-        },
-        {
-          model: Usuario,
-          as: 'usuario',
-          attributes: ['ID_usuario', 'nome', 'funcao']
-        },
-        {
-          model: Usuario,
-          as: 'coletorUsuario',
-          attributes: ['ID_usuario', 'nome', 'funcao']
-        },
-        {
-          model: Usuario,
-          as: 'revisorUsuario',
-          attributes: ['ID_usuario', 'nome', 'funcao']
-        },
-        {
-          model: Usuario,
-          as: 'digitadorUsuario',
-          attributes: ['ID_usuario', 'nome', 'funcao']
-        },
-        {
-          model: Captura,
-          as: 'capturas',
-          attributes: ['ID_captura', 'ID_especie', 'peso_kg', 'preco_kg', 'preco_total', 'com_tripa'],
-          include: [{
-            model: Especie,
-            as: 'especie',
-            attributes: ['nome_popular', 'nome_cientifico']
-          }]
-        },
-        { 
-          model: DesembarqueArte, 
-          as: 'artes',
-          attributes: artesAttributes
-        },
-        {
-          model: Individuo,
-          as: 'individuos',
-          attributes: ['ID_especie', 'comprimento_total_cm', 'peso_g']
+        if (cod_desembarque) {
+            where.cod_desembarque = {
+                [Op.like]: `%${cod_desembarque}%`
+            };
         }
-      ],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order: [['data_coleta', 'DESC']],
-      distinct: true,
-      col: 'ID_desembarque'
-    });
 
-    res.json({
-      success: true,
-      data: rows.map(serializeDesembarque),
-      pagination: {
-        total: count,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(count / limit)
-      }
-    });
+        if (data_inicio && data_fim) {
+            where.data_coleta = {
+                [Op.between]: [data_inicio, data_fim]
+            };
+        } else if (data_inicio) {
+            where.data_coleta = {
+                [Op.gte]: data_inicio
+            };
+        } else if (data_fim) {
+            where.data_coleta = {
+                [Op.lte]: data_fim
+            };
+        }
 
-  } catch (error) {
-    console.error('Erro ao listar desembarques:', error);
-    res.status(500).json({
-      success: false,
-      message: `Erro ao listar desembarques: ${error.message}`,
-      error: error.message
-    });
-  }
+        const offset = (page - 1) * limit;
+
+        const total = await Desembarque.count({
+            where
+        });
+
+        const rows = await Desembarque.findAll({
+
+            where,
+
+            attributes: [
+
+                "ID_desembarque",
+
+                "cod_desembarque",
+
+                "municipio",
+
+                "localidade",
+
+                "data_coleta",
+
+                "total_desembarque",
+
+                "createdAt"
+
+            ],
+
+            include: [
+
+                {
+                    model: Pescador,
+                    as: "pescador",
+
+                    attributes: [
+                        "nome"
+                    ]
+                },
+
+                {
+                    model: Usuario,
+                    as: "usuario",
+
+                    attributes: [
+                        "nome",
+                        "funcao"
+                    ]
+                }
+
+            ],
+
+            order: [
+                ["data_coleta", "DESC"]
+            ],
+
+            limit: Number(limit),
+
+            offset: Number(offset)
+
+        });
+
+        res.json({
+
+            success: true,
+
+            data: rows.map(serializeListaDesembarque),
+
+            pagination: {
+
+                total,
+
+                page: Number(page),
+
+                limit: Number(limit),
+
+                pages: Math.ceil(total / limit)
+
+            }
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            success: false,
+
+            message: error.message
+
+        });
+
+    }
+
 };
-
 // ─── BUSCAR POR ID ────────────────────────────────────────────────────────────
 
 export const buscarDesembarque = async (req, res) => {

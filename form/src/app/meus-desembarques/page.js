@@ -46,7 +46,9 @@ function MeusDesembarquesContent() {
                 ...(filtros.data_fim        ? { data_fim:        filtros.data_fim }        : {}),
             };
 
+            console.time("API");
             const resposta = await api.listarDesembarques(params);
+            console.timeEnd("API");
 
             setDesembarques(Array.isArray(resposta?.data) ? resposta.data : []);
             setTotalPaginas(Number(resposta?.pagination?.pages || 1));
