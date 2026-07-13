@@ -17,7 +17,8 @@ import {
   buscarDesembarque,
   atualizarDesembarque,
   deletarDesembarque,
-  estatisticasDesembarques
+  estatisticasDesembarques,
+  verificarCodigoDesembarque
 } from './controllers/desembarqueController.js';
 import {
   listarPescadores,
@@ -89,6 +90,7 @@ router.put('/auth/senha', verificarAutenticacao, alterarSenha);
 
 // Rotas de Desembarques (protegidas)
 router.post('/desembarques', verificarAutenticacao, criarDesembarque);
+router.get('/desembarques/verificar-codigo/:codigo', verificarAutenticacao, verificarCodigoDesembarque);
 router.get('/desembarques/estatisticas', verificarAutenticacao, estatisticasDesembarques);
 router.get('/desembarques', verificarAutenticacao, listarDesembarques);
 router.get('/desembarques/:id', verificarAutenticacao, buscarDesembarque);

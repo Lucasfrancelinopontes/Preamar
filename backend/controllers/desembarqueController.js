@@ -684,8 +684,28 @@ export const listarDesembarques = async (req, res) => {
     }
 
 };
-// ─── BUSCAR POR ID ────────────────────────────────────────────────────────────
+// verificar se o código de desembarque existe
+export const verificarCodigoDesembarque = async (req, res) => {
+  try {
+    const { codigo } = req.params;
 
+    const existe = await Desembarque.count({
+      where: { cod_desembarque: codigo }
+    });
+
+    return res.json({
+      existe: existe > 0
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: error.message
+    });
+  }
+};
+// ─── BUSCAR POR ID ────────────────────────────────────────────────────────────
 export const buscarDesembarque = async (req, res) => {
   try {
     const { id } = req.params;

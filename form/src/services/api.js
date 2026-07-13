@@ -53,27 +53,27 @@ const handleResponse = async (response) => {
     window.location.href = '/login';
     throw new ApiError('Não autorizado', 401, null);
   }
-  
+
   let data = null;
   let errorMessage = 'Erro na requisição';
-  
+
   // Verificar se há conteúdo na resposta
   const contentType = response.headers.get('content-type');
   const hasContent = response.headers.get('content-length') !== '0';
-  
+
   try {
     // Tentar parsear JSON se o content-type indicar JSON
     if (contentType && contentType.includes('application/json') && hasContent) {
       data = await response.json();
       errorMessage = data.message || data.error || errorMessage;
-      
+
       // Tratamento especial para erros de banco de dados
       errorMessage = parseErrorMessage(errorMessage, data);
     } else if (hasContent) {
       // Se não for JSON, tentar ler como texto
       const text = await response.text();
       errorMessage = text || errorMessage;
-      
+
       // Tentar parsear o texto como JSON (fallback)
       try {
         data = JSON.parse(text);
@@ -90,7 +90,7 @@ const handleResponse = async (response) => {
     console.error('Erro ao parsear resposta:', parseError);
     errorMessage = getErrorMessageByStatus(response.status);
   }
-  
+
   // Se a resposta não for ok, lançar erro
   if (!response.ok) {
     throw new ApiError(
@@ -99,21 +99,21 @@ const handleResponse = async (response) => {
       data
     );
   }
-  
+
   return data;
 };
 
 // Função para interpretar mensagens de erro do banco de dados
 const parseErrorMessage = (errorMessage, data) => {
   if (!errorMessage) return 'Erro na requisição';
-  
+
   const errorStr = typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage);
-  
+
   // Detectar erros de SequelizeDatabaseError ou Out of range
-  if (errorStr.includes('SequelizeDatabaseError') || 
-      errorStr.includes('Out of range') || 
-      errorStr.includes('out of range')) {
-    
+  if (errorStr.includes('SequelizeDatabaseError') ||
+    errorStr.includes('Out of range') ||
+    errorStr.includes('out of range')) {
+
     // Identificar campo específico se possível
     if (errorStr.includes('peso_g')) {
       return 'Peso muito alto ou inválido. O valor do peso excede o limite permitido pelo banco de dados (máximo: ~100 toneladas).';
@@ -121,20 +121,20 @@ const parseErrorMessage = (errorMessage, data) => {
     if (errorStr.includes('comprimento')) {
       return 'Comprimento muito alto ou inválido. O valor excede o limite permitido pelo banco de dados (máximo: ~100 metros).';
     }
-    
+
     return 'Um dos valores enviados excede o limite permitido pelo banco de dados. Verifique os valores de peso e comprimento.';
   }
-  
+
   // Detectar erros de validação
   if (errorStr.includes('Validation error')) {
     return 'Erro de validação: um ou mais campos contêm valores inválidos.';
   }
-  
+
   // Detectar erros de constraint
   if (errorStr.includes('constraint') || errorStr.includes('foreign key')) {
     return 'Erro de integridade: referência inválida a outro registro do banco de dados.';
   }
-  
+
   return errorMessage;
 };
 
@@ -149,13 +149,13 @@ const getErrorMessageByStatus = (status) => {
     502: 'Serviço indisponível',
     503: 'Serviço temporariamente indisponível'
   };
-  
+
   return statusMessages[status] || `Erro ${status}: Falha na requisição`;
 };
 
 const api = {
   // ==================== AUTENTICAÇÃO ====================
-  
+
   login: async (email, senha) => {
     try {
       const response = await fetch(`${API_URL}/login`, {
@@ -166,7 +166,7 @@ const api = {
         },
         body: JSON.stringify({ email, senha })
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao fazer login:', error);
@@ -184,7 +184,7 @@ const api = {
         },
         body: JSON.stringify(dados)
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao registrar usuário:', error);
@@ -197,7 +197,7 @@ const api = {
       const response = await fetch(`${API_URL}/auth/perfil`, {
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao obter perfil:', error);
@@ -212,7 +212,7 @@ const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify({ senhaAtual, novaSenha })
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao alterar senha:', error);
@@ -255,7 +255,7 @@ const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify(dados)
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
@@ -270,7 +270,7 @@ const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify(dados)
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
@@ -284,7 +284,7 @@ const api = {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao deletar usuário:', error);
@@ -315,22 +315,22 @@ const api = {
   },
 
   listarEspeciesAdmin: async (params = {}) => {
-  try {
-    const query = new URLSearchParams({
-      page: params.page || 1,
-      limit: params.limit || 50,
-      ...(params.busca ? { busca: params.busca } : {})
-    });
+    try {
+      const query = new URLSearchParams({
+        page: params.page || 1,
+        limit: params.limit || 50,
+        ...(params.busca ? { busca: params.busca } : {})
+      });
 
-    const response = await fetch(`${API_URL}/admin/especies?${query}`, {
-      headers: getAuthHeaders()
-    });
-    return handleResponse(response);
-  } catch (error) {
-    console.error('Erro ao listar espécies (admin):', error);
-    throw error;
-  }
-},
+      const response = await fetch(`${API_URL}/admin/especies?${query}`, {
+        headers: getAuthHeaders()
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao listar espécies (admin):', error);
+      throw error;
+    }
+  },
 
   criarEspecie: async (dados) => {
     try {
@@ -339,7 +339,7 @@ const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify(dados)
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao criar espécie:', error);
@@ -354,7 +354,7 @@ const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify(dados)
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao atualizar espécie:', error);
@@ -368,7 +368,7 @@ const api = {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao excluir espécie:', error);
@@ -378,6 +378,22 @@ const api = {
 
   // ==================== DESEMBARQUE ====================
 
+  verificarCodigoDesembarque: async (codigo) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/desembarques/verificar-codigo/${encodeURIComponent(codigo)}`,
+        {
+          headers: getAuthHeaders()
+        }
+      );
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao verificar código do desembarque:', error);
+      throw error;
+    }
+  },
+
   criarDesembarque: async (dados) => {
     try {
       const response = await fetch(`${API_URL}/desembarques`, {
@@ -385,7 +401,7 @@ const api = {
         headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify(dados)
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao criar desembarque:', error);
@@ -414,7 +430,7 @@ const api = {
       const response = await fetch(`${API_URL}/desembarques?${params}`, {
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao listar desembarques:', error);
@@ -427,7 +443,7 @@ const api = {
       const response = await fetch(`${API_URL}/desembarques/${id}`, {
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao buscar desembarque:', error);
@@ -441,7 +457,7 @@ const api = {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao deletar desembarque:', error);
@@ -511,7 +527,7 @@ const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify(dados)
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao criar embarcação:', error);
@@ -526,7 +542,7 @@ const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify(dados)
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao atualizar embarcação:', error);
@@ -540,7 +556,7 @@ const api = {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao excluir embarcação:', error);
@@ -587,7 +603,7 @@ const api = {
       const response = await fetch(`${API_URL}/embarcacoes?${params}`, {
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao listar embarcações:', error);
@@ -600,7 +616,7 @@ const api = {
       const response = await fetch(`${API_URL}/embarcacoes/${id}`, {
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao buscar embarcação:', error);
@@ -617,7 +633,7 @@ const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify(dados)
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao criar pescador:', error);
@@ -631,7 +647,7 @@ const api = {
       const response = await fetch(`${API_URL}/pescadores?${params}`, {
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao listar pescadores:', error);
@@ -644,7 +660,7 @@ const api = {
       const response = await fetch(`${API_URL}/pescadores/${id}`, {
         headers: getAuthHeaders()
       });
-      
+
       return handleResponse(response);
     } catch (error) {
       console.error('Erro ao buscar pescador:', error);

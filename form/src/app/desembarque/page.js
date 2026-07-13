@@ -494,7 +494,6 @@ function DesembarqueContent() {
         };
         carregarEmbarcacoesPorMunicipio();
     }, [formData.municipio, municipios]);
-
     const municipioSelecionado = useMemo(
         () => municipios.find((m) => m.municipio === formData.municipio) || null,
         [municipios, formData.municipio]
@@ -523,6 +522,27 @@ function DesembarqueContent() {
         return `${municipioCode} ${localidadeCode} ${dia} ${mes} ${ano.slice(-2)} ${consecutivo}`;
     }, [municipioSelecionado, localidadeSelecionada, formData.dataColeta, formData.numConsecutivo]);
 
+    // validação in line do cdg desembarque
+    useEffect(() => {
+        if (modoEdicao || !codigoDesembarqueGerado) return;
+
+        const verificarCodigo = async () => {
+            try {
+                const existe = await api.verificarCodigoDesembarque(codigoDesembarqueGerado);
+
+                if (existe.existe) {
+                    window.alert(
+                        `O código ${codigoDesembarqueGerado} já existe.\n\n` +
+                        "Altere o número consecutivo."
+                    );
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        verificarCodigo();
+    }, [codigoDesembarqueGerado]);
     const especiesSelecionadasNaCaptura = useMemo(() => {
         const especiesSelecionadas = new Set(
             (formData.capturas || [])
@@ -540,7 +560,7 @@ function DesembarqueContent() {
         });
         return map;
     }, [especies]);
-
+    const modoEdicao = Boolean(formData.ID_desembarque);
     const especiesPorIdd = useMemo(() => {
         const map = new Map();
         especies.forEach((esp) => {
@@ -914,47 +934,47 @@ function DesembarqueContent() {
     };
 
     const handleSubmit = async () => {
-    if (etapaAtual !== TOTAL_ETAPAS) return;
-    setErroEnvio("");
-    setSucessoEnvio("");
-    setCarregandoEnvio(true);
-    try {
-        const payload = montarPayload();
-        if (formData.ID_desembarque) {
-            await api.atualizarDesembarque(formData.ID_desembarque, payload);
-            setSucessoEnvio("Desembarque atualizado com sucesso! Redirecionando...");
-        } else {
-            await api.criarDesembarque(payload);
-            await atualizarPerfil();
-            setSucessoEnvio("Desembarque cadastrado com sucesso! Redirecionando...");
+        if (etapaAtual !== TOTAL_ETAPAS) return;
+        setErroEnvio("");
+        setSucessoEnvio("");
+        setCarregandoEnvio(true);
+        try {
+            const payload = montarPayload();
+            if (formData.ID_desembarque) {
+                await api.atualizarDesembarque(formData.ID_desembarque, payload);
+                setSucessoEnvio("Desembarque atualizado com sucesso! Redirecionando...");
+            } else {
+                await api.criarDesembarque(payload);
+                await atualizarPerfil();
+                setSucessoEnvio("Desembarque cadastrado com sucesso! Redirecionando...");
+            }
+            // Dá tempo do usuário ver a confirmação antes de sair da página
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            setTimeout(() => {
+                router.replace("/");
+            }, 1200);
+        } catch (error) {
+            const mensagemservidor = error?.response?.data?.message || error?.message;
+            setErroEnvio(
+                mensagemservidor || "Falha ao salvar desembarque. Verifique os dados e tente novamente."
+            );
+            setCarregandoEnvio(false);
+            // Garante que o usuário veja o erro, independente de onde estava na tela
+            window.scrollTo({ top: 0, behavior: "smooth" });
         }
-        // Dá tempo do usuário ver a confirmação antes de sair da página
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        setTimeout(() => {
-            router.replace("/");
-        }, 1200);
-    } catch (error) {
-        const mensagemservidor = error?.response?.data?.message || error?.message;
-        setErroEnvio(
-            mensagemservidor || "Falha ao salvar desembarque. Verifique os dados e tente novamente."
-        );
-        setCarregandoEnvio(false);
-        // Garante que o usuário veja o erro, independente de onde estava na tela
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    // Não reseta carregandoEnvio no caminho de sucesso: o botão continua
-    // desabilitado/"Enviando..." até o redirect acontecer, evitando duplo clique.
-};
+        // Não reseta carregandoEnvio no caminho de sucesso: o botão continua
+        // desabilitado/"Enviando..." até o redirect acontecer, evitando duplo clique.
+    };
 
-const handleConfirmarEnvio = async () => {
-    if (etapaAtual !== TOTAL_ETAPAS || carregandoEnvio || carregandoInicial || carregandoEdicao) return;
-    const mensagemConfirmacao = formData.ID_desembarque
-        ? "Confirma a atualizacao do desembarque?"
-        : "Confirma o envio do desembarque?";
-    const confirmado = window.confirm(mensagemConfirmacao);
-    if (!confirmado) return;
-    await handleSubmit();
-};
+    const handleConfirmarEnvio = async () => {
+        if (etapaAtual !== TOTAL_ETAPAS || carregandoEnvio || carregandoInicial || carregandoEdicao) return;
+        const mensagemConfirmacao = formData.ID_desembarque
+            ? "Confirma a atualizacao do desembarque?"
+            : "Confirma o envio do desembarque?";
+        const confirmado = window.confirm(mensagemConfirmacao);
+        if (!confirmado) return;
+        await handleSubmit();
+    };
 
     const possuiValor = (value) => {
         if (value === null || value === undefined) return false;
