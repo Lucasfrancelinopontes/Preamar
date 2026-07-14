@@ -25,11 +25,11 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider>
+        {/* <ThemeProvider> */}
           <ClientProvider>
             {children}
           </ClientProvider>
-        </ThemeProvider>
+        {/* </ThemeProvider> */}
         <SpeedInsights />
       </body>
     </html>

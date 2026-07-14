@@ -2,9 +2,9 @@
 
 @theme {
   /* Cores da marca Preamar */
-  --color-brand: #00a88d;
-  --color-brand-light: #00c4a7;
-  --color-brand-dark: #008f7a;
+  --color-brand: #007a68;
+--color-brand-light: #00967f;
+--color-brand-dark: #005f51;
   --color-accent: #c0e218;
   --color-accent-dark: #a8c314;
   --color-dark: #2c3e50;
@@ -18,7 +18,7 @@
 body {
   font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
   background-color: rgb(249 250 251);
-  color: rgb(17 24 39);
+  color: #0f172a;
   transition: background-color 0.3s, color 0.3s;
 }
 
@@ -106,7 +106,7 @@ body {
 .input-standard:focus {
   outline: none;
   border-color: var(--color-brand);
-  box-shadow: 0 0 0 3px rgb(0 168 141 / 0.1);
+  box-shadow: 0 0 0 4px rgb(0 122 104 / 0.18);
 }
 .input-standard::placeholder { color: #9ca3af; }
 .input-standard:disabled {

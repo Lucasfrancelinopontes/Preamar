@@ -25,8 +25,8 @@ export default function InputGroup({
                     w-full
                     rounded-xl
                     border
-                    border-slate-300
-                    bg-slate-50
+                    bg-white
+                    border-slate-400
                     px-4
                     py-3
                     outline-none
