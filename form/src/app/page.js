@@ -96,7 +96,35 @@ export default function Home() {
                                     </div>
                                 </div>
                             </Link>
+                            <Link href="/pescador" className="block group">
+                                <div className="bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-transparent hover:border-blue-400 transition-all cursor-pointer flex items-center gap-4 h-full">
+                                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
+                                        <svg
+                                            className="w-6 h-6"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M17 20h5V18a4 4 0 00-5.356-3.771M9 20H4V18a4 4 0 015.356-3.771M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 11a7 7 0 00-7 7"
+                                            />
+                                        </svg>
+                                    </div>
 
+                                    <div>
+                                        <h3 className="text-lg font-bold text-[#1e293b] group-hover:text-blue-600 leading-tight">
+                                            Pescador
+                                        </h3>
+
+                                        <p className="text-gray-500 text-xs mt-1">
+                                            Cadastro socioeconômico de pescadores
+                                        </p>
+                                    </div>
+                                </div>
+                            </Link>
                             <Link href="/meus-desembarques" className="block group">
                                 <div className="bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-transparent hover:border-blue-400 transition-all cursor-pointer flex items-center gap-4 h-full">
                                     <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
@@ -144,7 +172,7 @@ export default function Home() {
                                             </div>
                                             <div>
                                                 <h3 className="text-base font-bold text-[#1e293b] group-hover:text-emerald-600 leading-tight">Utilizadores</h3>
-                                                <p className="text-gray-500 text-xs mt-1">Gerir acessos a equipa</p>
+                                                <p className="text-gray-500 text-xs mt-1">Gerir acessos a equipe</p>
                                             </div>
                                         </div>
                                     </Link>

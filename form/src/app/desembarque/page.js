@@ -1666,6 +1666,7 @@ function DesembarqueContent() {
                                                 Selecione ao menos uma especie em Registro Geral para vincular individuos.
                                             </div>
                                         )}
+                                        {/* input */}
                                         <div className="space-y-4">
                                             {(formData.individuos || []).map((individuo, index) => (
                                                 <div key={`individuo-${individuo.ID_individuo || index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
