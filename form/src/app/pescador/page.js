@@ -2,19 +2,23 @@
 
 import { initialState } from "./utils/initialState";
 import TextareaGroup from "./components/TextareaGroup";
+
 import InputGroup from "./components/InputGroup";
+
 import SelectGroup from "./components/SelectGroup";
+
 import CheckboxGroup from "./components/CheckboxGroup";
+
 import usePescadorForm from "./hooks/usePescadorForm";
 
 import api from "@/services/api";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Total de etapas agora é 12 (10 original + 2 novas)
 const TOTAL_ETAPAS = 12;
 
 export default function CadastroPescador() {
+
     const router = useRouter();
     const [etapaAtual, setEtapaAtual] = useState(1);
 
@@ -44,7 +48,7 @@ export default function CadastroPescador() {
         const t = texto.trim().toLowerCase();
         return especiesDisponiveis
             .filter((e) => {
-                const porId = String(e.IDD ?? e.ID ?? "").toLowerCase().includes(t);
+                const porId   = String(e.IDD ?? e.ID ?? "").toLowerCase().includes(t);
                 const porNome = (e.Nome_popular ?? "").toLowerCase().includes(t);
                 return porId || porNome;
             })
@@ -110,9 +114,9 @@ export default function CadastroPescador() {
             const novas = [...prev.especies];
             novas[idx] = {
                 ...novas[idx],
-                id_especie: especie.ID,
-                buscaTexto: String(especie.IDD ?? especie.ID),
-                nome_popular: especie.Nome_popular,
+                id_especie:        especie.ID,
+                buscaTexto:        String(especie.IDD ?? especie.ID),
+                nome_popular:      especie.Nome_popular,
                 sugestoesvisiveis: false
             };
             return { ...prev, especies: novas };
@@ -125,8 +129,10 @@ export default function CadastroPescador() {
     ];
 
     const {
+
         formData,
         setFormData,
+
         handleInputChange,
         handleCheckboxChange,
         handleEmbarcacaoInputChange,
@@ -135,38 +141,63 @@ export default function CadastroPescador() {
         addDespesa,
         removeDespesa,
         updateDespesa,
+
         submitForm,
         salvando,
         erroSubmit,
         sucessoSubmit
+
     } = usePescadorForm();
 
+
     const [municipios, setMunicipios] = useState([]);
+
     const [carregando, setCarregando] = useState(true);
+
     const [erro, setErro] = useState("");
 
     useEffect(() => {
+
         async function carregarMunicipios() {
+
             try {
+
                 const response = await api.getMunicipios();
-                const lista = Array.isArray(response) ? response : response.data;
+
+                const lista = Array.isArray(response)
+                    ? response
+                    : response.data;
+
                 setMunicipios(lista);
+
             } catch (err) {
+
                 setErro("Não foi possível carregar os municípios.");
+
             } finally {
+
                 setCarregando(false);
+
             }
+
         }
 
         carregarMunicipios();
+
     }, []);
 
     const municipioSelecionado = useMemo(() => {
-        return municipios.find((m) => m.municipio === formData.municipio);
+
+        return municipios.find(
+            (m) => m.municipio === formData.municipio
+        );
+
     }, [municipios, formData.municipio]);
 
     const localidades = useMemo(() => {
+
         return municipioSelecionado?.localidades || [];
+
     }, [municipioSelecionado]);
 
     // Garante ao menos uma linha ao entrar na etapa 8
@@ -177,218 +208,748 @@ export default function CadastroPescador() {
     }, [etapaAtual]);
 
     function proximaEtapa() {
+
         if (etapaAtual < TOTAL_ETAPAS)
             setEtapaAtual((e) => e + 1);
 
         window.scrollTo(0, 0);
+
     }
 
     function etapaAnterior() {
+
         if (etapaAtual > 1)
             setEtapaAtual((e) => e - 1);
 
         window.scrollTo(0, 0);
+
     }
 
     return (
+
         <main className="min-h-screen bg-slate-100 py-10">
+
             <div className="max-w-6xl mx-auto">
+
                 <div className="bg-white rounded-2xl border border-slate-300 shadow-xl p-10">
+
                     <div className="mb-8">
+
                         <h1 className="text-3xl font-bold text-slate-800">
-                            Cadastro de Pescador
+
+                            Cadastro Socioeconômico do Pescador
+
                         </h1>
+
                         <p className="text-slate-500 mt-2">
-                            Preencha os dados abaixo para completar o cadastro
+
+                            Etapa {etapaAtual} de {TOTAL_ETAPAS}
+
                         </p>
+
                     </div>
 
-                    <div className="mb-6 bg-slate-100 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold text-slate-600">
-                                Etapa {etapaAtual} de {TOTAL_ETAPAS}
-                            </span>
-                            <div className="w-64 h-2 bg-slate-200 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-blue-600 transition-all duration-300"
-                                    style={{
-                                        width: `${(etapaAtual / TOTAL_ETAPAS) * 100}%`
-                                    }}
-                                ></div>
-                            </div>
-                        </div>
+                    <div className="w-full bg-slate-200 rounded-full h-3 mb-8">
+
+                        <div
+
+                            className="bg-blue-600 h-3 rounded-full transition-all"
+
+                            style={{
+                                width: `${(etapaAtual / TOTAL_ETAPAS) * 100}%`
+                            }}
+
+                        />
+
                     </div>
 
-                    {/* ETAPA 1: INFORMAÇÕES PESSOAIS */}
                     {etapaAtual === 1 && (
-                        <div>
-                            <h2 className="text-xl font-bold mb-6">
-                                Informações Pessoais
-                            </h2>
-                            <div className="grid md:grid-cols-2 gap-5">
-                                <InputGroup
-                                    label="Nome completo"
-                                    name="nomeCompleto"
-                                    value={formData.nomeCompleto || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <InputGroup
-                                    label="CPF"
-                                    name="cpf"
-                                    value={formData.cpf || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <InputGroup
-                                    label="Data de nascimento"
-                                    name="dataNascimento"
-                                    type="date"
-                                    value={formData.dataNascimento || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <SelectGroup
-                                    label="Sexo"
-                                    name="sexo"
-                                    value={formData.sexo || ""}
-                                    onChange={handleInputChange}
-                                    options={[
-                                        { id: "", nome: "Selecione" },
-                                        { id: "M", nome: "Masculino" },
-                                        { id: "F", nome: "Feminino" }
-                                    ]}
-                                />
-                            </div>
-                        </div>
-                    )}
 
-                    {/* ETAPA 2: INFORMAÇÕES DE CONTATO */}
-                    {etapaAtual === 2 && (
                         <div>
-                            <h2 className="text-xl font-bold mb-6">
-                                Informações de Contato
-                            </h2>
-                            <div className="grid md:grid-cols-2 gap-5">
-                                <InputGroup
-                                    label="Email"
-                                    name="email"
-                                    type="email"
-                                    value={formData.email || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <InputGroup
-                                    label="Telefone"
-                                    name="telefone"
-                                    value={formData.telefone || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <InputGroup
-                                    label="Rua"
-                                    name="rua"
-                                    value={formData.rua || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <InputGroup
-                                    label="Número"
-                                    name="numero"
-                                    value={formData.numero || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <InputGroup
-                                    label="Complemento"
-                                    name="complemento"
-                                    value={formData.complemento || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <InputGroup
-                                    label="Bairro"
-                                    name="bairro"
-                                    value={formData.bairro || ""}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-                        </div>
-                    )}
 
-                    {/* ETAPA 3: LOCALIZAÇÃO GEOGRÁFICA */}
-                    {etapaAtual === 3 && (
-                        <div>
-                            <h2 className="text-xl font-bold mb-6">
-                                Localização Geográfica
+                            <h2 className="text-xl font-bold mb-6 color-slate-800">
+
+                                Informações Iniciais
+
                             </h2>
+
                             <div className="grid md:grid-cols-2 gap-5">
+
+                                <InputGroup
+                                    label="Código da Coleta"
+                                    name="codigoColeta"
+                                    value={formData.codigoColeta}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Código da Foto"
+                                    name="codigoFoto"
+                                    value={formData.codigoFoto}
+                                    onChange={handleInputChange}
+                                />
+
                                 <SelectGroup
                                     label="Município"
                                     name="municipio"
-                                    value={formData.municipio || ""}
+                                    value={formData.municipio}
                                     onChange={handleInputChange}
-                                    options={municipios.map((m) => ({
-                                        id: m.municipio,
-                                        nome: m.municipio
-                                    }))}
+                                    options={municipios}
+                                    optionLabel="municipio"
+                                    optionValue="ID_municipio"
                                 />
+
                                 <SelectGroup
                                     label="Localidade"
                                     name="localidade"
-                                    value={formData.localidade || ""}
+                                    value={formData.localidade}
                                     onChange={handleInputChange}
-                                    options={localidades.map((l) => ({
-                                        id: l,
-                                        nome: l
-                                    }))}
+                                    options={localidades}
+                                    optionLabel="localidade"
+                                    optionValue="ID_localidade"
                                 />
-                                <InputGroup
-                                    label="CEP"
-                                    name="cep"
-                                    value={formData.cep || ""}
-                                    onChange={handleInputChange}
-                                />
+
                             </div>
+
                         </div>
+
                     )}
 
-                    {/* ETAPA 4: INFORMAÇÕES PROFISSIONAIS */}
-                    {etapaAtual === 4 && (
+                    {etapaAtual === 2 && (
+
                         <div>
+
                             <h2 className="text-xl font-bold mb-6">
-                                Informações Profissionais
+
+                                Dados Pessoais
+
                             </h2>
+
                             <div className="grid md:grid-cols-2 gap-5">
+
                                 <InputGroup
-                                    label="Número de RGP"
-                                    name="numeroRGP"
-                                    value={formData.numeroRGP || ""}
+                                    label="Nome"
+                                    name="nome"
+                                    value={formData.nome}
                                     onChange={handleInputChange}
                                 />
+
                                 <InputGroup
-                                    label="Colônia de Pescadores"
-                                    name="coloniaAfiliacoes"
-                                    value={formData.coloniaAfiliacoes || ""}
+                                    label="Apelido"
+                                    name="apelido"
+                                    value={formData.apelido}
                                     onChange={handleInputChange}
                                 />
+
+                                <InputGroup
+                                    label="CPF"
+                                    name="cpf"
+                                    value={formData.cpf}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Telefone"
+                                    name="telefone"
+                                    value={formData.telefone}
+                                    onChange={handleInputChange}
+                                />
+
                                 <SelectGroup
-                                    label="Tipo de Pescador"
-                                    name="tipoPescador"
-                                    value={formData.tipoPescador || ""}
+                                    label="Sexo"
+                                    name="sexo"
+                                    value={formData.sexo}
                                     onChange={handleInputChange}
                                     options={[
-                                        { id: "", nome: "Selecione" },
-                                        { id: "artesanal", nome: "Artesanal" },
-                                        { id: "industrial", nome: "Industrial" },
-                                        { id: "misto", nome: "Misto" }
+                                        { id: "M", nome: "Masculino" },
+                                        { id: "F", nome: "Feminino" }
                                     ]}
+                                    optionLabel="nome"
+                                    optionValue="id"
                                 />
-                                <SelectGroup
-                                    label="É filiado a alguma associação?"
-                                    name="eFiliadoAssociacao"
-                                    value={formData.eFiliadoAssociacao || ""}
+
+                                <InputGroup
+                                    label="Data de Nascimento"
+                                    type="date"
+                                    name="nascimento"
+                                    value={formData.nascimento}
                                     onChange={handleInputChange}
-                                    options={OPCOES_SIM_NAO}
                                 />
+
+                                <InputGroup
+                                    label="Naturalidade"
+                                    name="naturalidade"
+                                    value={formData.naturalidade}
+                                    onChange={handleInputChange}
+                                />
+
+                                <SelectGroup
+                                    label="Estado Civil"
+                                    name="estadoCivil"
+                                    value={formData.estadoCivil}
+                                    onChange={handleInputChange}
+                                    options={[
+                                        { id: "solteiro", nome: "Solteiro(a)" },
+                                        { id: "casado", nome: "Casado(a)" },
+                                        { id: "separado", nome: "Separado(a)" },
+                                        { id: "divorciado", nome: "Divorciado(a)" },
+                                        { id: "viuvo", nome: "Viúvo(a)" }
+                                    ]}
+                                    optionLabel="nome"
+                                    optionValue="id"
+                                />
+
+                                <InputGroup
+                                    label="Escolaridade"
+                                    name="escolaridade"
+                                    value={formData.escolaridade}
+                                    onChange={handleInputChange}
+                                    colSpan={2}
+                                />
+
                             </div>
+
                         </div>
+
+                    )}
+                    {etapaAtual === 3 && (
+
+                        <div>
+
+                            <h2 className="text-xl font-bold mb-6">
+
+                                Moradia
+
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-5">
+
+                                <SelectGroup
+                                    label="Local de Moradia"
+                                    name="moradiaTipo"
+                                    value={formData.moradiaTipo}
+                                    onChange={handleInputChange}
+                                    options={[
+                                        {
+                                            id: "comunidade",
+                                            nome: "Comunidade Tradicional"
+                                        },
+                                        {
+                                            id: "sede",
+                                            nome: "Sede Municipal"
+                                        },
+                                        {
+                                            id: "outro",
+                                            nome: "Outro"
+                                        }
+                                    ]}
+                                    optionLabel="nome"
+                                    optionValue="id"
+                                />
+
+                                {
+                                    formData.moradiaTipo === "outro" && (
+
+                                        <InputGroup
+                                            label="Qual?"
+                                            name="moradiaOutro"
+                                            value={formData.moradiaOutro}
+                                            onChange={handleInputChange}
+                                        />
+
+                                    )
+                                }
+
+                                <SelectGroup
+                                    label="Tipo de Construção"
+                                    name="tipoConstrucao"
+                                    value={formData.tipoConstrucao}
+                                    onChange={handleInputChange}
+                                    options={[
+                                        {
+                                            id: "alvenaria",
+                                            nome: "Alvenaria"
+                                        },
+                                        {
+                                            id: "madeira",
+                                            nome: "Madeira"
+                                        },
+                                        {
+                                            id: "outro",
+                                            nome: "Outro"
+                                        }
+                                    ]}
+                                    optionLabel="nome"
+                                    optionValue="id"
+                                />
+
+                                {
+                                    formData.tipoConstrucao === "outro" && (
+
+                                        <InputGroup
+                                            label="Outro tipo"
+                                            name="tipoConstrucaoOutro"
+                                            value={formData.tipoConstrucaoOutro}
+                                            onChange={handleInputChange}
+                                        />
+
+                                    )
+                                }
+
+                            </div>
+
+                        </div>
+
                     )}
 
-                    {/* ETAPA 5: INFORMAÇÕES SOBRE EMBARCAÇÕES */}
+                    {etapaAtual === 4 && (
+
+                        <div>
+
+                            <h2 className="text-xl font-bold mb-6">
+
+                                Saúde
+
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+
+                                <CheckboxGroup
+                                    label="Problemas de Vista"
+                                    checked={formData.saude.vista}
+                                    onChange={() => handleCheckboxChange("saude", "vista")}
+                                />
+
+                                <CheckboxGroup
+                                    label="Problemas de Pele"
+                                    checked={formData.saude.pele}
+                                    onChange={() => handleCheckboxChange("saude", "pele")}
+                                />
+
+                                <CheckboxGroup
+                                    label="Problemas na Coluna"
+                                    checked={formData.saude.coluna}
+                                    onChange={() => handleCheckboxChange("saude", "coluna")}
+                                />
+
+                                <CheckboxGroup
+                                    label="Problemas Ginecológicos"
+                                    checked={formData.saude.ginecologico}
+                                    onChange={() => handleCheckboxChange("saude", "ginecologico")}
+                                />
+
+                                <CheckboxGroup
+                                    label="Outros"
+                                    checked={formData.saude.outros}
+                                    onChange={() => handleCheckboxChange("saude", "outros")}
+                                />
+
+                            </div>
+
+                            {formData.saude.outros && (
+
+                                <div className="mt-6">
+
+                                    <InputGroup
+                                        label="Descreva os outros problemas de saúde"
+                                        name="saudeOutros"
+                                        value={formData.saudeOutros}
+                                        onChange={handleInputChange}
+                                        colSpan={2}
+                                    />
+
+                                </div>
+
+                            )}
+
+                        </div>
+
+                    )}
                     {etapaAtual === 5 && (
+
+                        <div>
+
+                            <h2 className="text-xl font-bold mb-6">
+
+                                Registros
+
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-5">
+
+                                <SelectGroup
+                                    label="Possui Registro no INSS?"
+                                    name="registroINSS"
+                                    value={formData.registroINSS}
+                                    onChange={handleInputChange}
+                                    options={OPCOES_SIM_NAO}
+                                    optionLabel="nome"
+                                    optionValue="id"
+                                />
+
+                                <SelectGroup
+                                    label="Registro em Colônia?"
+                                    name="registroColonia"
+                                    value={formData.registroColonia}
+                                    onChange={handleInputChange}
+                                    options={OPCOES_SIM_NAO}
+                                    optionLabel="nome"
+                                    optionValue="id"
+                                />
+
+                                {formData.registroColonia === "sim" && (
+
+                                    <InputGroup
+                                        label="Qual Colônia?"
+                                        name="qualColonia"
+                                        value={formData.qualColonia}
+                                        onChange={handleInputChange}
+                                    />
+
+                                )}
+
+                                <SelectGroup
+                                    label="Registro em Associação?"
+                                    name="registroAssociacao"
+                                    value={formData.registroAssociacao}
+                                    onChange={handleInputChange}
+                                    options={OPCOES_SIM_NAO}
+                                    optionLabel="nome"
+                                    optionValue="id"
+                                />
+
+                                {formData.registroAssociacao === "sim" && (
+
+                                    <InputGroup
+                                        label="Qual Associação?"
+                                        name="qualAssociacao"
+                                        value={formData.qualAssociacao}
+                                        onChange={handleInputChange}
+                                    />
+
+                                )}
+
+                                <SelectGroup
+                                    label="Possui Carteira de Pescador?"
+                                    name="possuiCarteira"
+                                    value={formData.possuiCarteira}
+                                    onChange={handleInputChange}
+                                    options={OPCOES_SIM_NAO}
+                                    optionLabel="nome"
+                                    optionValue="id"
+                                />
+
+                                {formData.possuiCarteira === "sim" && (
+
+                                    <>
+                                        <SelectGroup
+                                            label="Carteira Grande Marinha"
+                                            name="carteiraGrande"
+                                            value={formData.carteiraGrande}
+                                            onChange={handleInputChange}
+                                            options={OPCOES_SIM_NAO}
+                                            optionLabel="nome"
+                                            optionValue="id"
+                                        />
+
+                                        <SelectGroup
+                                            label="Carteira Pequena Colônia"
+                                            name="carteiraPequena"
+                                            value={formData.carteiraPequena}
+                                            onChange={handleInputChange}
+                                            options={OPCOES_SIM_NAO}
+                                            optionLabel="nome"
+                                            optionValue="id"
+                                        />
+                                    </>
+
+                                )}
+
+                            </div>
+
+                        </div>
+
+                    )}
+                    {etapaAtual === 6 && (
+
+                        <div>
+
+                            <h2 className="text-xl font-bold mb-6">
+
+                                Relação de Trabalho
+
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-5">
+
+                                <InputGroup
+                                    label="Há quanto tempo exerce a atividade pesqueira? (anos)"
+                                    name="tempoAtividade"
+                                    type="number"
+                                    value={formData.tempoAtividade}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Horas de trabalho por dia"
+                                    name="horasDia"
+                                    type="number"
+                                    value={formData.horasDia}
+                                    onChange={handleInputChange}
+                                />
+
+                                <SelectGroup
+                                    label="Relação de Trabalho"
+                                    name="relacaoTrabalho"
+                                    value={formData.relacaoTrabalho}
+                                    onChange={handleInputChange}
+                                    options={[
+                                        { id: "autonomo", nome: "Autônomo" },
+                                        { id: "empregado", nome: "Empregado" },
+                                        { id: "familiar", nome: "Trabalho Familiar" },
+                                        { id: "cooperativa", nome: "Cooperativa" },
+                                        { id: "outro", nome: "Outro" }
+                                    ]}
+                                    optionLabel="nome"
+                                    optionValue="id"
+                                />
+
+                                <InputGroup
+                                    label="Atividade Principal"
+                                    name="atividadePrincipal"
+                                    value={formData.atividadePrincipal}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Atividade Secundária"
+                                    name="atividadeSecundaria"
+                                    value={formData.atividadeSecundaria}
+                                    onChange={handleInputChange}
+                                />
+
+                                <TextareaGroup
+                                    label="Outras Fontes de Renda"
+                                    name="fontesRenda"
+                                    value={formData.fontesRenda}
+                                    onChange={handleInputChange}
+                                />
+
+                            </div>
+
+                        </div>
+
+                    )}
+                    {etapaAtual === 7 && (
+
+                        <div>
+
+                            <h2 className="text-xl font-bold mb-6">
+
+                                Composição da Pescaria
+
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-5">
+
+                                <SelectGroup
+                                    label="Categoria da Pesca"
+                                    name="categoriaPesca"
+                                    value={formData.categoriaPesca}
+                                    onChange={handleInputChange}
+                                    options={[
+                                        { id: "artesanal", nome: "Artesanal" },
+                                        { id: "industrial", nome: "Industrial" },
+                                        { id: "subsistencia", nome: "Subsistência" }
+                                    ]}
+                                    optionLabel="nome"
+                                    optionValue="id"
+                                />
+
+                                <InputGroup
+                                    label="Principal Pescaria"
+                                    name="principalPescaria"
+                                    value={formData.principalPescaria}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Petrecho de Pesca"
+                                    name="petrechoPesca"
+                                    value={formData.petrechoPesca}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Material do Petrecho"
+                                    name="materialPetrecho"
+                                    value={formData.materialPetrecho}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Tipo de Isca"
+                                    name="tipoIscas"
+                                    value={formData.tipoIscas}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Processo de Lançamento"
+                                    name="processoLancamento"
+                                    value={formData.processoLancamento}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Comprimento (metros)"
+                                    name="tamanhoMetros"
+                                    type="number"
+                                    value={formData.tamanhoMetros}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Comprimento (braças)"
+                                    name="tamanhoBracas"
+                                    type="number"
+                                    value={formData.tamanhoBracas}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Quantidade de Unidades"
+                                    name="unidades"
+                                    type="number"
+                                    value={formData.unidades}
+                                    onChange={handleInputChange}
+                                />
+
+                            </div>
+
+                        </div>
+
+                    )}
+
+                    {etapaAtual === 8 && (
+
+                        <div>
+
+                            <h2 className="text-xl font-bold mb-6">
+                                Espécies Capturadas
+                            </h2>
+
+                            {carregandoEspecies && (
+                                <p className="text-slate-500 text-sm mb-4">Carregando espécies...</p>
+                            )}
+
+                            {/* ── Cabeçalho ── */}
+                            <div className="hidden md:grid grid-cols-[160px_1fr_140px_140px_100px] gap-2 px-2 pb-1 border-b border-slate-200 mb-1">
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">ID</span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nome comum</span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Início safra</span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Fim safra</span>
+                                <span></span>
+                            </div>
+
+                            {/* ── Linhas ── */}
+                            <div className="space-y-2">
+                                {formData.especies.length === 0 && (
+                                    <p className="text-center text-slate-400 py-8 text-sm">
+                                        Nenhuma espécie adicionada. Clique em &quot;+ Adicionar linha&quot;.
+                                    </p>
+                                )}
+
+                                {formData.especies.map((esp, idx) => (
+                                    <div key={esp.rowId} className="grid grid-cols-1 md:grid-cols-[160px_1fr_140px_140px_100px] gap-2 items-start border-b border-slate-100 pb-2">
+
+                                        {/* ── Busca por ID ou nome ── */}
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="ID ou nome"
+                                                value={esp.buscaTexto}
+                                                onChange={(e) => handleEspecieBusca(idx, e.target.value)}
+                                                onFocus={() => handleEspecieFocus(idx)}
+                                                onBlur={() => setTimeout(() => handleEspecieBlur(idx), 200)}
+                                                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            />
+                                            {esp.sugestoesvisiveis && especieSugestoes(esp.buscaTexto).length > 0 && (
+                                                <div className="absolute left-0 top-full z-50 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto w-80">
+                                                    {especieSugestoes(esp.buscaTexto).map((s) => (
+                                                        <button
+                                                            key={s.ID}
+                                                            type="button"
+                                                            onMouseDown={(e) => { e.preventDefault(); handleEspecieSelecionada(idx, s); }}
+                                                            className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b border-slate-100 last:border-0"
+                                                        >
+                                                            <span className="font-medium text-blue-700">{s.IDD ?? s.ID}</span>
+                                                            <span className="text-slate-600"> — {s.Nome_popular}</span>
+                                                            {s.Nome_cientifico && (
+                                                                <span className="text-slate-400 italic text-xs block">{s.Nome_cientifico}</span>
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* ── Nome comum (preenchido ao selecionar) ── */}
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={esp.nome_popular || ""}
+                                            placeholder="Nome comum"
+                                            className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-600 cursor-default"
+                                        />
+
+                                        {/* ── Início safra ── */}
+                                        <input
+                                            type="text"
+                                            placeholder="Ex: janeiro"
+                                            value={esp.inicioSafra}
+                                            onChange={(e) => handleEspecieCampo(idx, "inicioSafra", e.target.value)}
+                                            className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        />
+
+                                        {/* ── Fim safra ── */}
+                                        <input
+                                            type="text"
+                                            placeholder="Ex: junho"
+                                            value={esp.fimSafra}
+                                            onChange={(e) => handleEspecieCampo(idx, "fimSafra", e.target.value)}
+                                            className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        />
+
+                                        {/* ── Remover ── */}
+                                        <button
+                                            type="button"
+                                            onClick={() => removerEspecieLinha(idx)}
+                                            className="px-3 py-1.5 rounded-lg border border-red-400 text-red-500 text-sm hover:bg-red-50 transition w-full"
+                                        >
+                                            Remover
+                                        </button>
+
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-4">
+                                <button
+                                    type="button"
+                                    onClick={adicionarEspecieLinha}
+                                    className="px-4 py-2 rounded-lg border border-blue-500 text-blue-600 text-sm font-medium hover:bg-blue-50 transition"
+                                >
+                                    + Adicionar linha
+                                </button>
+                            </div>
+
+                        </div>
+
+                    )}
+
+                    {/* ETAPA 9: EMBARCAÇÕES */}
+                    {etapaAtual === 9 && (
                         <div>
                             <h2 className="text-xl font-bold mb-6">
                                 Informações sobre Embarcações
@@ -398,7 +959,7 @@ export default function CadastroPescador() {
                             </p>
 
                             <div className="space-y-8">
-                                {formData.embarcacoes.map((emb, idx) => (
+                                {formData.embarcacoes && formData.embarcacoes.map((emb, idx) => (
                                     <div key={idx} className="border-l-4 border-blue-500 pl-6 py-4 bg-blue-50 rounded-lg">
                                         <h3 className="font-semibold text-slate-700 mb-4">
                                             Embarcação {idx + 1}
@@ -451,6 +1012,8 @@ export default function CadastroPescador() {
                                                     { id: "barco", nome: "Barco" },
                                                     { id: "jangada", nome: "Jangada" }
                                                 ]}
+                                                optionLabel="nome"
+                                                optionValue="id"
                                             />
                                         </div>
 
@@ -476,241 +1039,24 @@ export default function CadastroPescador() {
                         </div>
                     )}
 
-                    {/* ETAPA 6: TIPOS DE PESCA */}
-                    {etapaAtual === 6 && (
-                        <div>
-                            <h2 className="text-xl font-bold mb-6">
-                                Tipos de Pesca
-                            </h2>
-                            <div className="grid md:grid-cols-2 gap-5">
-                                <CheckboxGroup
-                                    label="Pesca em Alto Mar"
-                                    name="pescaAltoMar"
-                                    checked={formData.pescaAltoMar || false}
-                                    onChange={handleCheckboxChange}
-                                />
-                                <CheckboxGroup
-                                    label="Pesca em Águas Interiores"
-                                    name="pescaAguasInteriores"
-                                    checked={formData.pescaAguasInteriores || false}
-                                    onChange={handleCheckboxChange}
-                                />
-                                <CheckboxGroup
-                                    label="Pesca em Áreas Protegidas"
-                                    name="pescaAreasProtegidas"
-                                    checked={formData.pescaAreasProtegidas || false}
-                                    onChange={handleCheckboxChange}
-                                />
-                                <CheckboxGroup
-                                    label="Aquicultura"
-                                    name="aquicultura"
-                                    checked={formData.aquicultura || false}
-                                    onChange={handleCheckboxChange}
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ETAPA 7: TÉCNICAS E EQUIPAMENTOS */}
-                    {etapaAtual === 7 && (
-                        <div>
-                            <h2 className="text-xl font-bold mb-6">
-                                Técnicas e Equipamentos de Pesca
-                            </h2>
-                            <div className="grid md:grid-cols-2 gap-5">
-                                <CheckboxGroup
-                                    label="Rede de Arrasto"
-                                    name="rede_arrasto"
-                                    checked={formData.rede_arrasto || false}
-                                    onChange={handleCheckboxChange}
-                                />
-                                <CheckboxGroup
-                                    label="Rede de Cerco"
-                                    name="rede_cerco"
-                                    checked={formData.rede_cerco || false}
-                                    onChange={handleCheckboxChange}
-                                />
-                                <CheckboxGroup
-                                    label="Anzol e Linha"
-                                    name="anzol_linha"
-                                    checked={formData.anzol_linha || false}
-                                    onChange={handleCheckboxChange}
-                                />
-                                <CheckboxGroup
-                                    label="Armadilha"
-                                    name="armadilha"
-                                    checked={formData.armadilha || false}
-                                    onChange={handleCheckboxChange}
-                                />
-                                <CheckboxGroup
-                                    label="Mergulho"
-                                    name="mergulho"
-                                    checked={formData.mergulho || false}
-                                    onChange={handleCheckboxChange}
-                                />
-                                <CheckboxGroup
-                                    label="Arpão"
-                                    name="arpao"
-                                    checked={formData.arpao || false}
-                                    onChange={handleCheckboxChange}
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ETAPA 8: ESPÉCIES CAPTURADAS */}
-                    {etapaAtual === 8 && (
-                        <div>
-                            <h2 className="text-xl font-bold mb-6">
-                                Espécies Capturadas
-                            </h2>
-                            <p className="text-slate-500 mb-6">
-                                Cadastre as espécies capturadas pelo pescador.
-                            </p>
-
-                            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_80px] gap-2 px-2 pb-1 border-b border-slate-200 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                <span>Espécie</span>
-                                <span>Início Safra</span>
-                                <span>Fim Safra</span>
-                                <span>Período (dias)</span>
-                                <span></span>
-                            </div>
-
-                            <div className="space-y-2">
-                                {formData.especies.length === 0 && (
-                                    <p className="text-center text-slate-400 py-8 text-sm">
-                                        Nenhuma espécie adicionada.
-                                    </p>
-                                )}
-
-                                {formData.especies.map((esp, idx) => (
-                                    <div key={esp.rowId} className="relative grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_80px] gap-2 items-start border-b border-slate-100 pb-2">
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                placeholder="Buscar ou descrever espécie..."
-                                                value={esp.buscaTexto}
-                                                onChange={(e) => handleEspecieBusca(idx, e.target.value)}
-                                                onFocus={() => handleEspecieFocus(idx)}
-                                                onBlur={() => handleEspecieBlur(idx)}
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400"
-                                            />
-                                            {esp.sugestoesvisiveis && especieSugestoes(esp.buscaTexto).length > 0 && (
-                                                <div className="absolute top-full left-0 right-0 z-10 mt-1 border border-slate-200 rounded-lg bg-white shadow-lg max-h-40 overflow-y-auto">
-                                                    {especieSugestoes(esp.buscaTexto).map((e) => (
-                                                        <div
-                                                            key={e.ID}
-                                                            onClick={() => handleEspecieSelecionada(idx, e)}
-                                                            className="px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm"
-                                                        >
-                                                            <strong>{e.Nome_popular || e.nome_popular}</strong>
-                                                            <br />
-                                                            <small className="text-slate-500">
-                                                                {e.Nome_cientifico || e.nome_cientifico}
-                                                            </small>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            {esp.nome_popular && (
-                                                <p className="text-xs text-slate-500 mt-1">
-                                                    Selecionado: {esp.nome_popular}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <input
-                                            type="date"
-                                            value={esp.inicioSafra || ""}
-                                            onChange={(e) => handleEspecieCampo(idx, "inicioSafra", e.target.value)}
-                                            className="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400"
-                                        />
-                                        <input
-                                            type="date"
-                                            value={esp.fimSafra || ""}
-                                            onChange={(e) => handleEspecieCampo(idx, "fimSafra", e.target.value)}
-                                            className="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400"
-                                        />
-                                        <input
-                                            type="number"
-                                            placeholder="0"
-                                            readOnly
-                                            value={esp.inicioSafra && esp.fimSafra
-                                                ? Math.round((new Date(esp.fimSafra) - new Date(esp.inicioSafra)) / (1000 * 60 * 60 * 24))
-                                                : ""}
-                                            className="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-blue-400"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => removerEspecieLinha(idx)}
-                                            className="px-2 py-2 rounded-lg border border-red-400 text-red-500 text-xs hover:bg-red-50 transition h-fit"
-                                        >
-                                            Remover
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="mt-4">
-                                <button
-                                    type="button"
-                                    onClick={adicionarEspecieLinha}
-                                    className="px-4 py-2 rounded-lg border border-blue-500 text-blue-600 text-sm font-medium hover:bg-blue-50 transition"
-                                >
-                                    + Adicionar Espécie
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ETAPA 9: CAPACIDADE DE ARMAZENAGEM */}
-                    {etapaAtual === 9 && (
-                        <div>
-                            <h2 className="text-xl font-bold mb-6">
-                                Capacidade de Armazenagem
-                            </h2>
-                            <div className="grid md:grid-cols-2 gap-5">
-                                <InputGroup
-                                    label="Capacidade de Carga (kg)"
-                                    name="capacidadeCarga"
-                                    type="number"
-                                    value={formData.capacidadeCarga || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <InputGroup
-                                    label="Equipamento de Refrigeração (litros)"
-                                    name="equipamentoRefrigeracao"
-                                    type="number"
-                                    value={formData.equipamentoRefrigeracao || ""}
-                                    onChange={handleInputChange}
-                                />
-                                <SelectGroup
-                                    label="Possui câmara fria?"
-                                    name="possuiCamaraFria"
-                                    value={formData.possuiCamaraFria || ""}
-                                    onChange={handleInputChange}
-                                    options={OPCOES_SIM_NAO}
-                                />
-                                <SelectGroup
-                                    label="Possui tanque de armazenagem?"
-                                    name="possuiTanqueArmazenagem"
-                                    value={formData.possuiTanqueArmazenagem || ""}
-                                    onChange={handleInputChange}
-                                    options={OPCOES_SIM_NAO}
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ETAPA 10: QUADRANTES DE PESCA */}
                     {etapaAtual === 10 && (
+
                         <div>
+
                             <h2 className="text-xl font-bold mb-6">
+
                                 Quadrantes de Pesca
+
                             </h2>
+
                             <p className="text-slate-500 mb-8">
+
                                 Informe os principais quadrantes onde o pescador exerce sua atividade.
+
                             </p>
+
                             <div className="grid md:grid-cols-2 gap-5">
+
                                 <InputGroup
                                     label="Quadrante 1"
                                     name="quadrante1"
@@ -718,9 +1064,14 @@ export default function CadastroPescador() {
                                     onChange={(e) => {
                                         const novos = [...formData.quadrantes];
                                         novos[0] = e.target.value;
-                                        setFormData(prev => ({ ...prev, quadrantes: novos }));
+
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            quadrantes: novos
+                                        }));
                                     }}
                                 />
+
                                 <InputGroup
                                     label="Quadrante 2"
                                     name="quadrante2"
@@ -728,9 +1079,14 @@ export default function CadastroPescador() {
                                     onChange={(e) => {
                                         const novos = [...formData.quadrantes];
                                         novos[1] = e.target.value;
-                                        setFormData(prev => ({ ...prev, quadrantes: novos }));
+
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            quadrantes: novos
+                                        }));
                                     }}
                                 />
+
                                 <InputGroup
                                     label="Quadrante 3"
                                     name="quadrante3"
@@ -738,9 +1094,14 @@ export default function CadastroPescador() {
                                     onChange={(e) => {
                                         const novos = [...formData.quadrantes];
                                         novos[2] = e.target.value;
-                                        setFormData(prev => ({ ...prev, quadrantes: novos }));
+
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            quadrantes: novos
+                                        }));
                                     }}
                                 />
+
                                 <InputGroup
                                     label="Quadrante 4"
                                     name="quadrante4"
@@ -748,9 +1109,14 @@ export default function CadastroPescador() {
                                     onChange={(e) => {
                                         const novos = [...formData.quadrantes];
                                         novos[3] = e.target.value;
-                                        setFormData(prev => ({ ...prev, quadrantes: novos }));
+
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            quadrantes: novos
+                                        }));
                                     }}
                                 />
+
                                 <InputGroup
                                     label="Quadrante 5"
                                     name="quadrante5"
@@ -758,14 +1124,21 @@ export default function CadastroPescador() {
                                     onChange={(e) => {
                                         const novos = [...formData.quadrantes];
                                         novos[4] = e.target.value;
-                                        setFormData(prev => ({ ...prev, quadrantes: novos }));
+
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            quadrantes: novos
+                                        }));
                                     }}
                                 />
+
                             </div>
+
                         </div>
+
                     )}
 
-                    {/* ETAPA 11: DESPESAS DA ATIVIDADE */}
+                    {/* ETAPA 11: DESPESAS */}
                     {etapaAtual === 11 && (
                         <div>
                             <h2 className="text-xl font-bold mb-6">
@@ -789,12 +1162,12 @@ export default function CadastroPescador() {
 
                             {/* Linhas de Despesas */}
                             <div className="space-y-2">
-                                {formData.despesas.length === 0 && (
+                                {formData.despesas && formData.despesas.length === 0 && (
                                     <p className="text-center text-slate-400 py-8 text-sm">
                                         Nenhuma despesa adicionada.
                                     </p>
                                 )}
-                                {formData.despesas.map((desp, idx) => (
+                                {formData.despesas && formData.despesas.map((desp, idx) => (
                                     <div
                                         key={desp.rowId}
                                         className="grid grid-cols-1 md:grid-cols-[1fr_120px_100px_100px_120px_1fr_120px_80px] gap-2 items-start border-b border-slate-100 pb-2"
@@ -876,13 +1249,18 @@ export default function CadastroPescador() {
                         </div>
                     )}
 
-                    {/* ETAPA 12: PRODUÇÃO E COMERCIALIZAÇÃO */}
                     {etapaAtual === 12 && (
+
                         <div>
+
                             <h2 className="text-xl font-bold mb-6">
+
                                 Produção e Comercialização
+
                             </h2>
+
                             <div className="grid md:grid-cols-2 gap-5">
+
                                 <InputGroup
                                     label="Média de dias embarcado por mês"
                                     name="mediaDiasEmbarcado"
@@ -890,6 +1268,7 @@ export default function CadastroPescador() {
                                     value={formData.mediaDiasEmbarcado}
                                     onChange={handleInputChange}
                                 />
+
                                 <InputGroup
                                     label="Produção média (kg)"
                                     name="producaoMedia"
@@ -897,6 +1276,7 @@ export default function CadastroPescador() {
                                     value={formData.producaoMedia}
                                     onChange={handleInputChange}
                                 />
+
                                 <InputGroup
                                     label="Valor médio obtido (R$)"
                                     name="valorMedio"
@@ -904,21 +1284,30 @@ export default function CadastroPescador() {
                                     value={formData.valorMedio}
                                     onChange={handleInputChange}
                                 />
+
                                 <TextareaGroup
                                     label="Observações"
                                     name="observacoes"
                                     value={formData.observacoes || ""}
                                     onChange={handleInputChange}
                                 />
+
                             </div>
 
                             <div className="mt-10 p-6 rounded-xl bg-green-50 border border-green-200">
+
                                 <h3 className="text-lg font-semibold text-green-700">
+
                                     Cadastro concluído
+
                                 </h3>
+
                                 <p className="text-slate-600 mt-2">
+
                                     Revise todas as informações antes de salvar o cadastro.
+
                                 </p>
+
                             </div>
 
                             {erroSubmit && (
@@ -948,27 +1337,48 @@ export default function CadastroPescador() {
                                     {salvando ? "Salvando..." : "Salvar Cadastro"}
                                 </button>
                             </div>
-                        </div>
-                    )}
 
+                        </div>
+
+                    )}
                     <div className="flex justify-between mt-10">
+
                         <button
+
                             onClick={etapaAnterior}
+
                             disabled={etapaAtual === 1}
+
                             className="px-6 py-3 rounded-lg bg-slate-300 disabled:opacity-40"
+
                         >
+
                             Anterior
+
                         </button>
+
                         <button
+
                             onClick={proximaEtapa}
+
                             disabled={etapaAtual === TOTAL_ETAPAS}
+
                             className="px-6 py-3 rounded-lg bg-blue-600 text-white"
+
                         >
+
                             Próximo
+
                         </button>
+
                     </div>
+
                 </div>
+
             </div>
+
         </main>
+
     );
+
 }
