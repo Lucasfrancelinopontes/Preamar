@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 
 const TOTAL_ETAPAS = 20;
 
-export default function CadastroPescador() {
+export default function CadastroPescador({ editId = null }) {
 
     const router = useRouter();
     const [etapaAtual, setEtapaAtual] = useState(1);
@@ -145,9 +145,11 @@ export default function CadastroPescador() {
         submitForm,
         salvando,
         erroSubmit,
-        sucessoSubmit
+        sucessoSubmit,
+        carregandoEdicao,
+        erroCarregamento
 
-    } = usePescadorForm();
+    } = usePescadorForm(editId);
 
 
     const [municipios, setMunicipios] = useState([]);
@@ -199,6 +201,44 @@ export default function CadastroPescador() {
         return municipioSelecionado?.localidades || [];
 
     }, [municipioSelecionado]);
+
+    if (carregandoEdicao) {
+        return (
+            <main className="min-h-screen bg-slate-100 py-10 flex items-center justify-center">
+                <div className="rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-xl text-center max-w-md w-full mx-4">
+                    <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+                    <h1 className="text-2xl font-bold text-slate-800">
+                        Carregando cadastro socioeconômico...
+                    </h1>
+                    <p className="mt-2 text-slate-500">
+                        Aguarde enquanto o formulário é preenchido com os dados salvos.
+                    </p>
+                </div>
+            </main>
+        );
+    }
+
+    if (erroCarregamento) {
+        return (
+            <main className="min-h-screen bg-slate-100 py-10 flex items-center justify-center">
+                <div className="rounded-2xl border border-red-200 bg-white px-8 py-10 shadow-xl text-center max-w-md w-full mx-4">
+                    <h1 className="text-2xl font-bold text-slate-800">
+                        Não foi possível carregar o cadastro.
+                    </h1>
+                    <p className="mt-3 text-slate-600">
+                        {erroCarregamento}
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => router.push("/meus-pescadores")}
+                        className="mt-6 px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                    >
+                        Voltar para a listagem
+                    </button>
+                </div>
+            </main>
+        );
+    }
 
     // Garante ao menos uma linha ao entrar na etapa 8
     useEffect(() => {
@@ -261,7 +301,7 @@ export default function CadastroPescador() {
 
         const ok = await submitForm();
         if (ok) {
-            setTimeout(() => router.push("/"), 1500);
+            setTimeout(() => router.push(editId ? "/meus-pescadores" : "/"), 1500);
         }
     }
 
@@ -281,9 +321,9 @@ export default function CadastroPescador() {
 
                     <div className="mb-8">
 
-                        <h1 className="text-3xl font-bold text-slate-800">
+                            <h1 className="text-3xl font-bold text-slate-800">
 
-                            Cadastro Socioeconômico do Pescador
+                            {editId ? "Editar Cadastro Socioeconômico do Pescador" : "Cadastro Socioeconômico do Pescador"}
 
                         </h1>
 
@@ -633,7 +673,7 @@ export default function CadastroPescador() {
 
                             {sucessoSubmit && (
                                 <div className="mt-6 p-4 rounded-xl bg-green-100 border border-green-300 text-green-800 text-sm font-medium">
-                                    Cadastro salvo com sucesso!
+                                    {editId ? "Cadastro atualizado com sucesso." : "Cadastro salvo com sucesso!"}
                                 </div>
                             )}
 
@@ -1711,16 +1751,11 @@ export default function CadastroPescador() {
                             <div className="mt-6 flex justify-end">
                                 <button
                                     type="button"
-                                    onClick={async () => {
-                                        const ok = await submitForm();
-                                        if (ok) {
-                                            setTimeout(() => router.push("/"), 1500);
-                                        }
-                                    }}
+                                    onClick={handleSubmit}
                                     disabled={salvando || sucessoSubmit}
                                     className="px-8 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50"
                                 >
-                                    {salvando ? "Salvando..." : "Salvar Cadastro"}
+                                    {salvando ? "Salvando..." : editId ? "Salvar Alterações" : "Salvar Cadastro"}
                                 </button>
                             </div>
 

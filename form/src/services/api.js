@@ -668,6 +668,21 @@ const api = {
     }
   },
 
+  atualizarSocioPescador: async (id, dados) => {
+    try {
+      const response = await fetch(`${API_URL}/socio-pescadores/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao atualizar cadastro socioeconômico:', error);
+      throw error;
+    }
+  },
+
   // ==================== PESCADORES ====================
 
   criarPescador: async (dados) => {
