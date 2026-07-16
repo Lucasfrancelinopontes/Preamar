@@ -101,13 +101,25 @@ export default function MeusPescadoresPage() {
                 <div className="max-w-6xl mx-auto px-4">
                     <div className="bg-white rounded-2xl border border-slate-300 shadow-xl p-10 mb-6">
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <h1 className="text-3xl font-bold text-slate-800">
-                                    Meus Pescadores
-                                </h1>
-                                <p className="text-slate-500 mt-2">
-                                    Cadastro socioeconômico dos pescadores existentes
-                                </p>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => router.back()}
+                                    className="p-2 rounded-full text-slate-600 hover:bg-slate-100 transition"
+                                    aria-label="Voltar"
+                                >
+                                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                </button>
+                                <div>
+                                    <h1 className="text-3xl font-bold text-slate-800">
+                                        Meus Pescadores
+                                    </h1>
+                                    <p className="text-slate-500 mt-2">
+                                        Cadastro socioeconômico dos pescadores existentes
+                                    </p>
+                                </div>
                             </div>
                             <button
                                 type="button"
