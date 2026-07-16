@@ -10,17 +10,17 @@
  *   defineSocioAssociations();
  */
 
-import { SocioColeta }          from './SocioColeta.js';
-import { SocioPescador }        from './SocioPescador.js';
-import { SocioSaude }           from './SocioSaude.js';
-import { SocioRegistro }        from './SocioRegistro.js';
-import { SocioEmbarcacao }      from './SocioEmbarcacao.js';
-import { SocioPetrecho }        from './SocioPetrecho.js';
-import { SocioRelacaoTrabalho } from './SocioRelacaoTrabalho.js';
-import { SocioProducao }        from './SocioProducao.js';
-import { SocioDespesa }         from './SocioDespesa.js';
-import { SocioQuadrante }       from './SocioQuadrante.js';
-import { SocioPescadorEspecie } from './SocioPescadorEspecie.js';
+import { SocioColeta }          from './Sociocoleta.js';
+import { SocioPescador }        from './Sociopescador.js';
+import { SocioSaude }           from './Sociosaude.js';
+import { SocioRegistro }        from './Socioregistro.js';
+import { SocioEmbarcacao }      from './Socioembarcacao.js';
+import { SocioPetrecho }        from './Sociopetrecho.js';
+import { SocioRelacaoTrabalho } from './Sociorelacaotrabalho.js';
+import { SocioProducao }        from './Socioproducao.js';
+import { SocioDespesa }         from './Sociodespesa.js';
+import { SocioQuadrante }       from './Socioquadrante.js';
+import { SocioPescadorEspecie } from './Sociopescadorespecie.js';
 import { Especie }              from './Especie.js';
 
 export const defineSocioAssociations = () => {
