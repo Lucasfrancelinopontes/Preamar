@@ -683,6 +683,20 @@ const api = {
     }
   },
 
+  excluirSocioPescador: async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/socio-pescadores/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao excluir cadastro socioeconômico:', error);
+      throw error;
+    }
+  },
+
   // ==================== PESCADORES ====================
 
   criarPescador: async (dados) => {

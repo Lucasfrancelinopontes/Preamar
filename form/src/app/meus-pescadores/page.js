@@ -13,6 +13,9 @@ export default function MeusPescadoresPage() {
     const [pescadores, setPescadores] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+    const [deletandoId, setDeletandoId] = useState(null);
+    const [pescadorParaExcluir, setPescadorParaExcluir] = useState(null);
     const [paginaAtual, setPaginaAtual] = useState(1);
     const [totalPaginas, setTotalPaginas] = useState(1);
     const [totalRegistros, setTotalRegistros] = useState(0);
@@ -61,6 +64,37 @@ export default function MeusPescadoresPage() {
         router.push("/pescador");
     };
 
+    const handleExcluir = async (id) => {
+        setDeletandoId(id);
+        setError("");
+
+        try {
+            await api.excluirSocioPescador(id);
+
+            const novaPagina = pescadores.length === 1 && paginaAtual > 1
+                ? paginaAtual - 1
+                : paginaAtual;
+
+            setPescadores((itens) => itens.filter((pescador) => pescador.id !== id));
+            setTotalRegistros((valor) => Math.max(0, valor - 1));
+            setPescadorParaExcluir(null);
+            setPaginaAtual(novaPagina);
+            await carregarPescadores(novaPagina);
+            setSuccessMessage("Cadastro excluído com sucesso.");
+        } catch (err) {
+            console.error(err);
+            setError(err?.message || "Erro ao excluir cadastro socioeconômico.");
+            setPescadorParaExcluir(null);
+        } finally {
+            setDeletandoId(null);
+        }
+    };
+
+    const abrirConfirmacaoExclusao = (pescador, event) => {
+        event?.stopPropagation();
+        setPescadorParaExcluir(pescador);
+    };
+
     return (
         <ProtectedRoute>
             <main className="min-h-screen bg-slate-100 py-10">
@@ -96,6 +130,12 @@ export default function MeusPescadoresPage() {
                     {!loading && error && (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                             {error}
+                        </div>
+                    )}
+
+                    {successMessage && (
+                        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+                            {successMessage}
                         </div>
                     )}
 
@@ -160,6 +200,19 @@ export default function MeusPescadoresPage() {
                                             >
                                                 <span>✏️</span> Editar
                                             </button>
+                                            <button
+                                                type="button"
+                                                onClick={(event) => abrirConfirmacaoExclusao(pescador, event)}
+                                                disabled={deletandoId === pescador.id}
+                                                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60 ${deletandoId === pescador.id ? 'bg-red-200 text-red-900' : 'bg-red-100 hover:bg-red-200 text-red-800'}`}
+                                            >
+                                                {deletandoId === pescador.id ? (
+                                                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-red-700 border-t-transparent" />
+                                                ) : (
+                                                    <span>🗑️</span>
+                                                )}
+                                                {deletandoId === pescador.id ? 'Excluindo...' : 'Excluir'}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -194,6 +247,37 @@ export default function MeusPescadoresPage() {
                         </div>
                     )}
                 </div>
+
+                {pescadorParaExcluir && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+                        <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-200">
+                            <h2 className="text-xl font-semibold text-slate-800">Excluir cadastro</h2>
+                            <p className="mt-3 text-sm text-slate-600">
+                                Tem certeza que deseja excluir este cadastro socioeconômico?
+                            </p>
+                            <p className="mt-2 text-sm text-slate-600">
+                                Esta ação não poderá ser desfeita.
+                            </p>
+                            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setPescadorParaExcluir(null)}
+                                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleExcluir(pescadorParaExcluir.id)}
+                                    disabled={deletandoId === pescadorParaExcluir.id}
+                                    className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {deletandoId === pescadorParaExcluir.id ? 'Excluindo...' : 'Excluir'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
         </ProtectedRoute>
     );
