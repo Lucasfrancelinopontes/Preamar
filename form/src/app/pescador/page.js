@@ -687,6 +687,17 @@ export default function CadastroPescador({ editId = null }) {
                                 </div>
                             )}
 
+                            <div className="mt-6 flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    disabled={salvando || sucessoSubmit}
+                                    className="px-8 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50"
+                                >
+                                    {salvando ? "Salvando..." : editId ? "Salvar Alterações" : "Salvar Cadastro"}
+                                </button>
+                            </div>
+
                         </div>
                     )}
 
