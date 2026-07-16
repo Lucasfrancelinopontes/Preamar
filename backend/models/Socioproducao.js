@@ -27,8 +27,16 @@ export const SocioProducao = sequelize.define('SocioProducao', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true
   },
+  producao_media_viagem_kg: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
   producao_media_unidades: {
     type: DataTypes.INTEGER.UNSIGNED,
+    allowNull: true
+  },
+  valor_medio: {
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: true
   },
   valor_primeira: {
@@ -49,6 +57,14 @@ export const SocioProducao = sequelize.define('SocioProducao', {
   },
   renda_media_pescaria: {
     type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
+  percepcao_pesca_hoje_vs_passado: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  percepcao_tamanho_volume_pescado: {
+    type: DataTypes.TEXT,
     allowNull: true
   }
 }, {

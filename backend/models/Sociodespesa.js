@@ -20,8 +20,20 @@ export const SocioDespesa = sequelize.define('SocioDespesa', {
     allowNull: true,
     comment: 'Ex: combustivel, gelo, rancho, manutencao, outros'
   },
+  item: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  tipo: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
   descricao: {
     type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  quantidade: {
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: true
   },
   valor: {
@@ -32,6 +44,14 @@ export const SocioDespesa = sequelize.define('SocioDespesa', {
     type: DataTypes.STRING(50),
     allowNull: true,
     comment: 'Ex: kg, litros, R$'
+  },
+  outros: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  frequencia: {
+    type: DataTypes.STRING(100),
+    allowNull: true
   }
 }, {
   tableName: 'socio_despesas',

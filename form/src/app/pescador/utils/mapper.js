@@ -35,19 +35,17 @@ export function mapFormDataToPayload(formData) {
     localMoradiaOutro:     formData.moradiaOutro       || null,
     tipoConstrucao:        formData.tipoConstrucao     || null,
     tipoConstrucaoOutro:   formData.tipoConstrucaoOutro|| null,
-    
-    // Relação de Trabalho / Tempo Atividade
-    tempoAtividade:        formData.tempoAtividade !== '' ? Number(formData.tempoAtividade) : null, // Adicionado
-    horasDia:              formData.horasDia !== '' ? Number(formData.horasDia) : null,             // Adicionado
-    fontesRenda:           formData.fontesRenda        || null, // Adicionado
+    tempoAtividade:        formData.tempoAtividade !== '' ? Number(formData.tempoAtividade) : null,
+    horasDia:              formData.horasDia !== '' ? Number(formData.horasDia) : null,
+    fontesRenda:           formData.fontesRenda        || null,
     observacaoBraca:       formData.observacaoBraca    || null,
     petrechosProprios:     formData.petrechosProprios  || null,
     petrechosDeQuem:       formData.petrechosDeQuem    || null,
     conservacaoPescado:    formData.conservacaoPescado || null,
+    categoriaPesca:        formData.categoriaPesca     || null,
+    principalPescaria:     formData.principalPescaria  || null,
     entregaAtravessador:   !!formData.entregaAtravessador,
     dividaComAtravessador: !!formData.dividaComAtravessador,
-    categoriaPesca:        formData.categoriaPesca     || null, // Adicionado
-    principalPescaria:     formData.principalPescaria  || null  // Adicionado
   };
 
   // ── saude ─────────────────────────────────────────────────────────────────
@@ -137,24 +135,38 @@ export function mapFormDataToPayload(formData) {
     mediaDiasEmbarcado:    formData.mediaDiasEmbarcado !== '' ? Number(formData.mediaDiasEmbarcado) : null,
     viagensMes:            formData.viagensPorMes !== '' ? Number(formData.viagensPorMes) : null,
     producaoMediaKg:       formData.producaoMedia !== ''      ? Number(formData.producaoMedia)      : null,
+    producaoMediaViagemKg: formData.producaoMediaViagemKg !== '' ? Number(formData.producaoMediaViagemKg) : null,
     producaoMediaUnidades: formData.producaoMediaUnidades !== '' ? Number(formData.producaoMediaUnidades) : null,
     valorPrimeira:         formData.valorPrimeiraQualidade !== '' ? Number(formData.valorPrimeiraQualidade) : null,
     valorSegunda:          formData.valorSegundaQualidade !== '' ? Number(formData.valorSegundaQualidade) : null,
     valorTerceira:         formData.valorTerceiraQualidade !== '' ? Number(formData.valorTerceiraQualidade) : null,
+    valorMedio:            formData.valorMedio !== '' ? Number(formData.valorMedio) : null,
     rendaMediaMensal:      formData.rendaMensal !== '' ? Number(formData.rendaMensal) : null,
-    rendaMediaPescaria:    formData.rendaPorPescaria !== '' ? Number(formData.rendaPorPescaria) : null
+    rendaMediaPescaria:    formData.rendaPorPescaria !== '' ? Number(formData.rendaPorPescaria) : null,
+    percepcaoPescaHojeVsPassado: formData.percepcaoPescaHojeVsPassado || null,
+    percepcaoTamanhoVolumePescado: formData.percepcaoTamanhoVolumePescado || null
   };
 
   // ── despesas ──────────────────────────────────────────────────────────────
-  const despesas = (formData.despesas || []).map((d) => ({
-    item:       d.item || null,
-    tipo:       d.tipo || null,
-    quantidade: d.quantidade !== '' ? Number(d.quantidade) : null,
-    unidade:    d.unidade || null,
-    valor:      d.valor !== '' ? Number(d.valor) : null,
-    outros:     d.outros || null,
-    frequencia: d.frequencia || null
-  }));
+  const despesas = (formData.despesas || [])
+    .filter((d) => (
+      String(d.item || "").trim() ||
+      String(d.tipo || "").trim() ||
+      String(d.quantidade || "").trim() ||
+      String(d.unidade || "").trim() ||
+      String(d.valor || "").trim() ||
+      String(d.outros || "").trim() ||
+      String(d.frequencia || "").trim()
+    ))
+    .map((d) => ({
+      item:       d.item || null,
+      tipo:       d.tipo || null,
+      quantidade: d.quantidade !== '' ? Number(d.quantidade) : null,
+      unidade:    d.unidade || null,
+      valor:      d.valor !== '' ? Number(d.valor) : null,
+      outros:     d.outros || null,
+      frequencia: d.frequencia || null
+    }));
 
   // ── quadrantes (array) ────────────────────────────────────────────────────
   const quadrantes = (formData.quadrantes || [])

@@ -19,6 +19,11 @@ export const SocioPescador = sequelize.define('SocioPescador', {
     type: DataTypes.STRING(255),
     allowNull: true
   },
+  cpf: {
+    type: DataTypes.STRING(14),
+    allowNull: true,
+    unique: true
+  },
   apelido: {
     type: DataTypes.STRING(100),
     allowNull: true
@@ -45,6 +50,10 @@ export const SocioPescador = sequelize.define('SocioPescador', {
   },
   escolaridade: {
     type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  local_moradia_sede_municipal: {
+    type: DataTypes.STRING(255),
     allowNull: true
   },
   atividade_principal_renda: {
@@ -74,6 +83,52 @@ export const SocioPescador = sequelize.define('SocioPescador', {
   tipo_construcao_outro: {
     type: DataTypes.STRING(255),
     allowNull: true
+  },
+  tempo_atividade: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  horas_dia: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  fontes_renda: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  observacao_braca: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  petrechos_proprios: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  petrechos_de_quem: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  conservacao_pescado: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  categoria_pesca: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  principal_pescaria: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  entrega_atravessador: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
+    defaultValue: false
+  },
+  divida_com_atravessador: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
+    defaultValue: false
   }
 }, {
   tableName: 'socio_pescadores',

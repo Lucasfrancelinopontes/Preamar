@@ -20,7 +20,18 @@ export const initialState = {
     // ===== Perfil socioeconômico =====
     atividadePrincipal: "",
     atividadeSecundaria: "",
-    composicaoFamiliar: "",
+    tempoAtividade: "",
+    horasDia: "",
+    relacaoTrabalho: "",
+    fontesRenda: "",
+    observacaoBraca: "",
+    petrechosProprios: "",
+    petrechosDeQuem: "",
+    conservacaoPescado: "",
+    categoriaPesca: "",
+    principalPescaria: "",
+    entregaAtravessador: false,
+    dividaComAtravessador: false,
 
     // ===== Moradia =====
     moradiaTipo: "",

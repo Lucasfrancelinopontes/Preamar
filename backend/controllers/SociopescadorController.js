@@ -98,6 +98,7 @@ export const criar = async (req, res) => {
     // 2. SocioPescador
     const socioPescador = await SocioPescador.create({
       id_coleta:                num(socioColeta.id),
+      cpf:                      txt(pescador.cpf),
       nome:                     txt(pescador.nome),
       apelido:                  txt(pescador.apelido),
       telefone:                 txt(pescador.telefone),
@@ -106,13 +107,25 @@ export const criar = async (req, res) => {
       naturalidade:             txt(pescador.naturalidade),
       estado_civil:             txt(pescador.estadoCivil),
       escolaridade:             txt(pescador.escolaridade),
+      local_moradia_sede_municipal: txt(pescador.localMoradiaSedeMunicipal),
       atividade_principal_renda:txt(pescador.atividadePrincipal),
       atividade_secundaria_renda:txt(pescador.atividadeSecundaria),
       composicao_familiar:      txt(pescador.composicaoFamiliar),
       local_moradia:            txt(pescador.localMoradia),
       local_moradia_outro:      txt(pescador.localMoradiaOutro),
       tipo_construcao:          txt(pescador.tipoConstrucao),
-      tipo_construcao_outro:    txt(pescador.tipoConstrucaoOutro)
+      tipo_construcao_outro:    txt(pescador.tipoConstrucaoOutro),
+      tempo_atividade:          num(pescador.tempoAtividade),
+      horas_dia:                num(pescador.horasDia),
+      fontes_renda:             txt(pescador.fontesRenda),
+      observacao_braca:         txt(pescador.observacaoBraca),
+      petrechos_proprios:       txt(pescador.petrechosProprios),
+      petrechos_de_quem:        txt(pescador.petrechosDeQuem),
+      conservacao_pescado:      txt(pescador.conservacaoPescado),
+      categoria_pesca:          txt(pescador.categoriaPesca),
+      principal_pescaria:       txt(pescador.principalPescaria),
+      entrega_atravessador:     bool(pescador.entregaAtravessador),
+      divida_com_atravessador:  bool(pescador.dividaComAtravessador)
     }, { transaction: t });
 
     const id_pescador = socioPescador.id;
@@ -124,7 +137,8 @@ export const criar = async (req, res) => {
       pele:         bool(saude.pele),
       coluna:       bool(saude.coluna),
       ginecologico: bool(saude.ginecologico),
-      outros:       bool(saude.outros)
+      outros:       bool(saude.outros),
+      outros_texto: txt(saude.outrosTexto)
     }, { transaction: t });
 
     // 4. SocioRegistro
@@ -145,15 +159,27 @@ export const criar = async (req, res) => {
       id_pescador,
       pesca_embarcada:      txt(embarcacao.pescaEmbarcada),
       embarcacao_propria:   txt(embarcacao.embarcacaoPropria),
+      financiada:           bool(embarcacao.financiada),
+      quitada:              bool(embarcacao.quitada),
       status_financeiro:    txt(embarcacao.statusFinanceiro),
       nome_proprietario:    txt(embarcacao.nomeProprietario),
       apelido_proprietario: txt(embarcacao.apelidoProprietario),
       porto_origem:         txt(embarcacao.portoOrigem),
       porto_desembarque:    txt(embarcacao.portoDesembarque),
       nome_embarcacao:      txt(embarcacao.nomeEmbarcacao),
+      numero_registro:      txt(embarcacao.numeroRegistro),
       comprimento_m:        num(embarcacao.comprimentoM),
+      largura:              num(embarcacao.largura),
+      tonelagem_bruta:      num(embarcacao.tonelagemBruta),
       hp:                   num(embarcacao.hp),
       capacidade_tripulacao:num(embarcacao.capacidadeTripulacao),
+      material_casco:       txt(embarcacao.materialCasco),
+      ano_construcao:       num(embarcacao.anoConstrucao),
+      registro_capitania:   bool(embarcacao.registroCapitania),
+      registro_rgp:         bool(embarcacao.registroRGP),
+      licenciamento_ibama:  bool(embarcacao.licenciamentoIBAMA),
+      licenciamento_mpa:    bool(embarcacao.licenciamentoMPA),
+      propulsoes:           JSON.stringify(embarcacao.propulsoes || []),
       tipo_embarcacao:      txt(embarcacao.tipoEmbarcacao)
     }, { transaction: t });
 
@@ -191,12 +217,16 @@ export const criar = async (req, res) => {
       media_dias_embarcado:   num(producao.mediaDiasEmbarcado),
       viagens_mes:            num(producao.viagensMes),
       producao_media_kg:      num(producao.producaoMediaKg),
+      producao_media_viagem_kg:num(producao.producaoMediaViagemKg),
       producao_media_unidades:num(producao.producaoMediaUnidades),
+      valor_medio:            num(producao.valorMedio),
       valor_primeira:         num(producao.valorPrimeira),
       valor_segunda:          num(producao.valorSegunda),
       valor_terceira:         num(producao.valorTerceira),
       renda_media_mensal:     num(producao.rendaMediaMensal),
-      renda_media_pescaria:   num(producao.rendaMediaPescaria)
+      renda_media_pescaria:   num(producao.rendaMediaPescaria),
+      percepcao_pesca_hoje_vs_passado: txt(producao.percepcaoPescaHojeVsPassado),
+      percepcao_tamanho_volume_pescado: txt(producao.percepcaoTamanhoVolumePescado)
     }, { transaction: t });
 
     // 9. SocioDespesa (array)
@@ -204,10 +234,15 @@ export const criar = async (req, res) => {
       await SocioDespesa.bulkCreate(
         despesas.map((d) => ({
           id_pescador,
-          categoria:  txt(d.categoria),
-          descricao:  txt(d.descricao),
+          categoria:  txt(d.item),
+          item:       txt(d.item),
+          tipo:       txt(d.tipo),
+          descricao:  txt(d.tipo),
+          quantidade: num(d.quantidade),
           valor:      num(d.valor),
-          unidade:    txt(d.unidade)
+          unidade:    txt(d.unidade),
+          outros:     txt(d.outros),
+          frequencia: txt(d.frequencia)
         })),
         { transaction: t }
       );
@@ -382,6 +417,7 @@ export const atualizar = async (req, res) => {
 
     // Pescador principal
     await socioPescador.update({
+      cpf:                       txt(pescador.cpf),
       nome:                      txt(pescador.nome),
       apelido:                   txt(pescador.apelido),
       telefone:                  txt(pescador.telefone),
@@ -390,13 +426,25 @@ export const atualizar = async (req, res) => {
       naturalidade:              txt(pescador.naturalidade),
       estado_civil:              txt(pescador.estadoCivil),
       escolaridade:              txt(pescador.escolaridade),
+      local_moradia_sede_municipal: txt(pescador.localMoradiaSedeMunicipal),
       atividade_principal_renda: txt(pescador.atividadePrincipal),
       atividade_secundaria_renda:txt(pescador.atividadeSecundaria),
       composicao_familiar:       txt(pescador.composicaoFamiliar),
       local_moradia:             txt(pescador.localMoradia),
       local_moradia_outro:       txt(pescador.localMoradiaOutro),
       tipo_construcao:           txt(pescador.tipoConstrucao),
-      tipo_construcao_outro:     txt(pescador.tipoConstrucaoOutro)
+      tipo_construcao_outro:     txt(pescador.tipoConstrucaoOutro),
+      tempo_atividade:           num(pescador.tempoAtividade),
+      horas_dia:                 num(pescador.horasDia),
+      fontes_renda:              txt(pescador.fontesRenda),
+      observacao_braca:          txt(pescador.observacaoBraca),
+      petrechos_proprios:        txt(pescador.petrechosProprios),
+      petrechos_de_quem:         txt(pescador.petrechosDeQuem),
+      conservacao_pescado:       txt(pescador.conservacaoPescado),
+      categoria_pesca:           txt(pescador.categoriaPesca),
+      principal_pescaria:        txt(pescador.principalPescaria),
+      entrega_atravessador:      bool(pescador.entregaAtravessador),
+      divida_com_atravessador:   bool(pescador.dividaComAtravessador)
     }, { transaction: t });
 
     // Saúde (upsert)
@@ -406,7 +454,8 @@ export const atualizar = async (req, res) => {
       pele:         bool(saude.pele),
       coluna:       bool(saude.coluna),
       ginecologico: bool(saude.ginecologico),
-      outros:       bool(saude.outros)
+      outros:       bool(saude.outros),
+      outros_texto: txt(saude.outrosTexto)
     }, { transaction: t });
 
     // Registro (upsert)
@@ -427,15 +476,27 @@ export const atualizar = async (req, res) => {
       id_pescador,
       pesca_embarcada:       txt(embarcacao.pescaEmbarcada),
       embarcacao_propria:    txt(embarcacao.embarcacaoPropria),
+      financiada:            bool(embarcacao.financiada),
+      quitada:               bool(embarcacao.quitada),
       status_financeiro:     txt(embarcacao.statusFinanceiro),
       nome_proprietario:     txt(embarcacao.nomeProprietario),
       apelido_proprietario:  txt(embarcacao.apelidoProprietario),
       porto_origem:          txt(embarcacao.portoOrigem),
       porto_desembarque:     txt(embarcacao.portoDesembarque),
       nome_embarcacao:       txt(embarcacao.nomeEmbarcacao),
+      numero_registro:       txt(embarcacao.numeroRegistro),
       comprimento_m:         num(embarcacao.comprimentoM),
+      largura:               num(embarcacao.largura),
+      tonelagem_bruta:       num(embarcacao.tonelagemBruta),
       hp:                    num(embarcacao.hp),
       capacidade_tripulacao: num(embarcacao.capacidadeTripulacao),
+      material_casco:        txt(embarcacao.materialCasco),
+      ano_construcao:        num(embarcacao.anoConstrucao),
+      registro_capitania:    bool(embarcacao.registroCapitania),
+      registro_rgp:          bool(embarcacao.registroRGP),
+      licenciamento_ibama:   bool(embarcacao.licenciamentoIBAMA),
+      licenciamento_mpa:     bool(embarcacao.licenciamentoMPA),
+      propulsoes:            JSON.stringify(embarcacao.propulsoes || []),
       tipo_embarcacao:       txt(embarcacao.tipoEmbarcacao)
     }, { transaction: t });
 
@@ -475,12 +536,16 @@ export const atualizar = async (req, res) => {
       media_dias_embarcado:    num(producao.mediaDiasEmbarcado),
       viagens_mes:             num(producao.viagensMes),
       producao_media_kg:       num(producao.producaoMediaKg),
+      producao_media_viagem_kg:num(producao.producaoMediaViagemKg),
       producao_media_unidades: num(producao.producaoMediaUnidades),
+      valor_medio:             num(producao.valorMedio),
       valor_primeira:          num(producao.valorPrimeira),
       valor_segunda:           num(producao.valorSegunda),
       valor_terceira:          num(producao.valorTerceira),
       renda_media_mensal:      num(producao.rendaMediaMensal),
-      renda_media_pescaria:    num(producao.rendaMediaPescaria)
+      renda_media_pescaria:    num(producao.rendaMediaPescaria),
+      percepcao_pesca_hoje_vs_passado: txt(producao.percepcaoPescaHojeVsPassado),
+      percepcao_tamanho_volume_pescado: txt(producao.percepcaoTamanhoVolumePescado)
     }, { transaction: t });
 
     // Despesas — substitui tudo
@@ -489,10 +554,15 @@ export const atualizar = async (req, res) => {
       await SocioDespesa.bulkCreate(
         despesas.map((d) => ({
           id_pescador,
-          categoria: txt(d.categoria),
-          descricao: txt(d.descricao),
+          categoria: txt(d.item),
+          item:      txt(d.item),
+          tipo:      txt(d.tipo),
+          descricao: txt(d.tipo),
+          quantidade: num(d.quantidade),
           valor:     num(d.valor),
-          unidade:   txt(d.unidade)
+          unidade:   txt(d.unidade),
+          outros:    txt(d.outros),
+          frequencia: txt(d.frequencia)
         })),
         { transaction: t }
       );

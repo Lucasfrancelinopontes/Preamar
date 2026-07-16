@@ -34,6 +34,10 @@ export const SocioSaude = sequelize.define('SocioSaude', {
   outros: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  outros_texto: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'socio_saude',

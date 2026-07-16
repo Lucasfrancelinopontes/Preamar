@@ -15,7 +15,13 @@ export default function usePescadorForm() {
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [name]: value
+            [name]: value,
+            ...(name === "municipio" ? { localidade: "" } : {}),
+            ...(name === "moradiaTipo" && value !== "outro" ? { moradiaOutro: "" } : {}),
+            ...(name === "tipoConstrucao" && value !== "outro" ? { tipoConstrucaoOutro: "" } : {}),
+            ...(name === "registroColonia" && value !== "sim" ? { qualColonia: "" } : {}),
+            ...(name === "registroAssociacao" && value !== "sim" ? { qualAssociacao: "" } : {}),
+            ...(name === "possuiCarteira" && value !== "sim" ? { carteiraGrande: "", carteiraPequena: "" } : {})
         }));
     };
 
@@ -25,7 +31,10 @@ export default function usePescadorForm() {
             [grupo]: {
                 ...prev[grupo],
                 [campo]: !prev[grupo][campo]
-            }
+            },
+            ...(grupo === "saude" && campo === "outros" && prev[grupo][campo]
+                ? { saudeOutros: "" }
+                : {})
         }));
     };
 
@@ -121,6 +130,7 @@ export default function usePescadorForm() {
     };
 
     const submitForm = async () => {
+        if (salvando) return false;
         setSalvando(true);
         setErroSubmit("");
         setSucessoSubmit(false);
