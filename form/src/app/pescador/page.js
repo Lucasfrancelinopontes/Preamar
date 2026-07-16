@@ -41,14 +41,15 @@ export default function CadastroPescador() {
         carregarEspecies();
     }, []);
 
-    // Retorna sugestões filtradas por ID (idd) ou nome similar
+    // Retorna sugestões filtradas por ID (IDD) ou nome similar
+    // A API /especies retorna: { ID, IDD, Nome_popular, Nome_cientifico, ... }
     function especieSugestoes(texto) {
         if (!texto || texto.trim() === "") return [];
         const t = texto.trim().toLowerCase();
         return especiesDisponiveis
             .filter((e) => {
-                const porId  = String(e.idd ?? e.ID_especie ?? "").toLowerCase().includes(t);
-                const porNome = (e.nome_popular ?? "").toLowerCase().includes(t);
+                const porId   = String(e.IDD ?? e.ID ?? "").toLowerCase().includes(t);
+                const porNome = (e.Nome_popular ?? "").toLowerCase().includes(t);
                 return porId || porNome;
             })
             .slice(0, 10);
@@ -113,9 +114,9 @@ export default function CadastroPescador() {
             const novas = [...prev.especies];
             novas[idx] = {
                 ...novas[idx],
-                id_especie:      especie.ID_especie,
-                buscaTexto:      String(especie.idd ?? especie.ID_especie),
-                nome_popular:    especie.nome_popular,
+                id_especie:        especie.ID,
+                buscaTexto:        String(especie.IDD ?? especie.ID),
+                nome_popular:      especie.Nome_popular,
                 sugestoesvisiveis: false
             };
             return { ...prev, especies: novas };
@@ -870,15 +871,15 @@ export default function CadastroPescador() {
                                                 <div className="absolute left-0 top-full z-50 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto w-80">
                                                     {especieSugestoes(esp.buscaTexto).map((s) => (
                                                         <button
-                                                            key={s.ID_especie}
+                                                            key={s.ID}
                                                             type="button"
                                                             onMouseDown={(e) => { e.preventDefault(); handleEspecieSelecionada(idx, s); }}
                                                             className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b border-slate-100 last:border-0"
                                                         >
-                                                            <span className="font-medium text-blue-700">{s.idd ?? s.ID_especie}</span>
-                                                            <span className="text-slate-600"> — {s.nome_popular}</span>
-                                                            {s.nome_cientifico && (
-                                                                <span className="text-slate-400 italic text-xs block">{s.nome_cientifico}</span>
+                                                            <span className="font-medium text-blue-700">{s.IDD ?? s.ID}</span>
+                                                            <span className="text-slate-600"> — {s.Nome_popular}</span>
+                                                            {s.Nome_cientifico && (
+                                                                <span className="text-slate-400 italic text-xs block">{s.Nome_cientifico}</span>
                                                             )}
                                                         </button>
                                                     ))}
