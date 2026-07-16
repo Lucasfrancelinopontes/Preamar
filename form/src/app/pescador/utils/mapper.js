@@ -146,12 +146,15 @@ export function mapFormDataToPayload(formData) {
     .map((q) => ({ quadrante: q.trim() }));
 
   // ── especies (array) ──────────────────────────────────────────────────────
-  // O form captura apenas nome livre; id_especie fica null até o form evoluir
-  const especies = (formData.especies || []).map((e) => ({
-    id_especie:  null,
-    inicioSafra: e.nome || null,
-    fimSafra:    null
-  }));
+  // Cada linha: { rowId, id_especie, buscaTexto, nome_popular, inicioSafra, fimSafra }
+  // Só envia linhas que têm id_especie resolvido
+  const especies = (formData.especies || [])
+    .filter((e) => e.id_especie)
+    .map((e) => ({
+      id_especie:  e.id_especie,
+      inicioSafra: e.inicioSafra || null,
+      fimSafra:    e.fimSafra    || null
+    }));
 
   return {
     coleta,

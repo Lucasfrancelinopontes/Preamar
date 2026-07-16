@@ -21,6 +21,106 @@ export default function CadastroPescador() {
 
     const router = useRouter();
     const [etapaAtual, setEtapaAtual] = useState(1);
+
+    // ── Espécies disponíveis (carregadas do backend) ──────────────────────
+    const [especiesDisponiveis, setEspeciesDisponiveis] = useState([]);
+    const [carregandoEspecies, setCarregandoEspecies] = useState(false);
+
+    useEffect(() => {
+        async function carregarEspecies() {
+            setCarregandoEspecies(true);
+            try {
+                const data = await api.getEspecies();
+                setEspeciesDisponiveis(Array.isArray(data) ? data : []);
+            } catch {
+                // silencia — a tabela ainda funciona sem autocomplete
+            } finally {
+                setCarregandoEspecies(false);
+            }
+        }
+        carregarEspecies();
+    }, []);
+
+    // Retorna sugestões filtradas por ID (idd) ou nome similar
+    function especieSugestoes(texto) {
+        if (!texto || texto.trim() === "") return [];
+        const t = texto.trim().toLowerCase();
+        return especiesDisponiveis
+            .filter((e) => {
+                const porId  = String(e.idd ?? e.ID_especie ?? "").toLowerCase().includes(t);
+                const porNome = (e.nome_popular ?? "").toLowerCase().includes(t);
+                return porId || porNome;
+            })
+            .slice(0, 10);
+    }
+
+    // Adiciona linha em branco na tabela de espécies
+    function adicionarEspecieLinha() {
+        setFormData((prev) => ({
+            ...prev,
+            especies: [
+                ...prev.especies,
+                { rowId: Date.now(), id_especie: null, buscaTexto: "", nome_popular: "", inicioSafra: "", fimSafra: "", sugestoesvisiveis: false }
+            ]
+        }));
+    }
+
+    // Remove linha pelo índice
+    function removerEspecieLinha(idx) {
+        setFormData((prev) => ({
+            ...prev,
+            especies: prev.especies.filter((_, i) => i !== idx)
+        }));
+    }
+
+    // Atualiza campo livre (inicioSafra / fimSafra)
+    function handleEspecieCampo(idx, campo, valor) {
+        setFormData((prev) => {
+            const novas = [...prev.especies];
+            novas[idx] = { ...novas[idx], [campo]: valor };
+            return { ...prev, especies: novas };
+        });
+    }
+
+    // Atualiza texto de busca e abre sugestões
+    function handleEspecieBusca(idx, valor) {
+        setFormData((prev) => {
+            const novas = [...prev.especies];
+            novas[idx] = { ...novas[idx], buscaTexto: valor, id_especie: null, nome_popular: "", sugestoesvisiveis: true };
+            return { ...prev, especies: novas };
+        });
+    }
+
+    function handleEspecieFocus(idx) {
+        setFormData((prev) => {
+            const novas = [...prev.especies];
+            novas[idx] = { ...novas[idx], sugestoesvisiveis: true };
+            return { ...prev, especies: novas };
+        });
+    }
+
+    function handleEspecieBlur(idx) {
+        setFormData((prev) => {
+            const novas = [...prev.especies];
+            novas[idx] = { ...novas[idx], sugestoesvisiveis: false };
+            return { ...prev, especies: novas };
+        });
+    }
+
+    // Seleciona uma espécie do dropdown
+    function handleEspecieSelecionada(idx, especie) {
+        setFormData((prev) => {
+            const novas = [...prev.especies];
+            novas[idx] = {
+                ...novas[idx],
+                id_especie:      especie.ID_especie,
+                buscaTexto:      String(especie.idd ?? especie.ID_especie),
+                nome_popular:    especie.nome_popular,
+                sugestoesvisiveis: false
+            };
+            return { ...prev, especies: novas };
+        });
+    }
     const OPCOES_SIM_NAO = [
         { id: "sim", nome: "Sim" },
         { id: "nao", nome: "Não" }
@@ -33,9 +133,6 @@ export default function CadastroPescador() {
 
         handleInputChange,
         handleCheckboxChange,
-
-        adicionarEspecie,
-        removerEspecie,
 
         submitForm,
         salvando,
@@ -94,6 +191,13 @@ export default function CadastroPescador() {
         return municipioSelecionado?.localidades || [];
 
     }, [municipioSelecionado]);
+
+    // Garante ao menos uma linha ao entrar na etapa 8
+    useEffect(() => {
+        if (etapaAtual === 8 && formData.especies.length === 0) {
+            adicionarEspecieLinha();
+        }
+    }, [etapaAtual]);
 
     function proximaEtapa() {
 
@@ -271,11 +375,20 @@ export default function CadastroPescador() {
                                     onChange={handleInputChange}
                                 />
 
-                                <InputGroup
+                                <SelectGroup
                                     label="Estado Civil"
                                     name="estadoCivil"
                                     value={formData.estadoCivil}
                                     onChange={handleInputChange}
+                                    options={[
+                                        { id: "solteiro", nome: "Solteiro(a)" },
+                                        { id: "casado", nome: "Casado(a)" },
+                                        { id: "separado", nome: "Separado(a)" },
+                                        { id: "divorciado", nome: "Divorciado(a)" },
+                                        { id: "viuvo", nome: "Viúvo(a)" }
+                                    ]}
+                                    optionLabel="nome"
+                                    optionValue="id"
                                 />
 
                                 <InputGroup
@@ -715,123 +828,112 @@ export default function CadastroPescador() {
                         <div>
 
                             <h2 className="text-xl font-bold mb-6">
-
                                 Espécies Capturadas
-
                             </h2>
 
-                            <div className="grid md:grid-cols-5 gap-4 items-end">
+                            {carregandoEspecies && (
+                                <p className="text-slate-500 text-sm mb-4">Carregando espécies...</p>
+                            )}
 
-                                <div className="md:col-span-4">
-
-                                    <InputGroup
-                                        label="Espécie"
-                                        name="novaEspecie"
-                                        value={formData.novaEspecie}
-                                        onChange={handleInputChange}
-                                        placeholder="Digite o nome da espécie"
-                                    />
-
-                                </div>
-
-                                <button
-
-                                    type="button"
-
-                                    onClick={adicionarEspecie}
-
-                                    className="h-12 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
-
-                                >
-
-                                    Adicionar
-
-                                </button>
-
+                            {/* ── Cabeçalho ── */}
+                            <div className="hidden md:grid grid-cols-[160px_1fr_140px_140px_100px] gap-2 px-2 pb-1 border-b border-slate-200 mb-1">
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">ID</span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nome comum</span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Início safra</span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Fim safra</span>
+                                <span></span>
                             </div>
 
-                            <div className="mt-8 overflow-x-auto">
+                            {/* ── Linhas ── */}
+                            <div className="space-y-2">
+                                {formData.especies.length === 0 && (
+                                    <p className="text-center text-slate-400 py-8 text-sm">
+                                        Nenhuma espécie adicionada. Clique em &quot;+ Adicionar linha&quot;.
+                                    </p>
+                                )}
 
-                                <table className="w-full">
+                                {formData.especies.map((esp, idx) => (
+                                    <div key={esp.rowId} className="grid grid-cols-1 md:grid-cols-[160px_1fr_140px_140px_100px] gap-2 items-start border-b border-slate-100 pb-2">
 
-                                    <thead>
+                                        {/* ── Busca por ID ou nome ── */}
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="ID ou nome"
+                                                value={esp.buscaTexto}
+                                                onChange={(e) => handleEspecieBusca(idx, e.target.value)}
+                                                onFocus={() => handleEspecieFocus(idx)}
+                                                onBlur={() => setTimeout(() => handleEspecieBlur(idx), 200)}
+                                                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            />
+                                            {esp.sugestoesvisiveis && especieSugestoes(esp.buscaTexto).length > 0 && (
+                                                <div className="absolute left-0 top-full z-50 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto w-80">
+                                                    {especieSugestoes(esp.buscaTexto).map((s) => (
+                                                        <button
+                                                            key={s.ID_especie}
+                                                            type="button"
+                                                            onMouseDown={(e) => { e.preventDefault(); handleEspecieSelecionada(idx, s); }}
+                                                            className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b border-slate-100 last:border-0"
+                                                        >
+                                                            <span className="font-medium text-blue-700">{s.idd ?? s.ID_especie}</span>
+                                                            <span className="text-slate-600"> — {s.nome_popular}</span>
+                                                            {s.nome_cientifico && (
+                                                                <span className="text-slate-400 italic text-xs block">{s.nome_cientifico}</span>
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
 
-                                        <tr className="border-b bg-slate-100">
+                                        {/* ── Nome comum (preenchido ao selecionar) ── */}
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={esp.nome_popular || ""}
+                                            placeholder="Nome comum"
+                                            className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-600 cursor-default"
+                                        />
 
-                                            <th className="text-left p-4">
+                                        {/* ── Início safra ── */}
+                                        <input
+                                            type="text"
+                                            placeholder="Ex: janeiro"
+                                            value={esp.inicioSafra}
+                                            onChange={(e) => handleEspecieCampo(idx, "inicioSafra", e.target.value)}
+                                            className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        />
 
-                                                Espécie
+                                        {/* ── Fim safra ── */}
+                                        <input
+                                            type="text"
+                                            placeholder="Ex: junho"
+                                            value={esp.fimSafra}
+                                            onChange={(e) => handleEspecieCampo(idx, "fimSafra", e.target.value)}
+                                            className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        />
 
-                                            </th>
+                                        {/* ── Remover ── */}
+                                        <button
+                                            type="button"
+                                            onClick={() => removerEspecieLinha(idx)}
+                                            className="px-3 py-1.5 rounded-lg border border-red-400 text-red-500 text-sm hover:bg-red-50 transition w-full"
+                                        >
+                                            Remover
+                                        </button>
 
-                                            <th className="w-40 text-center p-4">
+                                    </div>
+                                ))}
+                            </div>
 
-                                                Ações
-
-                                            </th>
-
-                                        </tr>
-
-                                    </thead>
-
-                                    <tbody>
-
-                                        {formData.especies.length === 0 && (
-
-                                            <tr>
-
-                                                <td
-                                                    colSpan={2}
-                                                    className="text-center text-slate-500 py-8"
-                                                >
-
-                                                    Nenhuma espécie adicionada.
-
-                                                </td>
-
-                                            </tr>
-
-                                        )}
-
-                                        {formData.especies.map((especie) => (
-
-                                            <tr
-                                                key={especie.id}
-                                                className="border-b hover:bg-slate-50"
-                                            >
-
-                                                <td className="p-4">
-
-                                                    {especie.nome}
-
-                                                </td>
-
-                                                <td className="text-center">
-
-                                                    <button
-
-                                                        type="button"
-
-                                                        onClick={() => removerEspecie(especie.id)}
-
-                                                        className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
-
-                                                    >
-
-                                                        Remover
-
-                                                    </button>
-
-                                                </td>
-
-                                            </tr>
-
-                                        ))}
-
-                                    </tbody>
-
-                                </table>
-
+                            <div className="mt-4">
+                                <button
+                                    type="button"
+                                    onClick={adicionarEspecieLinha}
+                                    className="px-4 py-2 rounded-lg border border-blue-500 text-blue-600 text-sm font-medium hover:bg-blue-50 transition"
+                                >
+                                    + Adicionar linha
+                                </button>
                             </div>
 
                         </div>
