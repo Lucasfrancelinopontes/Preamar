@@ -30,6 +30,13 @@ app.use((req, res, next) => {
 // Rotas
 app.use('/api', router);
 
+//debug
+app.get("/health", (req, res) => {
+    res.json({
+        ok: true
+    });
+});
+
 // Middleware de erro (deve ser o último)
 app.use(errorHandler);
 
