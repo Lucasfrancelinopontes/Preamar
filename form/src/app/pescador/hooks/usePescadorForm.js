@@ -80,6 +80,7 @@ const removerEspecie = (id) => {
             const payload = mapFormDataToPayload(formData);
             await api.criarSocioPescador(payload);
             setSucessoSubmit(true);
+            return true;
         } catch (err) {
             const mensagem =
                 err?.data?.error ||
@@ -87,6 +88,7 @@ const removerEspecie = (id) => {
                 err?.message ||
                 "Erro ao salvar cadastro. Tente novamente.";
             setErroSubmit(mensagem);
+            return false;
         } finally {
             setSalvando(false);
         }

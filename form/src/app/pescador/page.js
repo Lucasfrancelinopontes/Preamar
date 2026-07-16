@@ -13,11 +13,13 @@ import usePescadorForm from "./hooks/usePescadorForm";
 
 import api from "@/services/api";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const TOTAL_ETAPAS = 10;
 
 export default function CadastroPescador() {
 
+    const router = useRouter();
     const [etapaAtual, setEtapaAtual] = useState(1);
     const OPCOES_SIM_NAO = [
         { id: "sim", nome: "Sim" },
@@ -1009,7 +1011,12 @@ export default function CadastroPescador() {
                             <div className="mt-6 flex justify-end">
                                 <button
                                     type="button"
-                                    onClick={() => submitForm()}
+                                    onClick={async () => {
+                                        const ok = await submitForm();
+                                        if (ok) {
+                                            setTimeout(() => router.push("/"), 1500);
+                                        }
+                                    }}
                                     disabled={salvando || sucessoSubmit}
                                     className="px-8 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50"
                                 >
