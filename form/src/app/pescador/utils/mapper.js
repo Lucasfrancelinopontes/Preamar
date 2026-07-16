@@ -1,28 +1,12 @@
 /**
  * mapper.js
- *
- * Transforma o formData do CadastroPescador no payload
- * esperado pelo endpoint POST /socio-pescadores.
- *
- * O formulário é preservado exatamente como está.
- * Somente este arquivo faz a conversão de nomes e tipos.
- *
- * Nota sobre municipio:
- *   O SelectGroup usa optionValue="ID_municipio", portanto
- *   formData.municipio já contém o ID numérico — não precisa
- *   de lookup na lista de municípios.
- */
-
-/**
- * @param {object} formData - estado do usePescadorForm
- * @returns {object} payload pronto para enviar ao backend
+ * Transforma o formData do CadastroPescador no payload esperado pelo backend.
  */
 export function mapFormDataToPayload(formData) {
   // ── coleta ────────────────────────────────────────────────────────────────
   const coleta = {
     codigoColeta:  formData.codigoColeta  || null,
     codigoFoto:    formData.codigoFoto    || null,
-    // formData.municipio já é o ID_municipio (optionValue="ID_municipio")
     ID_municipio:  formData.municipio ? Number(formData.municipio) : null,
     localidade:    formData.localidade    || null,
     coletor:       null,
@@ -36,9 +20,9 @@ export function mapFormDataToPayload(formData) {
   const pescador = {
     nome:                  formData.nome               || null,
     apelido:               formData.apelido            || null,
+    cpf:                   formData.cpf                || null, // Adicionado CPF
     telefone:              formData.telefone           || null,
     sexo:                  formData.sexo               || null,
-    // form usa "nascimento"; controller espera "dataNascimento"
     dataNascimento:        formData.nascimento         || null,
     naturalidade:          formData.naturalidade       || null,
     estadoCivil:           formData.estadoCivil        || null,
@@ -46,11 +30,17 @@ export function mapFormDataToPayload(formData) {
     atividadePrincipal:    formData.atividadePrincipal || null,
     atividadeSecundaria:   formData.atividadeSecundaria|| null,
     composicaoFamiliar:    formData.composicaoFamiliar || null,
-    // form usa "moradiaTipo"; controller espera "localMoradia"
     localMoradia:          formData.moradiaTipo        || null,
     localMoradiaOutro:     formData.moradiaOutro       || null,
     tipoConstrucao:        formData.tipoConstrucao     || null,
-    tipoConstrucaoOutro:   formData.tipoConstrucaoOutro|| null
+    tipoConstrucaoOutro:   formData.tipoConstrucaoOutro|| null,
+    
+    // Relação de Trabalho / Tempo Atividade
+    tempoAtividade:        formData.tempoAtividade !== '' ? Number(formData.tempoAtividade) : null, // Adicionado
+    horasDia:              formData.horasDia !== '' ? Number(formData.horasDia) : null,             // Adicionado
+    fontesRenda:           formData.fontesRenda        || null, // Adicionado
+    categoriaPesca:        formData.categoriaPesca     || null, // Adicionado
+    principalPescaria:     formData.principalPescaria  || null  // Adicionado
   };
 
   // ── saude ─────────────────────────────────────────────────────────────────
@@ -59,17 +49,16 @@ export function mapFormDataToPayload(formData) {
     pele:         !!formData.saude?.pele,
     coluna:       !!formData.saude?.coluna,
     ginecologico: !!formData.saude?.ginecologico,
-    outros:       !!formData.saude?.outros
+    outros:       !!formData.saude?.outros,
+    outrosTexto:  formData.saude?.outros ? (formData.saudeOutros || null) : null // Mapeando o texto descritivo
   };
 
   // ── registro ──────────────────────────────────────────────────────────────
   const registro = {
     registroINSS:        formData.registroINSS         || null,
     registroColonia:     formData.registroColonia      || null,
-    // form usa "qualColonia"; controller espera "nomeColonia"
     nomeColonia:         formData.qualColonia          || null,
     registroAssociacao:  formData.registroAssociacao   || null,
-    // form usa "qualAssociacao"; controller espera "nomeAssociacao"
     nomeAssociacao:      formData.qualAssociacao       || null,
     possuiCarteira:      formData.possuiCarteira       || null,
     carteiraGrande:      formData.carteiraGrande       || null,
@@ -77,19 +66,32 @@ export function mapFormDataToPayload(formData) {
   };
 
   // ── embarcacao ────────────────────────────────────────────────────────────
+  const emb = formData.embarcacao || {};
   const embarcacao = {
-    pescaEmbarcada:       null,
-    embarcacaoPropria:    null,
-    statusFinanceiro:     null,
-    nomeProprietario:     null,
-    apelidoProprietario:  null,
-    portoOrigem:          null,
-    portoDesembarque:     null,
-    nomeEmbarcacao:       null,
-    comprimentoM:         null,
-    hp:                   null,
-    capacidadeTripulacao: null,
-    tipoEmbarcacao:       null
+    pescaEmbarcada:       emb.pescaEmbarcada       || null,
+    embarcacaoPropria:    emb.embarcacaoPropria    || null,
+    statusFinanceiro:     emb.statusFinanceiro     || null,
+    nomeProprietario:     emb.nomeProprietario     || null,
+    apelidoProprietario:  emb.apelidoProprietario  || null,
+    portoOrigem:          emb.portoOrigem          || null,
+    portoDesembarque:     emb.portoDesembarque     || null,
+    nomeEmbarcacao:       emb.nomeEmbarcacao       || null,
+    numeroRegistro:       emb.numeroRegistro       || null,
+    comprimentoM:         emb.comprimento !== '' ? Number(emb.comprimento) : null,
+    largura:              emb.largura !== '' ? Number(emb.largura) : null,
+    tonelagemBruta:       emb.tonelagemBruta !== '' ? Number(emb.tonelagemBruta) : null,
+    capacidadeTripulacao: emb.capacidadeTripulacao !== '' ? Number(emb.capacidadeTripulacao) : null,
+    anoConstrucao:        emb.anoConstrucao !== '' ? Number(emb.anoConstrucao) : null,
+    hp:                   emb.hpCilindros          || null,
+    materialCasco:        emb.materialCasco        || null,
+    tipoEmbarcacao:       emb.tipoEmbarcacao       || null,
+    // Documentações estruturadas
+    registroCapitania:    !!emb.registroCapitania,
+    registroRGP:          !!emb.registroRGP,
+    licenciamentoIBAMA:   !!emb.licenciamentoIBAMA,
+    licenciamentoMPA:     !!emb.licenciamentoMPA,
+    // Lista de propulsões mapeada para payload
+    propulsoes:           formData.propulsoes      || []
   };
 
   // ── petrechos (array) ─────────────────────────────────────────────────────
@@ -107,7 +109,6 @@ export function mapFormDataToPayload(formData) {
         {
           nome:          formData.petrechoPesca        || null,
           material:      formData.materialPetrecho     || null,
-          // form usa "tamanhoMetros"; controller espera "tamanhoM"
           tamanhoM:      formData.tamanhoMetros !== '' ? Number(formData.tamanhoMetros) : null,
           tamanhoBracas: formData.tamanhoBracas !== '' ? Number(formData.tamanhoBracas) : null,
           unidades:      formData.unidades !== ''      ? Number(formData.unidades)      : null,
@@ -126,10 +127,8 @@ export function mapFormDataToPayload(formData) {
   const producao = {
     mediaDiasEmbarcado:    formData.mediaDiasEmbarcado !== '' ? Number(formData.mediaDiasEmbarcado) : null,
     viagensMes:            null,
-    // form usa "producaoMedia"; controller espera "producaoMediaKg"
     producaoMediaKg:       formData.producaoMedia !== ''      ? Number(formData.producaoMedia)      : null,
     producaoMediaUnidades: null,
-    // form usa "valorMedio"; controller espera "valorPrimeira"
     valorPrimeira:         formData.valorMedio !== ''         ? Number(formData.valorMedio)         : null,
     valorSegunda:          null,
     valorTerceira:         null,
@@ -138,7 +137,15 @@ export function mapFormDataToPayload(formData) {
   };
 
   // ── despesas ──────────────────────────────────────────────────────────────
-  const despesas = [];
+  const despesas = (formData.despesas || []).map((d) => ({
+    item:       d.item || null,
+    tipo:       d.tipo || null,
+    quantidade: d.quantidade !== '' ? Number(d.quantidade) : null,
+    unidade:    d.unidade || null,
+    valor:      d.valor !== '' ? Number(d.valor) : null,
+    outros:     d.outros || null,
+    frequencia: d.frequencia || null
+  }));
 
   // ── quadrantes (array) ────────────────────────────────────────────────────
   const quadrantes = (formData.quadrantes || [])
@@ -146,8 +153,6 @@ export function mapFormDataToPayload(formData) {
     .map((q) => ({ quadrante: q.trim() }));
 
   // ── especies (array) ──────────────────────────────────────────────────────
-  // Cada linha: { rowId, id_especie, buscaTexto, nome_popular, inicioSafra, fimSafra }
-  // Só envia linhas que têm id_especie resolvido
   const especies = (formData.especies || [])
     .filter((e) => e.id_especie)
     .map((e) => ({
