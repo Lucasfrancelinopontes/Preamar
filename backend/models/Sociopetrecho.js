@@ -3,12 +3,12 @@ import sequelize from '../db.js';
 
 export const SocioPetrecho = sequelize.define('SocioPetrecho', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     primaryKey: true,
     autoIncrement: true
   },
   id_pescador: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
     references: {
       model: 'socio_pescadores',
@@ -32,7 +32,7 @@ export const SocioPetrecho = sequelize.define('SocioPetrecho', {
     allowNull: true
   },
   unidades: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
   tipo_isca: {

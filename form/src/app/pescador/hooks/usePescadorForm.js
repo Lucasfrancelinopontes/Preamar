@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { initialState } from "../utils/initialState";
+import { mapFormDataToPayload } from "../utils/mapper";
+import api from "@/services/api";
 
 export default function usePescadorForm() {
 
@@ -66,6 +68,30 @@ const removerEspecie = (id) => {
     }));
 
 };
+    const [salvando, setSalvando] = useState(false);
+    const [erroSubmit, setErroSubmit] = useState("");
+    const [sucessoSubmit, setSucessoSubmit] = useState(false);
+
+    const submitForm = async () => {
+        setSalvando(true);
+        setErroSubmit("");
+        setSucessoSubmit(false);
+        try {
+            const payload = mapFormDataToPayload(formData);
+            await api.criarSocioPescador(payload);
+            setSucessoSubmit(true);
+        } catch (err) {
+            const mensagem =
+                err?.data?.error ||
+                err?.data?.message ||
+                err?.message ||
+                "Erro ao salvar cadastro. Tente novamente.";
+            setErroSubmit(mensagem);
+        } finally {
+            setSalvando(false);
+        }
+    };
+
     return {
 
     formData,
@@ -75,7 +101,12 @@ const removerEspecie = (id) => {
     handleCheckboxChange,
 
     adicionarEspecie,
-    removerEspecie
+    removerEspecie,
+
+    submitForm,
+    salvando,
+    erroSubmit,
+    sucessoSubmit
 
 };
 

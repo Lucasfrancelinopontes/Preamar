@@ -10,6 +10,22 @@ import { Individuo } from './Individuo.js';
 import { Usuario } from './Usuario.js';
 import sequelize from '../db.js';
 
+// Importar models e associações do módulo socioeconômico
+import {
+  defineSocioAssociations,
+  SocioColeta,
+  SocioPescador,
+  SocioSaude,
+  SocioRegistro,
+  SocioEmbarcacao,
+  SocioPetrecho,
+  SocioRelacaoTrabalho,
+  SocioProducao,
+  SocioDespesa,
+  SocioQuadrante,
+  SocioPescadorEspecie
+} from './Socio.js';
+
 // Definir associações
 export const defineAssociations = () => {
   // Desembarque pertence a Pescador
@@ -129,6 +145,9 @@ export const defineAssociations = () => {
     foreignKey: 'ID_especie',
     as: 'individuos'
   });
+
+  // ── Associações do módulo socioeconômico ─────────────────────────────────
+  defineSocioAssociations();
 };
 
 // Exportar todos os modelos
@@ -143,5 +162,17 @@ export {
   Captura,
   Individuo,
   Usuario,
-  sequelize
+  sequelize,
+  // Socio
+  SocioColeta,
+  SocioPescador,
+  SocioSaude,
+  SocioRegistro,
+  SocioEmbarcacao,
+  SocioPetrecho,
+  SocioRelacaoTrabalho,
+  SocioProducao,
+  SocioDespesa,
+  SocioQuadrante,
+  SocioPescadorEspecie
 };

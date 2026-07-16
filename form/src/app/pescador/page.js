@@ -33,7 +33,12 @@ export default function CadastroPescador() {
         handleCheckboxChange,
 
         adicionarEspecie,
-        removerEspecie
+        removerEspecie,
+
+        submitForm,
+        salvando,
+        erroSubmit,
+        sucessoSubmit
 
     } = usePescadorForm();
 
@@ -987,6 +992,29 @@ export default function CadastroPescador() {
 
                                 </p>
 
+                            </div>
+
+                            {erroSubmit && (
+                                <div className="mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+                                    {erroSubmit}
+                                </div>
+                            )}
+
+                            {sucessoSubmit && (
+                                <div className="mt-6 p-4 rounded-xl bg-green-100 border border-green-300 text-green-800 text-sm font-medium">
+                                    Cadastro salvo com sucesso!
+                                </div>
+                            )}
+
+                            <div className="mt-6 flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => submitForm()}
+                                    disabled={salvando || sucessoSubmit}
+                                    className="px-8 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50"
+                                >
+                                    {salvando ? "Salvando..." : "Salvar Cadastro"}
+                                </button>
                             </div>
 
                         </div>

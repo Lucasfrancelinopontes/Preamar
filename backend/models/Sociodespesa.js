@@ -1,18 +1,14 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../db.js';
 
-/**
- * SocioDespesa — despesas declaradas pelo pescador na entrevista socioeconômica.
- * Tabela: socio_despesas (criar via migration/sync).
- */
 export const SocioDespesa = sequelize.define('SocioDespesa', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     primaryKey: true,
     autoIncrement: true
   },
   id_pescador: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
     references: {
       model: 'socio_pescadores',

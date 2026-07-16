@@ -3,7 +3,7 @@ import sequelize from '../db.js';
 
 export const SocioColeta = sequelize.define('SocioColeta', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     primaryKey: true,
     autoIncrement: true
   },
@@ -16,7 +16,7 @@ export const SocioColeta = sequelize.define('SocioColeta', {
     allowNull: true
   },
   ID_municipio: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER,   // sem UNSIGNED — igual à PK da tabela municipios
     allowNull: true,
     references: {
       model: 'municipios',

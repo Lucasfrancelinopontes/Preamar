@@ -11,7 +11,7 @@ import {
   SocioDespesa,
   SocioQuadrante,
   SocioPescadorEspecie
-} from '../models/socioIndex.js';
+} from '../models/Socio.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 

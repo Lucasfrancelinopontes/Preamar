@@ -58,6 +58,15 @@ import {
   deletarUsuario
 } from './controllers/usuarioController.js';
 
+// Socio
+import {
+  criar as criarSocioPescador,
+  listar as listarSocioPescadores,
+  buscar as buscarSocioPescador,
+  atualizar as atualizarSocioPescador,
+  remover as removerSocioPescador
+} from './controllers/SociopescadorController.js';
+
 // Debug
 import { populateSpecies, checkDb } from './controllers/debugController.js';
 import { updateIndividuosSchema } from './controllers/schemaController.js';
@@ -103,6 +112,13 @@ router.post('/pescadores', verificarAutenticacao, criarPescador);
 router.get('/pescadores/:id', verificarAutenticacao, buscarPescador);
 router.put('/pescadores/:id', verificarAutenticacao, atualizarPescador);
 router.delete('/pescadores/:id', verificarAutenticacao, deletarPescador);
+
+// Rotas de Cadastro Socioeconômico (protegidas)
+router.post('/socio-pescadores', verificarAutenticacao, criarSocioPescador);
+router.get('/socio-pescadores', verificarAutenticacao, listarSocioPescadores);
+router.get('/socio-pescadores/:id', verificarAutenticacao, buscarSocioPescador);
+router.put('/socio-pescadores/:id', verificarAutenticacao, atualizarSocioPescador);
+router.delete('/socio-pescadores/:id', verificarAutenticacao, removerSocioPescador);
 
 // Rotas de Embarcações (protegidas)
 router.get('/embarcacoes', verificarAutenticacao, listarEmbarcacoes);

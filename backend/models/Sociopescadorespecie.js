@@ -3,12 +3,12 @@ import sequelize from '../db.js';
 
 export const SocioPescadorEspecie = sequelize.define('SocioPescadorEspecie', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     primaryKey: true,
     autoIncrement: true
   },
   id_pescador: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
     references: {
       model: 'socio_pescadores',
@@ -16,7 +16,7 @@ export const SocioPescadorEspecie = sequelize.define('SocioPescadorEspecie', {
     }
   },
   id_especie: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER,   // sem UNSIGNED — igual à PK da tabela especies
     allowNull: true,
     references: {
       model: 'especies',

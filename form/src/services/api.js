@@ -624,6 +624,50 @@ const api = {
     }
   },
 
+  // ==================== CADASTRO SOCIOECONÔMICO ====================
+
+  criarSocioPescador: async (dados) => {
+    try {
+      const response = await fetch(`${API_URL}/socio-pescadores`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao criar cadastro socioeconômico:', error);
+      throw error;
+    }
+  },
+
+  listarSocioPescadores: async (filtros = {}) => {
+    try {
+      const params = new URLSearchParams(filtros);
+      const response = await fetch(`${API_URL}/socio-pescadores?${params}`, {
+        headers: getAuthHeaders()
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao listar cadastros socioeconômicos:', error);
+      throw error;
+    }
+  },
+
+  getSocioPescador: async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/socio-pescadores/${id}`, {
+        headers: getAuthHeaders()
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao buscar cadastro socioeconômico:', error);
+      throw error;
+    }
+  },
+
   // ==================== PESCADORES ====================
 
   criarPescador: async (dados) => {

@@ -3,12 +3,12 @@ import sequelize from '../db.js';
 
 export const SocioProducao = sequelize.define('SocioProducao', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     primaryKey: true,
     autoIncrement: true
   },
   id_pescador: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
     references: {
       model: 'socio_pescadores',
@@ -16,11 +16,11 @@ export const SocioProducao = sequelize.define('SocioProducao', {
     }
   },
   media_dias_embarcado: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
   viagens_mes: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
   producao_media_kg: {
@@ -28,7 +28,7 @@ export const SocioProducao = sequelize.define('SocioProducao', {
     allowNull: true
   },
   producao_media_unidades: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true
   },
   valor_primeira: {
