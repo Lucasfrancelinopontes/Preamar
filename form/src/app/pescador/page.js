@@ -15,7 +15,7 @@ import api from "@/services/api";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const TOTAL_ETAPAS = 12;
+const TOTAL_ETAPAS = 20;
 
 export default function CadastroPescador() {
 
@@ -315,6 +315,299 @@ export default function CadastroPescador() {
 
                     )}
 
+                    {etapaAtual === 13 && (
+                        <div>
+                            <h2 className="text-xl font-bold mb-6">
+                                Propulsão
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                                {[
+                                    ["vela", "Vela"],
+                                    ["motor", "Motor"],
+                                    ["remo", "Remo"],
+                                    ["vara", "Vara"],
+                                    ["rabeta", "Rabeta"]
+                                ].map(([id, label]) => (
+                                    <CheckboxGroup
+                                        key={id}
+                                        label={label}
+                                        checked={formData.propulsoes.includes(id)}
+                                        onChange={() => togglePropulsao(id)}
+                                    />
+                                ))}
+
+                                <InputGroup
+                                    label="Cilindros/hp"
+                                    name="hpCilindros"
+                                    value={formData.embarcacao.hpCilindros || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {etapaAtual === 14 && (
+                        <div>
+                            <h2 className="text-xl font-bold mb-6">
+                                Portos
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-5">
+                                <InputGroup
+                                    label="Porto origem"
+                                    name="portoOrigem"
+                                    value={formData.embarcacao.portoOrigem || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                                <InputGroup
+                                    label="Porto desembarque"
+                                    name="portoDesembarque"
+                                    value={formData.embarcacao.portoDesembarque || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {etapaAtual === 15 && (
+                        <div>
+                            <h2 className="text-xl font-bold mb-6">
+                                Dados técnicos embarcação
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-5">
+                                <InputGroup
+                                    label="Nome embarcação"
+                                    name="nomeEmbarcacao"
+                                    value={formData.embarcacao.nomeEmbarcacao || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                                <InputGroup
+                                    label="Comprimento"
+                                    name="comprimento"
+                                    value={formData.embarcacao.comprimento || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                                <InputGroup
+                                    label="Número registro"
+                                    name="numeroRegistro"
+                                    value={formData.embarcacao.numeroRegistro || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                                <InputGroup
+                                    label="Largura"
+                                    name="largura"
+                                    value={formData.embarcacao.largura || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                                <InputGroup
+                                    label="Tonelada bruta"
+                                    name="tonelagemBruta"
+                                    value={formData.embarcacao.tonelagemBruta || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                                <InputGroup
+                                    label="Material casco"
+                                    name="materialCasco"
+                                    value={formData.embarcacao.materialCasco || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                                <InputGroup
+                                    label="Tripulação"
+                                    name="capacidadeTripulacao"
+                                    value={formData.embarcacao.capacidadeTripulacao || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                                <InputGroup
+                                    label="Ano construção"
+                                    name="anoConstrucao"
+                                    type="number"
+                                    value={formData.embarcacao.anoConstrucao || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {etapaAtual === 16 && (
+                        <div>
+                            <h2 className="text-xl font-bold mb-6">
+                                Registros embarcação
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <CheckboxGroup
+                                    label="Capitania"
+                                    checked={!!formData.embarcacao.registroCapitania}
+                                    onChange={() => handleEmbarcacaoCheckboxChange("registroCapitania")}
+                                />
+                                <CheckboxGroup
+                                    label="RGP"
+                                    checked={!!formData.embarcacao.registroRGP}
+                                    onChange={() => handleEmbarcacaoCheckboxChange("registroRGP")}
+                                />
+                                <CheckboxGroup
+                                    label="IBAMA"
+                                    checked={!!formData.embarcacao.licenciamentoIBAMA}
+                                    onChange={() => handleEmbarcacaoCheckboxChange("licenciamentoIBAMA")}
+                                />
+                                <CheckboxGroup
+                                    label="MPA"
+                                    checked={!!formData.embarcacao.licenciamentoMPA}
+                                    onChange={() => handleEmbarcacaoCheckboxChange("licenciamentoMPA")}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {etapaAtual === 17 && (
+                        <div>
+                            <h2 className="text-xl font-bold mb-6">
+                                Tipo embarcação
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-5">
+                                <InputGroup
+                                    label="Tipo embarcação"
+                                    name="tipoEmbarcacao"
+                                    value={formData.embarcacao.tipoEmbarcacao || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+
+                                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 flex items-center justify-center text-center text-slate-500 min-h-40">
+                                    Área reservada para desenho/anotação da embarcação
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {etapaAtual === 18 && (
+                        <div>
+                            <h2 className="text-xl font-bold mb-6">
+                                Atravessador
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <CheckboxGroup
+                                    label="Entrega pescado atravessador"
+                                    checked={!!formData.entregaAtravessador}
+                                    onChange={() => setFormData((prev) => ({ ...prev, entregaAtravessador: !prev.entregaAtravessador }))}
+                                />
+                                <CheckboxGroup
+                                    label="Dívida atravessador"
+                                    checked={!!formData.dividaComAtravessador}
+                                    onChange={() => setFormData((prev) => ({ ...prev, dividaComAtravessador: !prev.dividaComAtravessador }))}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {etapaAtual === 19 && (
+                        <div>
+                            <h2 className="text-xl font-bold mb-6">
+                                Percepções
+                            </h2>
+
+                            <div className="grid gap-5">
+                                <TextareaGroup
+                                    label="Percepção pesca hoje vs passado"
+                                    name="percepcaoPescaHojeVsPassado"
+                                    value={formData.percepcaoPescaHojeVsPassado || ""}
+                                    onChange={handleInputChange}
+                                />
+                                <TextareaGroup
+                                    label="Percepção tamanho e volume pescado"
+                                    name="percepcaoTamanhoVolumePescado"
+                                    value={formData.percepcaoTamanhoVolumePescado || ""}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {etapaAtual === 20 && (
+                        <div>
+                            <h2 className="text-xl font-bold mb-6">
+                                Observações e finalização
+                            </h2>
+
+                            <div className="grid md:grid-cols-2 gap-5">
+                                <TextareaGroup
+                                    label="Observações"
+                                    name="observacoes"
+                                    value={formData.observacoes || ""}
+                                    onChange={handleInputChange}
+                                    rows={6}
+                                />
+                                <InputGroup
+                                    label="Coletor"
+                                    name="coletor"
+                                    value={formData.coletor || ""}
+                                    onChange={handleInputChange}
+                                />
+                                <InputGroup
+                                    label="Data"
+                                    name="dataColeta"
+                                    type="date"
+                                    value={formData.dataColeta || ""}
+                                    onChange={handleInputChange}
+                                />
+                                <InputGroup
+                                    label="Digitador"
+                                    name="digitador"
+                                    value={formData.digitador || ""}
+                                    onChange={handleInputChange}
+                                />
+                                <InputGroup
+                                    label="Data digitador"
+                                    name="dataDigitador"
+                                    type="date"
+                                    value={formData.dataDigitador || ""}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+
+                            <div className="mt-10 p-6 rounded-xl bg-green-50 border border-green-200">
+                                <h3 className="text-lg font-semibold text-green-700">
+                                    Cadastro concluído
+                                </h3>
+                                <p className="text-slate-600 mt-2">
+                                    Revise todas as informações antes de salvar o cadastro.
+                                </p>
+                            </div>
+
+                            {erroSubmit && (
+                                <div className="mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+                                    {erroSubmit}
+                                </div>
+                            )}
+
+                            {sucessoSubmit && (
+                                <div className="mt-6 p-4 rounded-xl bg-green-100 border border-green-300 text-green-800 text-sm font-medium">
+                                    Cadastro salvo com sucesso!
+                                </div>
+                            )}
+
+                            <div className="mt-6 flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        const ok = await submitForm();
+                                        if (ok) {
+                                            setTimeout(() => router.push("/"), 1500);
+                                        }
+                                    }}
+                                    disabled={salvando || sucessoSubmit}
+                                    className="px-8 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50"
+                                >
+                                    {salvando ? "Salvando..." : "Salvar Cadastro"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+
                     {etapaAtual === 2 && (
 
                         <div>
@@ -407,6 +700,14 @@ export default function CadastroPescador() {
                                     colSpan={2}
                                 />
 
+                                <InputGroup
+                                    label="Composição familiar"
+                                    name="composicaoFamiliar"
+                                    value={formData.composicaoFamiliar || ""}
+                                    onChange={handleInputChange}
+                                    colSpan={2}
+                                />
+
                             </div>
 
                         </div>
@@ -445,6 +746,13 @@ export default function CadastroPescador() {
                                     ]}
                                     optionLabel="nome"
                                     optionValue="id"
+                                />
+
+                                <InputGroup
+                                    label="Sede municipal"
+                                    name="moradiaSedeMunicipal"
+                                    value={formData.moradiaSedeMunicipal || ""}
+                                    onChange={handleInputChange}
                                 />
 
                                 {
@@ -704,32 +1012,18 @@ export default function CadastroPescador() {
                                     value={formData.relacaoTrabalho}
                                     onChange={handleInputChange}
                                     options={[
-                                        { id: "autonomo", nome: "Autônomo" },
-                                        { id: "empregado", nome: "Empregado" },
-                                        { id: "familiar", nome: "Trabalho Familiar" },
-                                        { id: "cooperativa", nome: "Cooperativa" },
-                                        { id: "outro", nome: "Outro" }
+                                        { id: "familiar", nome: "Familiar" },
+                                        { id: "vizinhos_amigos", nome: "Vizinhos/Amigos" },
+                                        { id: "armador", nome: "Armador" },
+                                        { id: "embarcado", nome: "Embarcado" },
+                                        { id: "assalariado", nome: "Assalariado" }
                                     ]}
                                     optionLabel="nome"
                                     optionValue="id"
                                 />
 
-                                <InputGroup
-                                    label="Atividade Principal"
-                                    name="atividadePrincipal"
-                                    value={formData.atividadePrincipal}
-                                    onChange={handleInputChange}
-                                />
-
-                                <InputGroup
-                                    label="Atividade Secundária"
-                                    name="atividadeSecundaria"
-                                    value={formData.atividadeSecundaria}
-                                    onChange={handleInputChange}
-                                />
-
                                 <TextareaGroup
-                                    label="Outras Fontes de Renda"
+                                    label="Principais fontes renda familiar"
                                     name="fontesRenda"
                                     value={formData.fontesRenda}
                                     onChange={handleInputChange}
@@ -798,6 +1092,34 @@ export default function CadastroPescador() {
                                     label="Processo de Lançamento"
                                     name="processoLancamento"
                                     value={formData.processoLancamento}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Observação braça"
+                                    name="observacaoBraca"
+                                    value={formData.observacaoBraca || ""}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Petrechos próprios"
+                                    name="petrechosProprios"
+                                    value={formData.petrechosProprios || ""}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Se não, de quem"
+                                    name="petrechosDeQuem"
+                                    value={formData.petrechosDeQuem || ""}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Conservação pescado"
+                                    name="conservacaoPescado"
+                                    value={formData.conservacaoPescado || ""}
                                     onChange={handleInputChange}
                                 />
 
@@ -952,89 +1274,47 @@ export default function CadastroPescador() {
                     {etapaAtual === 9 && (
                         <div>
                             <h2 className="text-xl font-bold mb-6">
-                                Informações sobre Embarcações
+                                Dados da embarcação
                             </h2>
-                            <p className="text-slate-500 mb-6">
-                                Cadastre informações sobre a embarcação(ões) utilizada(s).
-                            </p>
 
-                            <div className="space-y-8">
-                                {formData.embarcacoes && formData.embarcacoes.map((emb, idx) => (
-                                    <div key={idx} className="border-l-4 border-blue-500 pl-6 py-4 bg-blue-50 rounded-lg">
-                                        <h3 className="font-semibold text-slate-700 mb-4">
-                                            Embarcação {idx + 1}
-                                        </h3>
-
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <InputGroup
-                                                label="Nome da Embarcação"
-                                                name="nomeEmbarcacao"
-                                                value={emb.nomeEmbarcacao || ""}
-                                                onChange={(e) => handleEmbarcacaoInputChange(idx, "nomeEmbarcacao", e.target.value)}
-                                            />
-                                            <InputGroup
-                                                label="Comprimento (m)"
-                                                name="comprimento"
-                                                type="number"
-                                                value={emb.comprimento || ""}
-                                                onChange={(e) => handleEmbarcacaoInputChange(idx, "comprimento", e.target.value)}
-                                            />
-                                            <InputGroup
-                                                label="Boca (m)"
-                                                name="boca"
-                                                type="number"
-                                                value={emb.boca || ""}
-                                                onChange={(e) => handleEmbarcacaoInputChange(idx, "boca", e.target.value)}
-                                            />
-                                            <InputGroup
-                                                label="Pontal (m)"
-                                                name="pontal"
-                                                type="number"
-                                                value={emb.pontal || ""}
-                                                onChange={(e) => handleEmbarcacaoInputChange(idx, "pontal", e.target.value)}
-                                            />
-                                            <InputGroup
-                                                label="Tonelagem (t)"
-                                                name="tonelagem"
-                                                type="number"
-                                                value={emb.tonelagem || ""}
-                                                onChange={(e) => handleEmbarcacaoInputChange(idx, "tonelagem", e.target.value)}
-                                            />
-                                            <SelectGroup
-                                                label="Tipo de Embarcação"
-                                                name="tipoEmbarcacao"
-                                                value={emb.tipoEmbarcacao || ""}
-                                                onChange={(e) => handleEmbarcacaoInputChange(idx, "tipoEmbarcacao", e.target.value)}
-                                                options={[
-                                                    { id: "", nome: "Selecione" },
-                                                    { id: "lancha", nome: "Lancha" },
-                                                    { id: "bote", nome: "Bote" },
-                                                    { id: "barco", nome: "Barco" },
-                                                    { id: "jangada", nome: "Jangada" }
-                                                ]}
-                                                optionLabel="nome"
-                                                optionValue="id"
-                                            />
-                                        </div>
-
-                                        <div className="mt-6">
-                                            <h4 className="font-semibold text-slate-700 mb-3">
-                                                Propulsão
-                                            </h4>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                {["vela", "motor", "remo", "tração_animal"].map((prop) => (
-                                                    <CheckboxGroup
-                                                        key={prop}
-                                                        label={prop.charAt(0).toUpperCase() + prop.slice(1)}
-                                                        name={prop}
-                                                        checked={emb.propulsoes?.[prop] || false}
-                                                        onChange={(e) => togglePropulsao(idx, prop, e.target.checked)}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
+                            <div className="grid md:grid-cols-2 gap-5">
+                                <div className="space-y-3 md:col-span-2">
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        <CheckboxGroup
+                                            label="Pesca embarcada"
+                                            checked={!!formData.embarcacao.pescaEmbarcada}
+                                            onChange={() => handleEmbarcacaoCheckboxChange("pescaEmbarcada")}
+                                        />
+                                        <CheckboxGroup
+                                            label="Embarcação própria"
+                                            checked={!!formData.embarcacao.embarcacaoPropria}
+                                            onChange={() => handleEmbarcacaoCheckboxChange("embarcacaoPropria")}
+                                        />
+                                        <CheckboxGroup
+                                            label="Financiada"
+                                            checked={!!formData.embarcacao.financiada}
+                                            onChange={() => handleEmbarcacaoCheckboxChange("financiada")}
+                                        />
+                                        <CheckboxGroup
+                                            label="Quitada"
+                                            checked={!!formData.embarcacao.quitada}
+                                            onChange={() => handleEmbarcacaoCheckboxChange("quitada")}
+                                        />
                                     </div>
-                                ))}
+                                </div>
+
+                                <InputGroup
+                                    label="Nome proprietário"
+                                    name="nomeProprietario"
+                                    value={formData.embarcacao.nomeProprietario || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
+                                <InputGroup
+                                    label="Apelido proprietário"
+                                    name="apelidoProprietario"
+                                    value={formData.embarcacao.apelidoProprietario || ""}
+                                    onChange={handleEmbarcacaoInputChange}
+                                />
                             </div>
                         </div>
                     )}
@@ -1270,10 +1550,63 @@ export default function CadastroPescador() {
                                 />
 
                                 <InputGroup
+                                    label="Viagens por mês"
+                                    name="viagensPorMes"
+                                    type="number"
+                                    value={formData.viagensPorMes || ""}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
                                     label="Produção média (kg)"
                                     name="producaoMedia"
                                     type="number"
                                     value={formData.producaoMedia}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Produção média por viagem (kg)"
+                                    name="producaoMediaViagemKg"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.producaoMediaViagemKg || ""}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Produção média unidades"
+                                    name="producaoMediaUnidades"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.producaoMediaUnidades || ""}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Valor primeira qualidade"
+                                    name="valorPrimeiraQualidade"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.valorPrimeiraQualidade || ""}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Valor segunda qualidade"
+                                    name="valorSegundaQualidade"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.valorSegundaQualidade || ""}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Valor terceira qualidade"
+                                    name="valorTerceiraQualidade"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.valorTerceiraQualidade || ""}
                                     onChange={handleInputChange}
                                 />
 
@@ -1285,10 +1618,21 @@ export default function CadastroPescador() {
                                     onChange={handleInputChange}
                                 />
 
-                                <TextareaGroup
-                                    label="Observações"
-                                    name="observacoes"
-                                    value={formData.observacoes || ""}
+                                <InputGroup
+                                    label="Renda mensal"
+                                    name="rendaMensal"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.rendaMensal || ""}
+                                    onChange={handleInputChange}
+                                />
+
+                                <InputGroup
+                                    label="Renda por pescaria"
+                                    name="rendaPorPescaria"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.rendaPorPescaria || ""}
                                     onChange={handleInputChange}
                                 />
 

@@ -5,7 +5,8 @@ export default function InputGroup({
     onChange,
     type = "text",
     placeholder = "",
-    colSpan = 1
+    colSpan = 1,
+    ...rest
 }) {
 
     return (
@@ -21,6 +22,7 @@ export default function InputGroup({
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
+                {...rest}
                 className="
                     w-full
                     rounded-xl

@@ -15,6 +15,7 @@ export const initialState = {
     naturalidade: "",
     estadoCivil: "",
     escolaridade: "",
+    composicaoFamiliar: "",
 
     // ===== Perfil socioeconômico =====
     atividadePrincipal: "",
@@ -23,6 +24,7 @@ export const initialState = {
 
     // ===== Moradia =====
     moradiaTipo: "",
+    moradiaSedeMunicipal: "",
     moradiaOutro: "",
     tipoConstrucao: "",
     tipoConstrucaoOutro: "",
@@ -52,6 +54,10 @@ export const initialState = {
     horasDia: "",       // Garantido
     relacaoTrabalho: "",
     fontesRenda: "",    // Garantido
+    observacaoBraca: "",
+    petrechosProprios: "",
+    petrechosDeQuem: "",
+    conservacaoPescado: "",
 
     // ===== Pescaria =====
     categoriaPesca: "",    // Garantido
@@ -68,6 +74,8 @@ export const initialState = {
     embarcacao: {
         pescaEmbarcada: "",
         embarcacaoPropria: "",
+        financiada: false,
+        quitada: false,
         statusFinanceiro: "",
         nomeProprietario: "",
         apelidoProprietario: "",
@@ -103,7 +111,21 @@ export const initialState = {
     mediaDiasEmbarcado: "",
     producaoMedia: "",
     valorMedio: "",
+    viagensPorMes: "",
+    producaoMediaViagemKg: "",
+    producaoMediaUnidades: "",
+    valorPrimeiraQualidade: "",
+    valorSegundaQualidade: "",
+    valorTerceiraQualidade: "",
+    rendaMensal: "",
+    rendaPorPescaria: "",
+    percepcaoPescaHojeVsPassado: "",
+    percepcaoTamanhoVolumePescado: "",
     observacoes: "",
+    coletor: "",
+    dataColeta: "",
+    digitador: "",
+    dataDigitador: "",
 
     // ===== Espécies =====
     especies: [],

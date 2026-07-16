@@ -39,7 +39,7 @@ export default function SelectGroup({
                     <option
 
                         key={item[optionValue]}
-                        value={item[optionLabel]}
+                        value={item[optionValue]}
 
                     >
 

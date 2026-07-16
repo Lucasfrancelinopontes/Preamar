@@ -9,10 +9,10 @@ export function mapFormDataToPayload(formData) {
     codigoFoto:    formData.codigoFoto    || null,
     ID_municipio:  formData.municipio ? Number(formData.municipio) : null,
     localidade:    formData.localidade    || null,
-    coletor:       null,
-    digitador:     null,
-    dataColeta:    null,
-    dataDigitacao: null,
+    coletor:       formData.coletor       || null,
+    digitador:     formData.digitador     || null,
+    dataColeta:    formData.dataColeta    || null,
+    dataDigitacao: formData.dataDigitador || null,
     observacoes:   formData.observacoes   || null
   };
 
@@ -31,6 +31,7 @@ export function mapFormDataToPayload(formData) {
     atividadeSecundaria:   formData.atividadeSecundaria|| null,
     composicaoFamiliar:    formData.composicaoFamiliar || null,
     localMoradia:          formData.moradiaTipo        || null,
+    localMoradiaSedeMunicipal: formData.moradiaSedeMunicipal || null,
     localMoradiaOutro:     formData.moradiaOutro       || null,
     tipoConstrucao:        formData.tipoConstrucao     || null,
     tipoConstrucaoOutro:   formData.tipoConstrucaoOutro|| null,
@@ -39,6 +40,12 @@ export function mapFormDataToPayload(formData) {
     tempoAtividade:        formData.tempoAtividade !== '' ? Number(formData.tempoAtividade) : null, // Adicionado
     horasDia:              formData.horasDia !== '' ? Number(formData.horasDia) : null,             // Adicionado
     fontesRenda:           formData.fontesRenda        || null, // Adicionado
+    observacaoBraca:       formData.observacaoBraca    || null,
+    petrechosProprios:     formData.petrechosProprios  || null,
+    petrechosDeQuem:       formData.petrechosDeQuem    || null,
+    conservacaoPescado:    formData.conservacaoPescado || null,
+    entregaAtravessador:   !!formData.entregaAtravessador,
+    dividaComAtravessador: !!formData.dividaComAtravessador,
     categoriaPesca:        formData.categoriaPesca     || null, // Adicionado
     principalPescaria:     formData.principalPescaria  || null  // Adicionado
   };
@@ -70,6 +77,8 @@ export function mapFormDataToPayload(formData) {
   const embarcacao = {
     pescaEmbarcada:       emb.pescaEmbarcada       || null,
     embarcacaoPropria:    emb.embarcacaoPropria    || null,
+    financiada:           !!emb.financiada,
+    quitada:              !!emb.quitada,
     statusFinanceiro:     emb.statusFinanceiro     || null,
     nomeProprietario:     emb.nomeProprietario     || null,
     apelidoProprietario:  emb.apelidoProprietario  || null,
@@ -126,14 +135,14 @@ export function mapFormDataToPayload(formData) {
   // ── producao ──────────────────────────────────────────────────────────────
   const producao = {
     mediaDiasEmbarcado:    formData.mediaDiasEmbarcado !== '' ? Number(formData.mediaDiasEmbarcado) : null,
-    viagensMes:            null,
+    viagensMes:            formData.viagensPorMes !== '' ? Number(formData.viagensPorMes) : null,
     producaoMediaKg:       formData.producaoMedia !== ''      ? Number(formData.producaoMedia)      : null,
-    producaoMediaUnidades: null,
-    valorPrimeira:         formData.valorMedio !== ''         ? Number(formData.valorMedio)         : null,
-    valorSegunda:          null,
-    valorTerceira:         null,
-    rendaMediaMensal:      null,
-    rendaMediaPescaria:    null
+    producaoMediaUnidades: formData.producaoMediaUnidades !== '' ? Number(formData.producaoMediaUnidades) : null,
+    valorPrimeira:         formData.valorPrimeiraQualidade !== '' ? Number(formData.valorPrimeiraQualidade) : null,
+    valorSegunda:          formData.valorSegundaQualidade !== '' ? Number(formData.valorSegundaQualidade) : null,
+    valorTerceira:         formData.valorTerceiraQualidade !== '' ? Number(formData.valorTerceiraQualidade) : null,
+    rendaMediaMensal:      formData.rendaMensal !== '' ? Number(formData.rendaMensal) : null,
+    rendaMediaPescaria:    formData.rendaPorPescaria !== '' ? Number(formData.rendaPorPescaria) : null
   };
 
   // ── despesas ──────────────────────────────────────────────────────────────
