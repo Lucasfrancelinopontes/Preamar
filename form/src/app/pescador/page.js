@@ -202,6 +202,13 @@ export default function CadastroPescador({ editId = null }) {
 
     }, [municipioSelecionado]);
 
+    // Garante ao menos uma linha ao entrar na etapa 8
+    useEffect(() => {
+        if (etapaAtual === 8 && formData.especies.length === 0) {
+            adicionarEspecieLinha();
+        }
+    }, [etapaAtual, formData.especies.length]);
+
     if (carregandoEdicao) {
         return (
             <main className="min-h-screen bg-slate-100 py-10 flex items-center justify-center">
@@ -239,13 +246,6 @@ export default function CadastroPescador({ editId = null }) {
             </main>
         );
     }
-
-    // Garante ao menos uma linha ao entrar na etapa 8
-    useEffect(() => {
-        if (etapaAtual === 8 && formData.especies.length === 0) {
-            adicionarEspecieLinha();
-        }
-    }, [etapaAtual]);
 
     function validarEtapaAtual(etapa) {
         switch (etapa) {
