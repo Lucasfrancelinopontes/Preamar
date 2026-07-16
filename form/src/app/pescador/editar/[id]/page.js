@@ -1,5 +1,6 @@
 import CadastroPescador from "../../page";
 
-export default function EditarPescadorPage({ params }) {
-    return <CadastroPescador editId={params.id} />;
+export default async function EditarPescadorPage({ params }) {
+    const resolvedParams = await params;
+    return <CadastroPescador editId={resolvedParams?.id} />;
 }

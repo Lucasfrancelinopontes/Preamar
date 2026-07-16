@@ -54,6 +54,51 @@ const toText = (value) => (value === undefined || value === null ? "" : String(v
 
 const toNumberText = (value) => (value === undefined || value === null || value === "" ? "" : String(value));
 
+const unwrapRecord = (value) => {
+    if (!value || typeof value !== "object") return value;
+    if (value.dataValues && typeof value.dataValues === "object") {
+        return { ...value.dataValues, ...value };
+    }
+    return value;
+};
+
+const normalizeApiData = (data) => {
+    if (!data || typeof data !== "object") return {};
+
+    const base = data.dataValues && typeof data.dataValues === "object" ? data.dataValues : data;
+
+    return {
+        ...base,
+        coleta: unwrapRecord(base.coleta || base.coletaPescador || data.coleta || data.coletaPescador),
+        saude: unwrapRecord(base.saude || base.saudePescador || data.saude || data.saudePescador),
+        registro: unwrapRecord(base.registro || base.registroPescador || data.registro || data.registroPescador),
+        embarcacao: unwrapRecord(base.embarcacao || base.embarcacaoPescador || data.embarcacao || data.embarcacaoPescador),
+        producao: unwrapRecord(base.producao || base.producaoPescador || data.producao || data.producaoPescador),
+        relacoes_trabalho: Array.isArray(base.relacoes_trabalho || data.relacoes_trabalho)
+            ? (base.relacoes_trabalho || data.relacoes_trabalho)
+            : Array.isArray(base.relacoes || data.relacoes)
+                ? (base.relacoes || data.relacoes)
+                : Array.isArray(base.relacoesTrabalho || data.relacoesTrabalho)
+                    ? (base.relacoesTrabalho || data.relacoesTrabalho)
+                    : [],
+        petrechos: Array.isArray(base.petrechos || data.petrechos)
+            ? (base.petrechos || data.petrechos)
+            : Array.isArray(base.petrecho || data.petrecho)
+                ? (base.petrecho || data.petrecho)
+                : [],
+        despesas: Array.isArray(base.despesas || data.despesas)
+            ? (base.despesas || data.despesas)
+            : Array.isArray(base.despesa || data.despesa)
+                ? (base.despesa || data.despesa)
+                : [],
+        pescador_especies: Array.isArray(base.pescador_especies || data.pescador_especies)
+            ? (base.pescador_especies || data.pescador_especies)
+            : Array.isArray(base.especies || data.especies)
+                ? (base.especies || data.especies)
+                : []
+    };
+};
+
 const getValue = (source, ...paths) => {
     for (const path of paths) {
         const value = path.split('.').reduce((acc, key) => {
@@ -94,34 +139,35 @@ const getBooleanValue = (source, ...paths) => {
 };
 
 const mapApiToFormData = (data) => {
-    const coleta = data?.coleta || data?.coletaPescador || {};
-    const saude = data?.saude || data?.saudePescador || {};
-    const registro = data?.registro || data?.registroPescador || {};
-    const embarcacao = data?.embarcacao || data?.embarcacaoPescador || {};
-    const producao = data?.producao || data?.producaoPescador || {};
-    const relacoes = Array.isArray(data?.relacoes_trabalho)
-        ? data.relacoes_trabalho
-        : Array.isArray(data?.relacoes)
-            ? data.relacoes
-            : Array.isArray(data?.relacoesTrabalho)
-                ? data.relacoesTrabalho
+    const normalized = normalizeApiData(data);
+    const coleta = normalized?.coleta || {};
+    const saude = normalized?.saude || {};
+    const registro = normalized?.registro || {};
+    const embarcacao = normalized?.embarcacao || {};
+    const producao = normalized?.producao || {};
+    const relacoes = Array.isArray(normalized?.relacoes_trabalho)
+        ? normalized.relacoes_trabalho
+        : Array.isArray(normalized?.relacoes)
+            ? normalized.relacoes
+            : Array.isArray(normalized?.relacoesTrabalho)
+                ? normalized.relacoesTrabalho
                 : [];
     const relacao = relacoes[0] || null;
-    const petrechos = Array.isArray(data?.petrechos)
-        ? data.petrechos
-        : Array.isArray(data?.petrecho)
-            ? data.petrecho
+    const petrechos = Array.isArray(normalized?.petrechos)
+        ? normalized.petrechos
+        : Array.isArray(normalized?.petrecho)
+            ? normalized.petrecho
             : [];
     const petrecho = petrechos[0] || null;
-    const despesas = Array.isArray(data?.despesas)
-        ? data.despesas
-        : Array.isArray(data?.despesa)
-            ? data.despesa
+    const despesas = Array.isArray(normalized?.despesas)
+        ? normalized.despesas
+        : Array.isArray(normalized?.despesa)
+            ? normalized.despesa
             : [];
-    const especies = Array.isArray(data?.pescador_especies)
-        ? data.pescador_especies
-        : Array.isArray(data?.especies)
-            ? data.especies
+    const especies = Array.isArray(normalized?.pescador_especies)
+        ? normalized.pescador_especies
+        : Array.isArray(normalized?.especies)
+            ? normalized.especies
             : [];
 
     return {
@@ -202,11 +248,12 @@ const mapApiToFormData = (data) => {
             tipoEmbarcacao: getTextValue(embarcacao, 'tipo_embarcacao', 'tipoEmbarcacao')
         },
         propulsoes: parsePropulsoes(getValue(embarcacao, 'propulsoes', 'propulsao', 'propulsaoList')),
-        quadrantes: Array.isArray(data?.quadrantes)
-            ? [0, 1, 2, 3, 4].map((index) => getTextValue(data?.quadrantes[index] || {}, 'quadrante'))
+        quadrantes: Array.isArray(normalized?.quadrantes)
+            ? [0, 1, 2, 3, 4].map((index) => getTextValue(normalized?.quadrantes[index] || {}, 'quadrante'))
             : initialState.quadrantes,
         mediaDiasEmbarcado: getNumberTextValue(producao, 'media_dias_embarcado', 'mediaDiasEmbarcado'),
         producaoMedia: getNumberTextValue(producao, 'producao_media_kg', 'producaoMedia'),
+        viagensPorMes: getNumberTextValue(producao, 'viagens_mes', 'viagensMes', 'viagensPorMes'),
         producaoMediaViagemKg: getNumberTextValue(producao, 'producao_media_viagem_kg', 'producaoMediaViagemKg'),
         producaoMediaUnidades: getNumberTextValue(producao, 'producao_media_unidades', 'producaoMediaUnidades'),
         valorPrimeiraQualidade: getNumberTextValue(producao, 'valor_primeira', 'valorPrimeiraQualidade'),
