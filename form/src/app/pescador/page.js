@@ -1721,22 +1721,6 @@ export default function CadastroPescador({ editId = null }) {
 
                             </div>
 
-                            <div className="mt-10 p-6 rounded-xl bg-green-50 border border-green-200">
-
-                                <h3 className="text-lg font-semibold text-green-700">
-
-                                    Cadastro concluído
-
-                                </h3>
-
-                                <p className="text-slate-600 mt-2">
-
-                                    Revise todas as informações antes de salvar o cadastro.
-
-                                </p>
-
-                            </div>
-
                             {erroSubmit && (
                                 <div className="mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
                                     {erroSubmit}
@@ -1748,6 +1732,17 @@ export default function CadastroPescador({ editId = null }) {
                                     Cadastro salvo com sucesso!
                                 </div>
                             )}
+
+                            <div className="mt-6 flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    disabled={salvando || sucessoSubmit}
+                                    className="px-8 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50"
+                                >
+                                    {salvando ? "Salvando..." : editId ? "Salvar Alterações" : "Salvar Cadastro"}
+                                </button>
+                            </div>
 
                         </div>
 
