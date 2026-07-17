@@ -697,6 +697,79 @@ const api = {
     }
   },
 
+  // ==================== PEIXARIA ====================
+
+  listarPeixarias: async (filtros = {}) => {
+    try {
+      const params = new URLSearchParams(filtros);
+      const response = await fetch(`${API_URL}/peixarias?${params}`, {
+        headers: getAuthHeaders()
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao listar peixarias:', error);
+      throw error;
+    }
+  },
+
+  buscarPeixaria: async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/peixarias/${id}`, {
+        headers: getAuthHeaders()
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao buscar peixaria:', error);
+      throw error;
+    }
+  },
+
+  criarPeixaria: async (dados) => {
+    try {
+      const response = await fetch(`${API_URL}/peixarias`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao criar peixaria:', error);
+      throw error;
+    }
+  },
+
+  editarPeixaria: async (id, dados) => {
+    try {
+      const response = await fetch(`${API_URL}/peixarias/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao editar peixaria:', error);
+      throw error;
+    }
+  },
+
+  excluirPeixaria: async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/peixarias/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao excluir peixaria:', error);
+      throw error;
+    }
+  },
+
   // ==================== PESCADORES ====================
 
   criarPescador: async (dados) => {

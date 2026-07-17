@@ -57,6 +57,13 @@ import {
   atualizarUsuario,
   deletarUsuario
 } from './controllers/usuarioController.js';
+import {
+  listarPeixarias,
+  buscarPeixaria,
+  criarPeixaria,
+  atualizarPeixaria,
+  deletarPeixaria
+} from './controllers/peixariaController.js';
 
 // Socio
 import {
@@ -119,6 +126,13 @@ router.get('/socio-pescadores', verificarAutenticacao, listarSocioPescadores);
 router.get('/socio-pescadores/:id', verificarAutenticacao, buscarSocioPescador);
 router.put('/socio-pescadores/:id', verificarAutenticacao, atualizarSocioPescador);
 router.delete('/socio-pescadores/:id', verificarAutenticacao, removerSocioPescador);
+
+// Rotas do módulo Peixaria (protegidas)
+router.post('/peixarias', verificarAutenticacao, criarPeixaria);
+router.get('/peixarias', verificarAutenticacao, listarPeixarias);
+router.get('/peixarias/:id', verificarAutenticacao, buscarPeixaria);
+router.put('/peixarias/:id', verificarAutenticacao, atualizarPeixaria);
+router.delete('/peixarias/:id', verificarAutenticacao, deletarPeixaria);
 
 // Rotas de Embarcações (protegidas)
 router.get('/embarcacoes', verificarAutenticacao, listarEmbarcacoes);

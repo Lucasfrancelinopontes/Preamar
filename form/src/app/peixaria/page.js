@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import api from "@/services/api";
+import { mapFormDataToPayload, mapApiToFormData } from "./utils/mapper";
 
 const cardClass = "rounded-2xl border border-slate-200 bg-white shadow-sm";
 const fieldClass = "w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:bg-white";
@@ -360,8 +363,39 @@ const initialForm = {
 };
 
 export default function PeixariaPage() {
+    const searchParams = useSearchParams();
+    const editId = searchParams.get("edit");
+    const isEditMode = Boolean(editId);
+
     const [form, setForm] = useState(initialForm);
-    const [salvo, setSalvo] = useState(false);
+    const [carregandoEdicao, setCarregandoEdicao] = useState(false);
+    const [erroEnvio, setErroEnvio] = useState("");
+    const [sucessoEnvio, setSucessoEnvio] = useState("");
+    const [enviando, setEnviando] = useState(false);
+
+    useEffect(() => {
+        if (!isEditMode) {
+            setForm(initialForm);
+            return;
+        }
+
+        const carregarPeixaria = async () => {
+            setCarregandoEdicao(true);
+            setErroEnvio("");
+            try {
+                const response = await api.buscarPeixaria(editId);
+                const data = response?.data || response;
+                setForm(mapApiToFormData(data));
+            } catch (err) {
+                console.error('[Peixaria] Erro ao carregar edição:', err);
+                setErroEnvio(err?.message || `Não foi possível carregar a peixaria #${editId}.`);
+            } finally {
+                setCarregandoEdicao(false);
+            }
+        };
+
+        carregarPeixaria();
+    }, [editId, isEditMode]);
 
     const updateField = (field, value) => {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -454,8 +488,75 @@ export default function PeixariaPage() {
         }));
     };
 
-    const handleSave = () => {
-        setSalvo(true);
+    const validarCamposObrigatorios = () => {
+        const camposObrigatorios = [
+            { valor: form.responsavel, mensagem: 'Preencha o nome do responsável.' },
+            { valor: form.contato, mensagem: 'Preencha o contato.' },
+            { valor: form.municipio, mensagem: 'Preencha o município.' },
+            { valor: form.localidade, mensagem: 'Preencha a localidade.' },
+            { valor: form.nome, mensagem: 'Preencha o nome do responsável pela peixaria.' },
+            { valor: form.atividadePrincipal, mensagem: 'Preencha a atividade principal.' },
+            { valor: form.atividadeComercial, mensagem: 'Preencha a atividade comercial.' },
+            { valor: form.periodoComercializacao, mensagem: 'Preencha o período de comercialização.' },
+            { valor: form.formaVenda, mensagem: 'Preencha a forma de venda.' },
+            { valor: form.transporte, mensagem: 'Preencha o transporte.' }
+        ];
+
+        if (form.filiadoColonia === 'Sim') {
+            camposObrigatorios.push({ valor: form.qualColonia, mensagem: 'Preencha qual colônia.' });
+        }
+
+        if (form.participaAssociacao === 'Sim') {
+            camposObrigatorios.push({ valor: form.qualAssociacao, mensagem: 'Preencha qual associação.' });
+        }
+
+        if (form.possuiCarteiraPescador === 'Sim') {
+            camposObrigatorios.push({ valor: form.orgaoEmissorCarteira, mensagem: 'Preencha o órgão emissor da carteira.' });
+        }
+
+        if (form.possuiPlanoSaude === 'Sim') {
+            camposObrigatorios.push({ valor: form.planoSaudeEspecificar, mensagem: 'Preencha o plano de saúde especificado.' });
+        }
+
+        const erroEncontrado = camposObrigatorios.find((campo) => !campo.valor || String(campo.valor).trim() === '');
+        if (erroEncontrado) {
+            setErroEnvio(erroEncontrado.mensagem);
+            setSucessoEnvio("");
+            return false;
+        }
+
+        setErroEnvio("");
+        return true;
+    };
+
+    const handleSave = async () => {
+        if (enviando) return;
+
+        if (!validarCamposObrigatorios()) {
+            return;
+        }
+
+        const payload = mapFormDataToPayload(form);
+        setEnviando(true);
+        setErroEnvio("");
+        setSucessoEnvio("");
+
+        try {
+            const response = isEditMode
+                ? await api.editarPeixaria(editId, payload)
+                : await api.criarPeixaria(payload);
+
+            if (response?.success) {
+                setSucessoEnvio(isEditMode ? 'Peixaria atualizada com sucesso.' : 'Peixaria criada com sucesso.');
+            } else {
+                throw new Error(response?.message || 'Falha ao salvar peixaria.');
+            }
+        } catch (error) {
+            console.error('[Peixaria] Erro ao salvar:', error);
+            setErroEnvio(error?.message || 'Erro ao salvar peixaria. Tente novamente.');
+        } finally {
+            setEnviando(false);
+        }
     };
 
     return (
@@ -468,21 +569,27 @@ export default function PeixariaPage() {
                                 <p className="text-sm font-semibold text-blue-600">Módulo operacional</p>
                                 <h1 className="mt-1 text-3xl font-bold text-slate-800">Peixaria</h1>
                                 <p className="mt-2 text-sm text-slate-500">
-                                    Formulário mockado para cadastro das principais informações de comercialização, fornecedores e mercados.
+                                    Formulário para cadastro das principais informações de comercialização, fornecedores e mercados.
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
-                                <Button variant="secondary" onClick={() => { setForm(initialForm); setSalvo(false); }}>
+                                <Button variant="secondary" onClick={() => { setForm(initialForm); setErroEnvio(""); setSucessoEnvio(""); }}>
                                     Limpar
                                 </Button>
-                                <Button onClick={handleSave}>Salvar mock</Button>
+                                <Button onClick={handleSave} disabled={enviando}>{isEditMode ? "Atualizar" : "Salvar"}</Button>
                             </div>
                         </div>
                     </div>
 
-                    {salvo && (
+                    {erroEnvio && (
+                        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+                            {erroEnvio}
+                        </div>
+                    )}
+
+                    {sucessoEnvio && (
                         <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
-                            Dados mockados salvos localmente com sucesso.
+                            {sucessoEnvio}
                         </div>
                     )}
 
