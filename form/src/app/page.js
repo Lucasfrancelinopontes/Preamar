@@ -159,6 +159,23 @@ export default function Home() {
                                     </div>
                                 </div>
                             </Link>
+
+                            <Link href="/peixaria" className="block group">
+                                <div className="bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.04)] border border-transparent hover:border-blue-400 transition-all cursor-pointer flex items-center gap-4 h-full">
+                                    <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors shrink-0">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h18v18H3z"></path>
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h4v4H7zM13 13h4v4h-4z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-[#1e293b] group-hover:text-amber-600 leading-tight">
+                                            Peixaria
+                                        </h3>
+                                        <p className="text-gray-500 text-xs mt-1">Cadastro mockado de comercialização</p>
+                                    </div>
+                                </div>
+                            </Link>
                         </div>
 
                         {ehAdmin() && (
