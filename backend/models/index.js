@@ -8,6 +8,7 @@ import { DesembarqueArte } from './DesembarqueArte.js';
 import { Captura } from './Captura.js';
 import { Individuo } from './Individuo.js';
 import { Usuario } from './Usuario.js';
+import { Peixaria, PeixariaDespesa, PeixariaFornecedor, PeixariaPescadorFornecedor, PeixariaEspecieComercial, PeixariaPerda, PeixariaPerdaPorEspecie, PeixariaOrigemPescado, PeixariaMercado, PeixariaMercadoLinha, PeixariaRelacaoTrabalho, definePeixariaAssociations } from './Peixaria.js';
 import sequelize from '../db.js';
 
 // Importar models e associações do módulo socioeconômico
@@ -148,6 +149,9 @@ export const defineAssociations = () => {
 
   // ── Associações do módulo socioeconômico ─────────────────────────────────
   defineSocioAssociations();
+
+  // ── Associações do módulo Peixaria ───────────────────────────────────────
+  definePeixariaAssociations();
 };
 
 // Exportar todos os modelos
@@ -174,5 +178,17 @@ export {
   SocioProducao,
   SocioDespesa,
   SocioQuadrante,
-  SocioPescadorEspecie
+  SocioPescadorEspecie,
+  // Peixaria
+  Peixaria,
+  PeixariaDespesa,
+  PeixariaFornecedor,
+  PeixariaPescadorFornecedor,
+  PeixariaEspecieComercial,
+  PeixariaPerda,
+  PeixariaPerdaPorEspecie,
+  PeixariaOrigemPescado,
+  PeixariaMercado,
+  PeixariaMercadoLinha,
+  PeixariaRelacaoTrabalho
 };
