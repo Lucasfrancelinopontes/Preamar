@@ -24,7 +24,7 @@ export const Desembarque = sequelize.define('Desembarque', {
     comment: 'Código do município para geração do cod_desembarque'
   },
   localidade: {
-    type: DataTypes.STRING(50),
+    type: DataTypes.STRING(1000),
     allowNull: false
   },
   localidade_code: {
