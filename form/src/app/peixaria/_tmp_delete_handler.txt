@@ -1,0 +1,27 @@
+Add handleDelete to PeixariaClient.js after handleSave.
+
+Implementation:
+
+const handleDelete = async () => {
+  if (!isEditMode || deletando) return;
+  setDeletando(true);
+  setErroEnvio("");
+  try {
+    const response = await api.excluirPeixaria(editId);
+    if (response?.success) {
+      setSucessoEnvio('Peixaria excluída com sucesso. Redirecionando...');
+      setShowDeleteModal(false);
+      setTimeout(() => router.push('/peixaria'), 800);
+      return;
+    }
+    throw new Error(response?.message || 'Falha ao excluir peixaria.');
+  } catch (err) {
+    console.error('[Peixaria] Erro ao excluir:', err);
+    const status = err?.status || err?.statusCode || 500;
+    if (status === 404) setErroEnvio('Peixaria não encontrada (404).');
+    else if (status === 403) setErroEnvio('Acesso negado (403). Você não tem permissão para excluir.');
+    else setErroEnvio(err?.message || 'Erro ao excluir peixaria. Tente novamente.');
+  } finally {
+    setDeletando(false);
+  }
+};

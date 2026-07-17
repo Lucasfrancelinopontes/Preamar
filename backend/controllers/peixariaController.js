@@ -292,7 +292,9 @@ const createPeixariaDependencias = async (ID_peixaria, body, transaction) => {
   if (pescadoresFornecedores.length) {
     const invalid = pescadoresFornecedores.some((item) => !normalizeFornecedorTipo(item.tipo));
     if (invalid) {
-      throw new Error('Tipo de pescador fornecedor inválido. Use LOCAL ou ENTREGA.');
+      const err = new Error('Tipo de pescador fornecedor inválido. Use LOCAL ou ENTREGA.');
+      err.statusCode = 400;
+      throw err;
     }
     await PeixariaPescadorFornecedor.bulkCreate(pescadoresFornecedores, { transaction });
   }
@@ -388,7 +390,8 @@ export const listarPeixarias = async (req, res) => {
     });
   } catch (error) {
     console.error('[peixariaController] listarPeixarias:', error);
-    return res.status(500).json({
+    const status = error?.statusCode || 500;
+    return res.status(status).json({
       success: false,
       message: 'Erro ao listar peixarias',
       error: error.message
@@ -416,7 +419,8 @@ export const buscarPeixaria = async (req, res) => {
     });
   } catch (error) {
     console.error('[peixariaController] buscarPeixaria:', error);
-    return res.status(500).json({
+    const status = error?.statusCode || 500;
+    return res.status(status).json({
       success: false,
       message: 'Erro ao buscar peixaria',
       error: error.message
@@ -446,7 +450,8 @@ export const criarPeixaria = async (req, res) => {
   } catch (error) {
     await transaction.rollback();
     console.error('[peixariaController] criarPeixaria:', error);
-    return res.status(500).json({
+    const status = error?.statusCode || 500;
+    return res.status(status).json({
       success: false,
       message: 'Erro ao criar peixaria',
       error: error.message
@@ -470,8 +475,173 @@ export const atualizarPeixaria = async (req, res) => {
     const payload = buildBasePayload(req.body || {}, req.usuario?.ID_usuario || peixaria.ID_usuario);
     await peixaria.update(payload, { transaction });
 
-    await destroyPeixariaDependencias(peixaria.ID_peixaria, transaction);
-    await createPeixariaDependencias(peixaria.ID_peixaria, req.body || {}, transaction);
+    // Upsert dependências: atualizar existentes, inserir novos, remover excluídos
+    const upsertSimple = async (Model, pkField, buildRecordsFn, incomingArray) => {
+      const existing = await Model.findAll({ where: { ID_peixaria: peixaria.ID_peixaria }, transaction });
+      const existingById = new Map(existing.map((r) => [r[pkField], r]));
+
+      const incoming = Array.isArray(incomingArray) ? incomingArray : [];
+      const toKeepIds = new Set();
+
+      for (const item of incoming) {
+        const incomingId = item[pkField] || item.id || item[pkField.toLowerCase()] || null;
+        if (incomingId) {
+          const existingRow = existingById.get(incomingId);
+          if (!existingRow) {
+            const err = new Error(`Registro com ID ${incomingId} não encontrado para ${Model.name}`);
+            err.statusCode = 400;
+            throw err;
+          }
+          // Update existing
+          await existingRow.update(buildRecordsFn(peixaria.ID_peixaria, [item])[0], { transaction });
+          toKeepIds.add(incomingId);
+        } else {
+          // Create new
+          const createdRows = buildRecordsFn(peixaria.ID_peixaria, [item]);
+          if (createdRows.length) {
+            await Model.create(createdRows[0], { transaction });
+          }
+        }
+      }
+
+      // Delete rows not present in incoming
+      const idsToDelete = existing
+        .map((r) => r[pkField])
+        .filter((id) => id != null && !toKeepIds.has(id));
+      if (idsToDelete.length) await Model.destroy({ where: { [pkField]: idsToDelete }, transaction });
+    };
+
+    // despesas
+    await upsertSimple(PeixariaDespesa, 'ID_despesa', (ID_peixaria, items) => buildDespesaRecords(ID_peixaria, items), req.body.despesas);
+
+    // fornecedores
+    await upsertSimple(PeixariaFornecedor, 'ID_fornecedor', (ID_peixaria, items) => buildFornecedorRecords(ID_peixaria, items), req.body.fornecedores);
+
+    // pescadores_fornecedores (complex: may have tipo LOCAL/ENTREGA but same model)
+    // We'll reuse buildPescadorFornecedorRecords by splitting incoming arrays
+    const incomingLocais = req.body.pescadores_locais ?? req.body.pescadoresLocais ?? [];
+    const incomingEntregas = req.body.pescadores_entregam ?? req.body.pescadoresEntregam ?? [];
+    const incomingPescadores = [];
+    (Array.isArray(incomingLocais) ? incomingLocais : []).forEach((it) => incomingPescadores.push({ ...it, tipo: 'LOCAL' }));
+    (Array.isArray(incomingEntregas) ? incomingEntregas : []).forEach((it) => incomingPescadores.push({ ...it, tipo: 'ENTREGA' }));
+
+    await upsertSimple(PeixariaPescadorFornecedor, 'ID_pescador_fornecedor', (ID_peixaria, items) => {
+      // buildPescadorFornecedorRecords expects separate arrays but can process combined
+      return buildPescadorFornecedorRecords(ID_peixaria, items.filter((i) => i.tipo === 'LOCAL'), items.filter((i) => i.tipo === 'ENTREGA'));
+    }, incomingPescadores);
+
+    // especies comerciais
+    await upsertSimple(PeixariaEspecieComercial, 'ID_especie_comercial', (ID_peixaria, items) => buildEspecieComercialRecords(ID_peixaria, items), req.body.especies_comerciais ?? req.body.especiesComerciais);
+
+    // perdas
+    await upsertSimple(PeixariaPerda, 'ID_perda', (ID_peixaria, items) => buildPerdaRecords(ID_peixaria, items), req.body.perdas);
+
+    // perdas por especie (these are grouped by titulo with linhas array; our buildPerdaPorEspecieRecords flattens to rows without original sub-ids)
+    // For per-species losses we will delete all and recreate because original structure flattens and doesn't preserve IDs reliably
+    await PeixariaPerdaPorEspecie.destroy({ where: { ID_peixaria: peixaria.ID_peixaria }, transaction });
+    const perdasPorEspecieRows = buildPerdaPorEspecieRecords(peixaria.ID_peixaria, req.body.perdas_por_especie ?? req.body.perdasPorEspecie);
+    if (perdasPorEspecieRows.length) await PeixariaPerdaPorEspecie.bulkCreate(perdasPorEspecieRows, { transaction });
+
+    // origens pescado
+    await upsertSimple(PeixariaOrigemPescado, 'ID_origem_pescado', (ID_peixaria, items) => buildOrigemPescadoRecords(ID_peixaria, items), req.body.origem_pescado ?? req.body.origemPescado);
+
+    // relacoes trabalho (simple strings/objects)
+    await upsertSimple(PeixariaRelacaoTrabalho, 'ID_relacao_trabalho', (ID_peixaria, items) => buildRelacaoTrabalhoRecords(ID_peixaria, items), req.body.relacoes_trabalho ?? req.body.relacoesTrabalho);
+
+    // mercados + linhas: handle per-mercado upsert
+    const incomingMercados = [
+      ...(Array.isArray(req.body.mercado_local ?? req.body.mercadoLocal) ? (req.body.mercado_local ?? req.body.mercadoLocal) : []),
+      ...(Array.isArray(req.body.mercado_estadual ?? req.body.mercadoEstadual) ? (req.body.mercado_estadual ?? req.body.mercadoEstadual) : []),
+      ...(Array.isArray(req.body.mercado_nacional ?? req.body.mercadoNacional) ? (req.body.mercado_nacional ?? req.body.mercadoNacional) : []),
+      ...(Array.isArray(req.body.mercado_internacional ?? req.body.mercadoInternacional) ? (req.body.mercado_internacional ?? req.body.mercadoInternacional) : [])
+    ].map((m) => ({ ...m }));
+
+    // For mercados we expect each mercado object to include tipo_mercado or we'll compute from its group
+    const existingMercados = await PeixariaMercado.findAll({ where: { ID_peixaria: peixaria.ID_peixaria }, transaction });
+    const existingMercById = new Map(existingMercados.map((m) => [m.ID_mercado, m]));
+    const keepMercIds = new Set();
+
+    for (const mercadoIncoming of incomingMercados) {
+      const mercId = mercadoIncoming.ID_mercado || mercadoIncoming.id || null;
+      const tipo = normalizeMarketType(mercadoIncoming.tipo_mercado ?? mercadoIncoming.tipo ?? mercadoIncoming.type);
+      const mercadoData = {
+        ID_peixaria: peixaria.ID_peixaria,
+        tipo_mercado: tipo,
+        volume: parseDecimal(mercadoIncoming.volume),
+        valor: parseDecimal(mercadoIncoming.valor),
+        observacoes: txt(mercadoIncoming.observacoes)
+      };
+
+      const linhas = Array.isArray(mercadoIncoming.linhas) ? mercadoIncoming.linhas : [];
+
+      if (mercId) {
+        const existingMerc = existingMercById.get(mercId);
+        if (!existingMerc) {
+          const err = new Error(`Mercado com ID ${mercId} não encontrado para esta peixaria`);
+          err.statusCode = 400;
+          throw err;
+        }
+        await existingMerc.update(mercadoData, { transaction });
+        keepMercIds.add(mercId);
+
+        // Upsert linhas
+        const existingLinhas = await PeixariaMercadoLinha.findAll({ where: { ID_mercado: mercId }, transaction });
+        const existingLinhasById = new Map(existingLinhas.map((l) => [l.ID_mercado_linha, l]));
+        const keepLinhaIds = new Set();
+
+        for (const linha of linhas) {
+          const linhaId = linha.ID_mercado_linha || linha.id || null;
+          const linhaData = {
+            ID_mercado: mercId,
+            especie: txt(linha.especie),
+            forma_comercializacao: txt(linha.forma_comercializacao ?? linha.formaComercializacao),
+            destino: txt(linha.destino),
+            volume_medio: parseDecimal(linha.volume_medio ?? linha.volumeMedio),
+            preco_venda: parseDecimal(linha.preco_venda ?? linha.precoVenda)
+          };
+          if (linhaId) {
+            const existingLinha = existingLinhasById.get(linhaId);
+            if (!existingLinha) {
+              const err = new Error(`Linha de mercado com ID ${linhaId} não encontrada para mercado ${mercId}`);
+              err.statusCode = 400;
+              throw err;
+            }
+            await existingLinha.update(linhaData, { transaction });
+            keepLinhaIds.add(linhaId);
+          } else {
+            await PeixariaMercadoLinha.create(linhaData, { transaction });
+          }
+        }
+
+        const idsLinhaToDelete = existingLinhas
+          .map((l) => l.ID_mercado_linha)
+          .filter((id) => id != null && !keepLinhaIds.has(id));
+        if (idsLinhaToDelete.length) await PeixariaMercadoLinha.destroy({ where: { ID_mercado_linha: idsLinhaToDelete }, transaction });
+      } else {
+        // Create mercado and linhas
+        const createdMerc = await PeixariaMercado.create(mercadoData, { transaction });
+        if (linhas.length) {
+          await PeixariaMercadoLinha.bulkCreate(
+            linhas.map((linha) => ({
+              ID_mercado: createdMerc.ID_mercado,
+              especie: txt(linha.especie),
+              forma_comercializacao: txt(linha.forma_comercializacao ?? linha.formaComercializacao),
+              destino: txt(linha.destino),
+              volume_medio: parseDecimal(linha.volume_medio ?? linha.volumeMedio),
+              preco_venda: parseDecimal(linha.preco_venda ?? linha.precoVenda)
+            })).filter(isPopulated),
+            { transaction }
+          );
+        }
+      }
+    }
+
+    // Remove mercados not in incoming
+    const mercIdsToDelete = existingMercados.map((m) => m.ID_mercado).filter((id) => id != null && !keepMercIds.has(id));
+    if (mercIdsToDelete.length) {
+      // cascades will remove linhas due to associations
+      await PeixariaMercado.destroy({ where: { ID_mercado: mercIdsToDelete }, transaction });
+    }
 
     await transaction.commit();
 
@@ -487,7 +657,8 @@ export const atualizarPeixaria = async (req, res) => {
   } catch (error) {
     await transaction.rollback();
     console.error('[peixariaController] atualizarPeixaria:', error);
-    return res.status(500).json({
+    const status = error?.statusCode || 500;
+    return res.status(status).json({
       success: false,
       message: 'Erro ao atualizar peixaria',
       error: error.message
@@ -508,6 +679,10 @@ export const deletarPeixaria = async (req, res) => {
       });
     }
 
+    // Remover dependências explicitamente para evitar registros órfãos
+    await destroyPeixariaDependencias(peixaria.ID_peixaria, transaction);
+
+    // Remover registro principal
     await peixaria.destroy({ transaction });
     await transaction.commit();
 
@@ -518,7 +693,8 @@ export const deletarPeixaria = async (req, res) => {
   } catch (error) {
     await transaction.rollback();
     console.error('[peixariaController] deletarPeixaria:', error);
-    return res.status(500).json({
+    const status = error?.statusCode || 500;
+    return res.status(status).json({
       success: false,
       message: 'Erro ao deletar peixaria',
       error: error.message

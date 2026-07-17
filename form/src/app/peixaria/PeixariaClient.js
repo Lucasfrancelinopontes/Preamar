@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import api from "@/services/api";
 import { mapFormDataToPayload, mapApiToFormData } from "./utils/mapper";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 const cardClass = "rounded-2xl border border-slate-200 bg-white shadow-sm";
 const fieldClass = "w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:bg-white";
@@ -336,6 +337,9 @@ export default function PeixariaClient() {
     const [erroEnvio, setErroEnvio] = useState("");
     const [sucessoEnvio, setSucessoEnvio] = useState("");
     const [enviando, setEnviando] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deletando, setDeletando] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         if (!isEditMode) {
@@ -523,6 +527,30 @@ export default function PeixariaClient() {
         }
     };
 
+    const handleDelete = async () => {
+        if (!isEditMode || deletando) return;
+        setDeletando(true);
+        setErroEnvio("");
+        try {
+            const response = await api.excluirPeixaria(editId);
+            if (response?.success) {
+                setSucessoEnvio('Peixaria excluída com sucesso. Redirecionando...');
+                setShowDeleteModal(false);
+                setTimeout(() => router.push('/peixaria'), 800);
+                return;
+            }
+            throw new Error(response?.message || 'Falha ao excluir peixaria.');
+        } catch (err) {
+            console.error('[Peixaria] Erro ao excluir:', err);
+            const status = err?.status || err?.statusCode || 500;
+            if (status === 404) setErroEnvio('Peixaria não encontrada (404).');
+            else if (status === 403) setErroEnvio('Acesso negado (403). Você não tem permissão para excluir.');
+            else setErroEnvio(err?.message || 'Erro ao excluir peixaria. Tente novamente.');
+        } finally {
+            setDeletando(false);
+        }
+    };
+
     return (
         <ProtectedRoute>
             <main className="min-h-screen bg-slate-100 py-8 md:py-10">
@@ -540,6 +568,9 @@ export default function PeixariaClient() {
                                 <Button variant="secondary" onClick={() => { setForm(initialForm); setErroEnvio(""); setSucessoEnvio(""); }}>
                                     Limpar
                                 </Button>
+                                {isEditMode && (
+                                    <Button variant="secondary" onClick={() => setShowDeleteModal(true)} disabled={enviando}>Excluir</Button>
+                                )}
                                 <Button onClick={handleSave} disabled={enviando}>{isEditMode ? "Atualizar" : "Salvar"}</Button>
                             </div>
                         </div>
@@ -602,6 +633,7 @@ export default function PeixariaClient() {
                     </div>
                 </div>
             </main>
+            <DeleteConfirmModal open={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={handleDelete} loading={deletando} />
         </ProtectedRoute>
     );
 }

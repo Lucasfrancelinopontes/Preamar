@@ -65,7 +65,7 @@ const mapPescadorFornecedorRows = (rows = [], tipo) =>
 const mapEspeciesComerciais = (especies = []) =>
   normalizeArray(especies)
     .map((item) => ({
-      ID_especie: toNumber(item.id_especie),
+      ID_especie: toNumber(item.ID_especie ?? item.id_especie ?? item.id ?? item.ID),
       especie: toText(item.especie),
       quantidade_fresco: toNumber(item.quantidadeFresco ?? item.quantidade),
       quantidade_congelado: toNumber(item.quantidadeCongelado),
@@ -89,6 +89,7 @@ const mapPerdasPorEspecie = (items = []) =>
 
 export const mapFormDataToPayload = (formData = {}) => {
   return {
+    ID_municipio: toNumber(formData.municipioId ?? formData.ID_municipio ?? formData.municipio_id),
     responsavel: toText(formData.responsavel),
     contato: toText(formData.contato),
     municipio: toText(formData.municipio),
@@ -124,6 +125,7 @@ export const mapFormDataToPayload = (formData = {}) => {
     transporte: toText(formData.transporte),
     despesas: normalizeArray(formData.despesas)
       .map((item) => ({
+        id: item.id ?? item.ID_despesa ?? null,
         descricao: toText(item.descricao),
         quantidade: toNumber(item.quantidade),
         custo: toNumber(item.custo),
@@ -132,19 +134,29 @@ export const mapFormDataToPayload = (formData = {}) => {
       .filter(isPopulated),
     fornecedores: normalizeArray(formData.fornecedores)
       .map((item) => ({
+        id: item.id ?? item.ID_fornecedor ?? null,
         nome: toText(item.nome),
         tipo: toText(item.tipo),
         telefone: toText(item.telefone)
       }))
       .filter(isPopulated),
-    pescadores_locais: mapPescadorFornecedorRows(formData.pescadoresLocais, 'LOCAL'),
-    pescadores_entregam: mapPescadorFornecedorRows(formData.pescadoresEntregam, 'ENTREGA'),
+    pescadores_locais: mapPescadorFornecedorRows((formData.pescadoresLocais || []).map((it) => ({ id: it.id ?? it.ID_pescador_fornecedor ?? null, ...it })), 'LOCAL'),
+    pescadores_entregam: mapPescadorFornecedorRows((formData.pescadoresEntregam || []).map((it) => ({ id: it.id ?? it.ID_pescador_fornecedor ?? null, ...it })), 'ENTREGA'),
     especies_comerciais: [
-      ...mapEspeciesComerciais(formData.especiesComerciais),
-      ...mapEspeciesComerciais(formData.especies)
+      ...mapEspeciesComerciais(formData.especiesComerciais).map((it, idx) => ({ id: (formData.especiesComerciais && formData.especiesComerciais[idx] && (formData.especiesComerciais[idx].id ?? formData.especiesComerciais[idx].ID_especie_comercial)) || null, ...it })),
+      ...mapEspeciesComerciais(formData.especies).map((it, idx) => ({ id: (formData.especies && formData.especies[idx] && (formData.especies[idx].id ?? formData.especies[idx].ID_especie_comercial)) || null, ...it }))
     ].filter(isPopulated),
+    // payload key accepts both singular and plural to be tolerant with API
+    origens_pescado: normalizeArray(formData.origemPescado).map((item) => ({
+      tipo: toText(item.tipo),
+      pescadores_locais: toText(item.pescadoresLocais),
+      outras_localidades_pb: toText(item.outrasLocalidadesPB),
+      outros_estados: toText(item.outrosEstados),
+      outro: toText(item.outro)
+    })).filter(isPopulated),
     perdas: normalizeArray(formData.perdas)
       .map((item) => ({
+        id: item.id ?? item.ID_perda ?? null,
         descricao: toText(item.descricao),
         quantidade: toNumber(item.quantidade),
         causa: toText(item.causa)
@@ -153,6 +165,7 @@ export const mapFormDataToPayload = (formData = {}) => {
     perdas_por_especie: mapPerdasPorEspecie(formData.perdasPorEspecie),
     origem_pescado: normalizeArray(formData.origemPescado)
       .map((item) => ({
+        id: item.id ?? item.ID_origem_pescado ?? null,
         tipo: toText(item.tipo),
         pescadores_locais: toText(item.pescadoresLocais),
         outras_localidades_pb: toText(item.outrasLocalidadesPB),
@@ -162,7 +175,8 @@ export const mapFormDataToPayload = (formData = {}) => {
       .filter(isPopulated),
     relacoes_trabalho: normalizeArray(formData.relacoesTrabalho)
       .filter((item) => item !== undefined && item !== null && String(item).trim() !== '')
-      .map((item) => toText(item)),
+      .map((item) => (typeof item === 'string' ? item : { id: item.id ?? item.ID_relacao_trabalho ?? null, tipo: toText(item.tipo) })),
+
     mercado_local: mapMarketSection(formData.mercadoLocal),
     mercado_estadual: mapMarketSection(formData.mercadoEstadual),
     mercado_nacional: mapMarketSection(formData.mercadoNacional),
@@ -201,7 +215,14 @@ export const mapApiToFormData = (apiData = {}) => {
   const locais = pescadoresFornecedores.filter((item) => String(item.tipo || '').toUpperCase() === 'LOCAL');
   const entregas = pescadoresFornecedores.filter((item) => String(item.tipo || '').toUpperCase() === 'ENTREGA');
 
+  const booleanToSimNao = (val) => {
+    if (val === true || String(val).toLowerCase() === 'true' || String(val).toLowerCase() === 'sim') return 'Sim';
+    if (val === false || String(val).toLowerCase() === 'false' || String(val).toLowerCase() === 'nao' || String(val).toLowerCase() === 'não') return 'Não';
+    return toText(val);
+  };
+
   return {
+    ID_municipio: data.ID_municipio ?? data.ID_municipio,
     responsavel: toText(data.responsavel),
     contato: toText(data.contato),
     municipio: toText(data.municipio),
@@ -219,14 +240,14 @@ export const mapApiToFormData = (apiData = {}) => {
     numeroFamiliares: toText(data.numero_familiares),
     escolaridade: toText(data.escolaridade),
     localMoradia: toText(data.local_moradia),
-    possuiRegistroINSS: toText(data.possui_registro_inss),
-    filiadoColonia: toText(data.filiado_colonia),
+    possuiRegistroINSS: booleanToSimNao(data.possui_registro_inss),
+    filiadoColonia: booleanToSimNao(data.filiado_colonia),
     qualColonia: toText(data.qual_colonia),
-    participaAssociacao: toText(data.participa_associacao),
+    participaAssociacao: booleanToSimNao(data.participa_associacao),
     qualAssociacao: toText(data.qual_associacao),
-    possuiCarteiraPescador: toText(data.possui_carteira_pescador),
+    possuiCarteiraPescador: booleanToSimNao(data.possui_carteira_pescador),
     orgaoEmissorCarteira: toText(data.orgao_emissor_carteira),
-    possuiPlanoSaude: toText(data.possui_plano_saude),
+    possuiPlanoSaude: booleanToSimNao(data.possui_plano_saude),
     planoSaudeEspecificar: toText(data.plano_saude_especificar),
     atividadesRendaFamilia: toText(data.atividades_renda_familia),
     quemTrabalhaFamilia: toText(data.quem_trabalha_familia),
