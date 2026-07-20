@@ -7,59 +7,90 @@ import api from "@/services/api";
 import { mapFormDataToPayload, mapApiToFormData } from "./utils/mapper";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
-const cardClass = "rounded-2xl border border-slate-200 bg-white shadow-sm";
-const fieldClass = "w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:bg-white";
-const labelClass = "mb-2 block text-sm font-semibold text-slate-700";
+// ─────────────────────────────────────────────────────────────────────────────
+// Classes base padronizadas (alinhadas com Desembarque e Pescador)
+// ─────────────────────────────────────────────────────────────────────────────
+const inputClass =
+    "w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-black outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-blue-600";
 
-function Card({ title, subtitle, children }) {
+const btnPrimary =
+    "rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
+
+const btnSecondary =
+    "rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50";
+
+const btnDanger =
+    "rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40";
+
+const btnAdd =
+    "rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700";
+
+const labelClass = "mb-1.5 block text-sm font-semibold text-black";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Componentes de formulário locais — padrão Desembarque/Pescador
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SectionTitle({ children }) {
     return (
-        <section className={`${cardClass} p-6 md:p-8`}>
+        <h3 className="mb-4 text-lg font-semibold text-black">{children}</h3>
+    );
+}
+
+function SectionDivider({ title }) {
+    return (
+        <h3 className="mb-4 border-t pt-6 text-lg font-semibold text-black">
+            {title}
+        </h3>
+    );
+}
+
+function SectionCard({ subtitle, title, children }) {
+    return (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <div className="mb-6">
                 <p className="text-sm font-semibold text-blue-600">{subtitle}</p>
                 <h2 className="mt-1 text-2xl font-bold text-slate-800">{title}</h2>
             </div>
             {children}
-        </section>
-    );
-}
-
-function Grid({ children, cols = 2 }) {
-    return (
-        <div className={`grid grid-cols-1 gap-5 ${cols === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
-            {children}
         </div>
     );
 }
 
-function InputField({ label, value, onChange, name, type = "text", placeholder = "", colSpan = 1, inputMode = "text", min, max, step }) {
+function InputGroup({ label, name, value, onChange, type = "text", placeholder = "", colSpan = 1, inputMode, min, max, step, readOnly, disabled }) {
+    const isNumberInput = type === "number";
+    const handleWheel = (e) => { if (isNumberInput) e.currentTarget.blur(); };
     return (
-        <div className={colSpan === 2 ? "md:col-span-2" : ""}>
+        <div className={colSpan === 2 ? "md:col-span-2" : colSpan === 3 ? "md:col-span-3" : ""}>
             <label className={labelClass}>{label}</label>
             <input
                 type={type}
                 name={name}
-                value={value}
+                value={value ?? ""}
                 onChange={onChange}
+                onWheel={handleWheel}
                 placeholder={placeholder}
                 inputMode={inputMode}
                 min={min}
                 max={max}
                 step={step}
-                className={fieldClass}
+                readOnly={readOnly}
+                disabled={disabled}
+                className={inputClass}
             />
         </div>
     );
 }
 
-function SelectField({ label, value, onChange, name, options }) {
+function SelectGroup({ label, name, value, onChange, options, colSpan = 1 }) {
     return (
-        <div>
+        <div className={colSpan === 2 ? "md:col-span-2" : ""}>
             <label className={labelClass}>{label}</label>
-            <select name={name} value={value} onChange={onChange} className={fieldClass}>
+            <select name={name} value={value ?? ""} onChange={onChange} className={inputClass}>
                 <option value="">Selecione</option>
-                {options.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
+                {options.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                        {opt.label}
                     </option>
                 ))}
             </select>
@@ -67,37 +98,67 @@ function SelectField({ label, value, onChange, name, options }) {
     );
 }
 
-function TextareaField({ label, value, onChange, name, rows = 4, colSpan = 1 }) {
+function TextareaGroup({ label, name, value, onChange, rows = 3, colSpan = 2 }) {
     return (
         <div className={colSpan === 2 ? "md:col-span-2" : ""}>
             <label className={labelClass}>{label}</label>
-            <textarea name={name} value={value} onChange={onChange} rows={rows} className={`${fieldClass} min-h-[110px] resize-none`} />
+            <textarea
+                name={name}
+                value={value ?? ""}
+                onChange={onChange}
+                rows={rows}
+                className={`${inputClass} resize-none`}
+            />
         </div>
     );
 }
 
-function Button({ children, onClick, variant = "primary", type = "button", disabled = false }) {
-    const base = "rounded-lg px-4 py-2.5 text-sm font-semibold transition";
-    const styles = variant === "secondary"
-        ? `${base} border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`
-        : `${base} bg-blue-600 text-white hover:bg-blue-700 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`;
-
+function FormGrid({ children, cols = 2 }) {
+    const colClass = cols === 3 ? "md:grid-cols-3" : "md:grid-cols-2";
     return (
-        <button type={type} onClick={onClick} className={styles} disabled={disabled}>
+        <div className={`grid grid-cols-1 gap-5 ${colClass}`}>
             {children}
-        </button>
+        </div>
     );
 }
 
-function Table({ headers, children }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Componente de linha condicional (Sim/Não → campo extra)
+// ─────────────────────────────────────────────────────────────────────────────
+function ConditionalField({ selectLabel, selectName, selectValue, onSelectChange, fieldLabel, fieldName, fieldValue, onFieldChange }) {
+    return (
+        <>
+            <SelectGroup
+                label={selectLabel}
+                name={selectName}
+                value={selectValue}
+                onChange={onSelectChange}
+                options={[{ value: "Sim", label: "Sim" }, { value: "Não", label: "Não" }]}
+            />
+            {selectValue === "Sim" && (
+                <InputGroup
+                    label={fieldLabel}
+                    name={fieldName}
+                    value={fieldValue}
+                    onChange={onFieldChange}
+                />
+            )}
+        </>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tabela genérica (padrão Desembarque)
+// ─────────────────────────────────────────────────────────────────────────────
+function DataTable({ headers, children, emptyMessage = "Nenhum registro encontrado." }) {
     return (
         <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
                     <tr>
-                        {headers.map((header) => (
-                            <th key={header} className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                {header}
+                        {headers.map((h) => (
+                            <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                {h}
                             </th>
                         ))}
                     </tr>
@@ -108,122 +169,9 @@ function Table({ headers, children }) {
     );
 }
 
-function PerdaPorEspecieCard({ titulo, linhas, onChange }) {
-    const handlePercentChange = (index, value) => {
-        const numericValue = value.replace(/[^0-9]/g, "");
-        const limitedValue = Math.min(100, Math.max(0, Number(numericValue || 0)));
-        onChange(index, "estimativa", String(limitedValue));
-    };
-
-    return (
-        <Card subtitle="Perdas por espécie" title={titulo}>
-            <div className="overflow-x-auto">
-                <Table headers={["Espécie", "Causa da perda", "Estimativa da perda (%)", "Destino do peixe perdido"]}>
-                    {linhas.map((linha, index) => (
-                        <tr key={`${titulo}-${index}`}>
-                            <td className="px-3 py-3 font-medium text-slate-700">{titulo}</td>
-                            <td className="px-3 py-3 text-slate-700">{linha.causa}</td>
-                            <td className="px-3 py-3">
-                                <input
-                                    className={`${fieldClass} text-right`}
-                                    value={linha.estimativa}
-                                    onChange={(e) => handlePercentChange(index, e.target.value)}
-                                    placeholder="0"
-                                    min="0"
-                                    max="100"
-                                    type="number"
-                                />
-                            </td>
-                            <td className="px-3 py-3">
-                                <input
-                                    className={fieldClass}
-                                    value={linha.destino}
-                                    onChange={(e) => onChange(index, "destino", e.target.value)}
-                                    placeholder="Ex.: Mercado local"
-                                />
-                            </td>
-                        </tr>
-                    ))}
-                </Table>
-            </div>
-        </Card>
-    );
-}
-
-function MercadoTableCard({ titulo, linhas, onAddRow, onRemoveRow, onChange }) {
-    return (
-        <Card subtitle="Comercialização por mercado" title={titulo}>
-            <div className="mb-4 flex justify-end">
-                <Button onClick={onAddRow}>Adicionar linha</Button>
-            </div>
-            <div className="overflow-x-auto">
-                <Table headers={["ID", "Espécie", "Forma de comercialização", "Destino", "Volumes médios (kg)", "Preço de venda (R$/kg)", "Ações"]}>
-                    {linhas.map((linha, index) => (
-                        <tr key={linha.id ?? `${titulo}-${index}`}>
-                            <td className="px-3 py-3 text-sm font-semibold text-slate-600">{index + 1}</td>
-                            <td className="px-3 py-3">
-                                <input
-                                    className={fieldClass}
-                                    value={linha.especie}
-                                    onChange={(e) => onChange(index, "especie", e.target.value)}
-                                    placeholder="Ex.: Tilápia"
-                                />
-                            </td>
-                            <td className="px-3 py-3">
-                                <select
-                                    className={fieldClass}
-                                    value={linha.formaComercializacao}
-                                    onChange={(e) => onChange(index, "formaComercializacao", e.target.value)}
-                                >
-                                    <option value="">Selecione</option>
-                                    <option value="Fresco">Fresco</option>
-                                    <option value="Congelado">Congelado</option>
-                                    <option value="Processado">Processado</option>
-                                    <option value="Vivo">Vivo</option>
-                                    <option value="Outro">Outro</option>
-                                </select>
-                            </td>
-                            <td className="px-3 py-3">
-                                <input
-                                    className={fieldClass}
-                                    value={linha.destino}
-                                    onChange={(e) => onChange(index, "destino", e.target.value)}
-                                    placeholder="Ex.: Feirinha"
-                                />
-                            </td>
-                            <td className="px-3 py-3">
-                                <input
-                                    className={`${fieldClass} text-right`}
-                                    type="number"
-                                    value={linha.volumeMedio}
-                                    onChange={(e) => onChange(index, "volumeMedio", e.target.value)}
-                                    placeholder="0"
-                                    min="0"
-                                    step="0.01"
-                                />
-                            </td>
-                            <td className="px-3 py-3">
-                                <input
-                                    className={`${fieldClass} text-right`}
-                                    type="number"
-                                    value={linha.precoVenda}
-                                    onChange={(e) => onChange(index, "precoVenda", e.target.value)}
-                                    placeholder="0"
-                                    min="0"
-                                    step="0.01"
-                                />
-                            </td>
-                            <td className="px-3 py-3">
-                                <Button variant="secondary" onClick={() => onRemoveRow(index)}>Excluir</Button>
-                            </td>
-                        </tr>
-                    ))}
-                </Table>
-            </div>
-        </Card>
-    );
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
+// Estado inicial
+// ─────────────────────────────────────────────────────────────────────────────
 const initialForm = {
     responsavel: "",
     contato: "",
@@ -265,7 +213,7 @@ const initialForm = {
         { id: 3, descricao: "Energia", quantidade: "", custo: "", frequencia: "" },
         { id: 4, descricao: "Aluguel", quantidade: "", custo: "", frequencia: "" },
         { id: 5, descricao: "Salários", quantidade: "", custo: "", frequencia: "" },
-        { id: 6, descricao: "Outros", quantidade: "", custo: "", frequencia: "" }
+        { id: 6, descricao: "Outros", quantidade: "", custo: "", frequencia: "" },
     ],
     fornecedores: [{ id: 1, nome: "", tipo: "", telefone: "" }],
     pescadoresLocais: [{ id: 1, nome: "", comunidade: "", volume: "" }],
@@ -273,31 +221,12 @@ const initialForm = {
     especies: [{ id: 1, especie: "", quantidade: "", preco: "" }],
     perdas: [{ id: 1, descricao: "", quantidade: "", causa: "" }],
     perdasPorEspecie: [
-        { id: 1, titulo: "Espécie 1", linhas: [
-            { causa: "Deterioração", estimativa: "", destino: "" },
-            { causa: "Falta de mercado", estimativa: "", destino: "" },
-            { causa: "Transporte", estimativa: "", destino: "" }
-        ] },
-        { id: 2, titulo: "Espécie 2", linhas: [
-            { causa: "Deterioração", estimativa: "", destino: "" },
-            { causa: "Falta de mercado", estimativa: "", destino: "" },
-            { causa: "Transporte", estimativa: "", destino: "" }
-        ] },
-        { id: 3, titulo: "Espécie 3", linhas: [
-            { causa: "Deterioração", estimativa: "", destino: "" },
-            { causa: "Falta de mercado", estimativa: "", destino: "" },
-            { causa: "Transporte", estimativa: "", destino: "" }
-        ] }
+        { id: 1, titulo: "Espécie 1", linhas: [{ causa: "Deterioração", estimativa: "", destino: "" }, { causa: "Falta de mercado", estimativa: "", destino: "" }, { causa: "Transporte", estimativa: "", destino: "" }] },
+        { id: 2, titulo: "Espécie 2", linhas: [{ causa: "Deterioração", estimativa: "", destino: "" }, { causa: "Falta de mercado", estimativa: "", destino: "" }, { causa: "Transporte", estimativa: "", destino: "" }] },
+        { id: 3, titulo: "Espécie 3", linhas: [{ causa: "Deterioração", estimativa: "", destino: "" }, { causa: "Falta de mercado", estimativa: "", destino: "" }, { causa: "Transporte", estimativa: "", destino: "" }] },
     ],
-    mercadoLocal: {
-        volume: "",
-        valor: "",
-        observacoes: "",
-        linhas: [{ id: 1, especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }]
-    },
-    especiesComerciais: [
-        { id: 1, especie: "", quantidadeFresco: "", quantidadeCongelado: "", precoCompra: "", precoVenda: "" }
-    ],
+    mercadoLocal: { volume: "", valor: "", observacoes: "", linhas: [{ id: 1, especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }] },
+    especiesComerciais: [{ id: 1, especie: "", quantidadeFresco: "", quantidadeCongelado: "", precoCompra: "", precoVenda: "" }],
     origemPescado: [
         { id: 1, tipo: "Total pescado", pescadoresLocais: "", outrasLocalidadesPB: "", outrosEstados: "", outro: "" },
         { id: 2, tipo: "Peixe fresco", pescadoresLocais: "", outrasLocalidadesPB: "", outrosEstados: "", outro: "" },
@@ -306,32 +235,21 @@ const initialForm = {
         { id: 5, tipo: "Lagosta", pescadoresLocais: "", outrasLocalidadesPB: "", outrosEstados: "", outro: "" },
         { id: 6, tipo: "Camarão", pescadoresLocais: "", outrasLocalidadesPB: "", outrosEstados: "", outro: "" },
         { id: 7, tipo: "Polvo", pescadoresLocais: "", outrasLocalidadesPB: "", outrosEstados: "", outro: "" },
-        { id: 8, tipo: "Outro", pescadoresLocais: "", outrasLocalidadesPB: "", outrosEstados: "", outro: "" }
+        { id: 8, tipo: "Outro", pescadoresLocais: "", outrasLocalidadesPB: "", outrosEstados: "", outro: "" },
     ],
-    mercadoEstadual: {
-        volume: "",
-        valor: "",
-        observacoes: "",
-        linhas: [{ id: 1, especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }]
-    },
-    mercadoNacional: {
-        volume: "",
-        valor: "",
-        observacoes: "",
-        linhas: [{ id: 1, especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }]
-    },
-    mercadoInternacional: {
-        volume: "",
-        valor: "",
-        observacoes: "",
-        linhas: [{ id: 1, especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }]
-    }
+    mercadoEstadual: { volume: "", valor: "", observacoes: "", linhas: [{ id: 1, especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }] },
+    mercadoNacional: { volume: "", valor: "", observacoes: "", linhas: [{ id: 1, especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }] },
+    mercadoInternacional: { volume: "", valor: "", observacoes: "", linhas: [{ id: 1, especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }] },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Componente principal
+// ─────────────────────────────────────────────────────────────────────────────
 export default function PeixariaClient() {
     const searchParams = useSearchParams();
     const editId = searchParams.get("edit");
     const isEditMode = Boolean(editId);
+
     const [form, setForm] = useState(initialForm);
     const [carregandoEdicao, setCarregandoEdicao] = useState(false);
     const [erroEnvio, setErroEnvio] = useState("");
@@ -341,187 +259,132 @@ export default function PeixariaClient() {
     const [deletando, setDeletando] = useState(false);
     const router = useRouter();
 
+    // ── Carregamento em modo edição ──────────────────────────────────────────
     useEffect(() => {
-        if (!isEditMode) {
-            setForm(initialForm);
-            return;
-        }
-
-        const carregarPeixaria = async () => {
+        if (!isEditMode) { setForm(initialForm); return; }
+        const carregar = async () => {
             setCarregandoEdicao(true);
             setErroEnvio("");
             try {
                 const response = await api.buscarPeixaria(editId);
-                const data = response?.data || response;
-                setForm(mapApiToFormData(data));
+                setForm(mapApiToFormData(response?.data || response));
             } catch (err) {
-                console.error('[Peixaria] Erro ao carregar edição:', err);
+                console.error("[Peixaria] Erro ao carregar:", err);
                 setErroEnvio(err?.message || `Não foi possível carregar a peixaria #${editId}.`);
             } finally {
                 setCarregandoEdicao(false);
             }
         };
-
-        carregarPeixaria();
+        carregar();
     }, [editId, isEditMode]);
 
-    const updateField = (field, value) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
-    };
+    // ── Helpers de atualização de estado ────────────────────────────────────
+    const updateField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
-    const updateNumericField = (field, value) => {
+    const updateNumericField = (field, value) =>
         setForm((prev) => ({ ...prev, [field]: value.replace(/\D/g, "") }));
-    };
 
-    const updateNestedField = (group, field, value) => {
+    const updateNestedField = (group, field, value) =>
+        setForm((prev) => ({ ...prev, [group]: { ...prev[group], [field]: value } }));
+
+    const updateArrayItem = (key, index, field, value) =>
         setForm((prev) => ({
             ...prev,
-            [group]: { ...prev[group], [field]: value }
+            [key]: prev[key].map((item, i) => (i === index ? { ...item, [field]: value } : item)),
         }));
-    };
 
-    const updateArrayItem = (key, index, field, value) => {
-        setForm((prev) => ({
-            ...prev,
-            [key]: prev[key].map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item)
-        }));
-    };
-
-    const updatePercentField = (key, index, field, value) => {
-        const numericValue = value.replace(/[^\d]/g, "");
-        const limitedValue = Math.min(100, Math.max(0, Number(numericValue || 0)));
-        updateArrayItem(key, index, field, String(limitedValue));
-    };
-
-    const updateMarketRow = (group, index, field, value) => {
+    const updateMarketRow = (group, index, field, value) =>
         setForm((prev) => ({
             ...prev,
             [group]: {
                 ...prev[group],
-                linhas: prev[group].linhas.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item)
-            }
+                linhas: prev[group].linhas.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+            },
         }));
-    };
 
-    const addMarketRow = (group) => {
+    const addMarketRow = (group) =>
         setForm((prev) => ({
             ...prev,
             [group]: {
                 ...prev[group],
-                linhas: [...prev[group].linhas, { id: Date.now(), especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }]
-            }
+                linhas: [...prev[group].linhas, { id: Date.now(), especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }],
+            },
         }));
-    };
 
-    const removeMarketRow = (group, index) => {
+    const removeMarketRow = (group, index) =>
         setForm((prev) => ({
             ...prev,
             [group]: {
                 ...prev[group],
-                linhas: prev[group].linhas.filter((_, itemIndex) => itemIndex !== index)
-            }
+                linhas: prev[group].linhas.filter((_, i) => i !== index),
+            },
         }));
-    };
 
-    const updatePerdaPorEspecie = (speciesIndex, rowIndex, field, value) => {
+    const updatePerdaPorEspecie = (speciesIndex, rowIndex, field, value) =>
         setForm((prev) => ({
             ...prev,
-            perdasPorEspecie: prev.perdasPorEspecie.map((species, speciesItemIndex) => speciesItemIndex === speciesIndex ? {
-                ...species,
-                linhas: species.linhas.map((row, rowItemIndex) => rowItemIndex === rowIndex ? { ...row, [field]: value } : row)
-            } : species)
+            perdasPorEspecie: prev.perdasPorEspecie.map((sp, si) =>
+                si === speciesIndex
+                    ? { ...sp, linhas: sp.linhas.map((row, ri) => (ri === rowIndex ? { ...row, [field]: value } : row)) }
+                    : sp
+            ),
         }));
+
+    const handlePercentInput = (speciesIndex, rowIndex, value) => {
+        const num = Math.min(100, Math.max(0, Number(value.replace(/[^0-9]/g, "") || 0)));
+        updatePerdaPorEspecie(speciesIndex, rowIndex, "estimativa", String(num));
     };
 
-    const updateCurrencyField = (key, index, field, value) => {
-        const digits = value.replace(/\D/g, "");
-        const cents = digits.padStart(3, "0");
-        const integer = cents.slice(0, -2);
-        const decimal = cents.slice(-2);
-        const formatted = integer ? `${Number(integer).toLocaleString("pt-BR")},${decimal}` : `0,${decimal}`;
-        updateArrayItem(key, index, field, formatted);
-    };
+    const addRow = (key, template) =>
+        setForm((prev) => ({ ...prev, [key]: [...prev[key], { ...template, id: Date.now() }] }));
 
-    const addRow = (key, template) => {
-        setForm((prev) => ({
-            ...prev,
-            [key]: [...prev[key], { ...template, id: Date.now() }]
-        }));
-    };
+    const removeRow = (key, index) =>
+        setForm((prev) => ({ ...prev, [key]: prev[key].filter((_, i) => i !== index) }));
 
-    const removeRow = (key, index) => {
-        setForm((prev) => ({
-            ...prev,
-            [key]: prev[key].filter((_, itemIndex) => itemIndex !== index)
-        }));
-    };
-
+    // ── Validação ────────────────────────────────────────────────────────────
     const validarCamposObrigatorios = () => {
-        const camposObrigatorios = [
-            { valor: form.responsavel, mensagem: 'Preencha o nome do responsável.' },
-            { valor: form.contato, mensagem: 'Preencha o contato.' },
-            { valor: form.municipio, mensagem: 'Preencha o município.' },
-            { valor: form.localidade, mensagem: 'Preencha a localidade.' },
-            { valor: form.nome, mensagem: 'Preencha o nome do responsável pela peixaria.' },
-            { valor: form.atividadePrincipal, mensagem: 'Preencha a atividade principal.' },
-            { valor: form.atividadeComercial, mensagem: 'Preencha a atividade comercial.' },
-            { valor: form.periodoComercializacao, mensagem: 'Preencha o período de comercialização.' },
-            { valor: form.formaVenda, mensagem: 'Preencha a forma de venda.' },
-            { valor: form.transporte, mensagem: 'Preencha o transporte.' }
+        const obrigatorios = [
+            { valor: form.responsavel, mensagem: "Preencha o nome do responsável." },
+            { valor: form.contato, mensagem: "Preencha o contato." },
+            { valor: form.municipio, mensagem: "Preencha o município." },
+            { valor: form.localidade, mensagem: "Preencha a localidade." },
+            { valor: form.nome, mensagem: "Preencha o nome do responsável pela peixaria." },
+            { valor: form.atividadePrincipal, mensagem: "Preencha a atividade principal." },
+            { valor: form.atividadeComercial, mensagem: "Preencha a atividade comercial." },
+            { valor: form.periodoComercializacao, mensagem: "Preencha o período de comercialização." },
+            { valor: form.formaVenda, mensagem: "Preencha a forma de venda." },
+            { valor: form.transporte, mensagem: "Preencha o transporte." },
         ];
-
-        if (form.filiadoColonia === 'Sim') {
-            camposObrigatorios.push({ valor: form.qualColonia, mensagem: 'Preencha qual colônia.' });
-        }
-
-        if (form.participaAssociacao === 'Sim') {
-            camposObrigatorios.push({ valor: form.qualAssociacao, mensagem: 'Preencha qual associação.' });
-        }
-
-        if (form.possuiCarteiraPescador === 'Sim') {
-            camposObrigatorios.push({ valor: form.orgaoEmissorCarteira, mensagem: 'Preencha o órgão emissor da carteira.' });
-        }
-
-        if (form.possuiPlanoSaude === 'Sim') {
-            camposObrigatorios.push({ valor: form.planoSaudeEspecificar, mensagem: 'Preencha o plano de saúde especificado.' });
-        }
-
-        const erroEncontrado = camposObrigatorios.find((campo) => !campo.valor || String(campo.valor).trim() === '');
-        if (erroEncontrado) {
-            setErroEnvio(erroEncontrado.mensagem);
-            setSucessoEnvio("");
-            return false;
-        }
-
+        if (form.filiadoColonia === "Sim") obrigatorios.push({ valor: form.qualColonia, mensagem: "Preencha qual colônia." });
+        if (form.participaAssociacao === "Sim") obrigatorios.push({ valor: form.qualAssociacao, mensagem: "Preencha qual associação." });
+        if (form.possuiCarteiraPescador === "Sim") obrigatorios.push({ valor: form.orgaoEmissorCarteira, mensagem: "Preencha o órgão emissor da carteira." });
+        if (form.possuiPlanoSaude === "Sim") obrigatorios.push({ valor: form.planoSaudeEspecificar, mensagem: "Preencha o plano de saúde." });
+        const erro = obrigatorios.find((c) => !c.valor || String(c.valor).trim() === "");
+        if (erro) { setErroEnvio(erro.mensagem); setSucessoEnvio(""); return false; }
         setErroEnvio("");
         return true;
     };
 
+    // ── Salvar / Excluir ─────────────────────────────────────────────────────
     const handleSave = async () => {
         if (enviando) return;
-
-        if (!validarCamposObrigatorios()) {
-            return;
-        }
-
+        if (!validarCamposObrigatorios()) return;
         const payload = mapFormDataToPayload(form);
         setEnviando(true);
         setErroEnvio("");
         setSucessoEnvio("");
-
         try {
             const response = isEditMode
                 ? await api.editarPeixaria(editId, payload)
                 : await api.criarPeixaria(payload);
-
             if (response?.success) {
-                setSucessoEnvio(isEditMode ? 'Peixaria atualizada com sucesso.' : 'Peixaria criada com sucesso.');
+                setSucessoEnvio(isEditMode ? "Peixaria atualizada com sucesso." : "Peixaria criada com sucesso.");
             } else {
-                throw new Error(response?.message || 'Falha ao salvar peixaria.');
+                throw new Error(response?.message || "Falha ao salvar peixaria.");
             }
         } catch (error) {
-            console.error('[Peixaria] Erro ao salvar:', error);
-            setErroEnvio(error?.message || 'Erro ao salvar peixaria. Tente novamente.');
+            console.error("[Peixaria] Erro ao salvar:", error);
+            setErroEnvio(error?.message || "Erro ao salvar peixaria. Tente novamente.");
         } finally {
             setEnviando(false);
         }
@@ -534,106 +397,556 @@ export default function PeixariaClient() {
         try {
             const response = await api.excluirPeixaria(editId);
             if (response?.success) {
-                setSucessoEnvio('Peixaria excluída com sucesso. Redirecionando...');
+                setSucessoEnvio("Peixaria excluída com sucesso. Redirecionando...");
                 setShowDeleteModal(false);
-                setTimeout(() => router.push('/peixaria'), 800);
+                setTimeout(() => router.push("/peixaria"), 800);
                 return;
             }
-            throw new Error(response?.message || 'Falha ao excluir peixaria.');
+            throw new Error(response?.message || "Falha ao excluir peixaria.");
         } catch (err) {
-            console.error('[Peixaria] Erro ao excluir:', err);
+            console.error("[Peixaria] Erro ao excluir:", err);
             const status = err?.status || err?.statusCode || 500;
-            if (status === 404) setErroEnvio('Peixaria não encontrada (404).');
-            else if (status === 403) setErroEnvio('Acesso negado (403). Você não tem permissão para excluir.');
-            else setErroEnvio(err?.message || 'Erro ao excluir peixaria. Tente novamente.');
+            if (status === 404) setErroEnvio("Peixaria não encontrada (404).");
+            else if (status === 403) setErroEnvio("Acesso negado (403). Você não tem permissão para excluir.");
+            else setErroEnvio(err?.message || "Erro ao excluir peixaria. Tente novamente.");
         } finally {
             setDeletando(false);
         }
     };
 
+    // ── Opções de select reutilizadas ────────────────────────────────────────
+    const optsSexo = [{ value: "Masculino", label: "Masculino" }, { value: "Feminino", label: "Feminino" }];
+    const optsEstadoCivil = [
+        { value: "Solteiro", label: "Solteiro" }, { value: "Casado", label: "Casado" },
+        { value: "Separado", label: "Separado" }, { value: "Viúvo", label: "Viúvo" },
+    ];
+    const optsSimNao = [{ value: "Sim", label: "Sim" }, { value: "Não", label: "Não" }];
+    const optsFormaComercializacao = [
+        { value: "Fresco", label: "Fresco" }, { value: "Congelado", label: "Congelado" },
+        { value: "Processado", label: "Processado" }, { value: "Vivo", label: "Vivo" },
+        { value: "Outro", label: "Outro" },
+    ];
+
+    // ── Loading state (edição) ───────────────────────────────────────────────
+    if (carregandoEdicao) {
+        return (
+            <ProtectedRoute>
+                <main className="min-h-screen bg-slate-100 py-10 flex items-center justify-center">
+                    <div className="rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-xl text-center max-w-md w-full mx-4">
+                        <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+                        <h1 className="text-2xl font-bold text-slate-800">Carregando peixaria...</h1>
+                        <p className="mt-2 text-slate-500">Aguarde enquanto os dados são carregados.</p>
+                    </div>
+                </main>
+            </ProtectedRoute>
+        );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // RENDER
+    // ─────────────────────────────────────────────────────────────────────────
     return (
         <ProtectedRoute>
             <main className="min-h-screen bg-slate-100 py-8 md:py-10">
-                <div className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8">
+
+                    {/* ── Cabeçalho ──────────────────────────────────────────── */}
                     <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
                         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                             <div>
                                 <p className="text-sm font-semibold text-blue-600">Módulo operacional</p>
-                                <h1 className="mt-1 text-3xl font-bold text-slate-800">Peixaria</h1>
+                                <h1 className="mt-1 text-3xl font-bold text-slate-800">
+                                    {isEditMode ? "Editar Peixaria" : "Cadastro de Peixaria"}
+                                </h1>
                                 <p className="mt-2 text-sm text-slate-500">
                                     Formulário para cadastro das principais informações de comercialização, fornecedores e mercados.
                                 </p>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <Button variant="secondary" onClick={() => { setForm(initialForm); setErroEnvio(""); setSucessoEnvio(""); }}>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <button
+                                    type="button"
+                                    className={btnSecondary}
+                                    onClick={() => { setForm(initialForm); setErroEnvio(""); setSucessoEnvio(""); }}
+                                    disabled={enviando}
+                                >
                                     Limpar
-                                </Button>
+                                </button>
                                 {isEditMode && (
-                                    <Button variant="secondary" onClick={() => setShowDeleteModal(true)} disabled={enviando}>Excluir</Button>
+                                    <button
+                                        type="button"
+                                        className="rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                        onClick={() => setShowDeleteModal(true)}
+                                        disabled={enviando}
+                                    >
+                                        Excluir
+                                    </button>
                                 )}
-                                <Button onClick={handleSave} disabled={enviando}>{isEditMode ? "Atualizar" : "Salvar"}</Button>
+                                <button type="button" className={btnPrimary} onClick={handleSave} disabled={enviando}>
+                                    {enviando ? "Salvando..." : isEditMode ? "Atualizar" : "Salvar"}
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    {carregandoEdicao && (
-                        <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-700">
-                            Carregando os dados da peixaria para edição...
-                        </div>
-                    )}
-
+                    {/* ── Alertas ────────────────────────────────────────────── */}
                     {erroEnvio && (
-                        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+                        <div className="mb-6 rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-medium text-red-600">
                             {erroEnvio}
                         </div>
                     )}
-
                     {sucessoEnvio && (
-                        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
+                        <div className="mb-6 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm font-medium text-emerald-600">
                             {sucessoEnvio}
                         </div>
                     )}
 
+                    {/* ── Seções do formulário ───────────────────────────────── */}
                     <div className="space-y-6">
-                        <Card subtitle="Informações socioeconômicas" title="Dados do responsável">
-                            <Grid cols={2}>
-                                <InputField label="Nome" value={form.nome} name="nome" onChange={(e) => updateField("nome", e.target.value)} />
-                                <InputField label="Apelido" value={form.apelido} name="apelido" onChange={(e) => updateField("apelido", e.target.value)} />
-                                <InputField label="Naturalidade" value={form.naturalidade} name="naturalidade" onChange={(e) => updateField("naturalidade", e.target.value)} />
-                                <SelectField
-                                    label="Sexo"
-                                    value={form.sexo}
-                                    name="sexo"
-                                    onChange={(e) => updateField("sexo", e.target.value)}
-                                    options={[
-                                        { value: "Masculino", label: "Masculino" },
-                                        { value: "Feminino", label: "Feminino" }
-                                    ]}
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 1 · Coleta e localização
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Identificação da coleta" title="Localização e responsável">
+                            <FormGrid cols={2}>
+                                <InputGroup label="Responsável pela coleta" name="responsavel" value={form.responsavel} onChange={(e) => updateField("responsavel", e.target.value)} />
+                                <InputGroup label="Contato" name="contato" value={form.contato} onChange={(e) => updateField("contato", e.target.value)} />
+                                <InputGroup label="Município" name="municipio" value={form.municipio} onChange={(e) => updateField("municipio", e.target.value)} />
+                                <InputGroup label="Localidade" name="localidade" value={form.localidade} onChange={(e) => updateField("localidade", e.target.value)} />
+                            </FormGrid>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 2 · Dados pessoais do responsável
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Informações socioeconômicas" title="Dados do responsável pela peixaria">
+                            <FormGrid cols={2}>
+                                <InputGroup label="Nome" name="nome" value={form.nome} onChange={(e) => updateField("nome", e.target.value)} />
+                                <InputGroup label="Apelido" name="apelido" value={form.apelido} onChange={(e) => updateField("apelido", e.target.value)} />
+                                <InputGroup label="Naturalidade" name="naturalidade" value={form.naturalidade} onChange={(e) => updateField("naturalidade", e.target.value)} />
+                                <SelectGroup label="Sexo" name="sexo" value={form.sexo} onChange={(e) => updateField("sexo", e.target.value)} options={optsSexo} />
+                                <InputGroup label="Idade" name="idade" value={form.idade} type="number" inputMode="numeric" onChange={(e) => updateNumericField("idade", e.target.value)} />
+                                <SelectGroup label="Estado civil" name="estadoCivil" value={form.estadoCivil} onChange={(e) => updateField("estadoCivil", e.target.value)} options={optsEstadoCivil} />
+                                <InputGroup label="Número de familiares" name="numeroFamiliares" value={form.numeroFamiliares} type="number" inputMode="numeric" onChange={(e) => updateNumericField("numeroFamiliares", e.target.value)} />
+                                <InputGroup label="Escolaridade" name="escolaridade" value={form.escolaridade} onChange={(e) => updateField("escolaridade", e.target.value)} />
+                                <InputGroup label="Local de moradia" name="localMoradia" value={form.localMoradia} onChange={(e) => updateField("localMoradia", e.target.value)} />
+                            </FormGrid>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 3 · Atividade e estrutura da peixaria
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Atividade profissional" title="Estrutura da peixaria">
+                            <FormGrid cols={2}>
+                                <InputGroup label="Atividade principal de renda" name="atividadePrincipal" value={form.atividadePrincipal} onChange={(e) => updateField("atividadePrincipal", e.target.value)} />
+                                <InputGroup label="Atividade secundária" name="atividadeSecundaria" value={form.atividadeSecundaria} onChange={(e) => updateField("atividadeSecundaria", e.target.value)} />
+                                <InputGroup label="Número total de peixarias/boxes" name="totalPeixariasBoxes" value={form.totalPeixariasBoxes} type="number" inputMode="numeric" onChange={(e) => updateNumericField("totalPeixariasBoxes", e.target.value)} />
+                                <InputGroup label="Quantos você possui" name="quantosPossui" value={form.quantosPossui} type="number" inputMode="numeric" onChange={(e) => updateNumericField("quantosPossui", e.target.value)} />
+                                <InputGroup label="Tempo de atividade" name="tempoAtividade" value={form.tempoAtividade} onChange={(e) => updateField("tempoAtividade", e.target.value)} />
+                                <TextareaGroup label="Atividades de renda da família" name="atividadesRendaFamilia" value={form.atividadesRendaFamilia} onChange={(e) => updateField("atividadesRendaFamilia", e.target.value)} rows={2} />
+                                <InputGroup label="Quem trabalha na família" name="quemTrabalhaFamilia" value={form.quemTrabalhaFamilia} onChange={(e) => updateField("quemTrabalhaFamilia", e.target.value)} />
+                            </FormGrid>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 4 · Filiações e registros
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Registros e filiações" title="Documentação e vínculos institucionais">
+                            <FormGrid cols={2}>
+                                <SelectGroup label="Possui registro no INSS" name="possuiRegistroINSS" value={form.possuiRegistroINSS} onChange={(e) => updateField("possuiRegistroINSS", e.target.value)} options={optsSimNao} />
+                                <ConditionalField
+                                    selectLabel="Filiado à colônia de pescadores"
+                                    selectName="filiadoColonia"
+                                    selectValue={form.filiadoColonia}
+                                    onSelectChange={(e) => updateField("filiadoColonia", e.target.value)}
+                                    fieldLabel="Qual colônia"
+                                    fieldName="qualColonia"
+                                    fieldValue={form.qualColonia}
+                                    onFieldChange={(e) => updateField("qualColonia", e.target.value)}
                                 />
-                                <InputField label="Idade" value={form.idade} name="idade" type="number" inputMode="numeric" onChange={(e) => updateNumericField("idade", e.target.value)} />
-                                <InputField label="Atividade principal de renda" value={form.atividadePrincipal} name="atividadePrincipal" onChange={(e) => updateField("atividadePrincipal", e.target.value)} />
-                                <InputField label="Atividade secundária" value={form.atividadeSecundaria} name="atividadeSecundaria" onChange={(e) => updateField("atividadeSecundaria", e.target.value)} colSpan={2} />
-                                <InputField label="Número total de peixarias/boxes" value={form.totalPeixariasBoxes} name="totalPeixariasBoxes" type="number" inputMode="numeric" onChange={(e) => updateNumericField("totalPeixariasBoxes", e.target.value)} />
-                                <InputField label="Quantos você possui" value={form.quantosPossui} name="quantosPossui" type="number" inputMode="numeric" onChange={(e) => updateNumericField("quantosPossui", e.target.value)} />
-                                <SelectField
-                                    label="Estado civil"
-                                    value={form.estadoCivil}
-                                    name="estadoCivil"
-                                    onChange={(e) => updateField("estadoCivil", e.target.value)}
-                                    options={[
-                                        { value: "Solteiro", label: "Solteiro" },
-                                        { value: "Casado", label: "Casado" },
-                                        { value: "Separado", label: "Separado" },
-                                        { value: "Viúvo", label: "Viúvo" }
-                                    ]}
+                                <ConditionalField
+                                    selectLabel="Participa de associação"
+                                    selectName="participaAssociacao"
+                                    selectValue={form.participaAssociacao}
+                                    onSelectChange={(e) => updateField("participaAssociacao", e.target.value)}
+                                    fieldLabel="Qual associação"
+                                    fieldName="qualAssociacao"
+                                    fieldValue={form.qualAssociacao}
+                                    onFieldChange={(e) => updateField("qualAssociacao", e.target.value)}
                                 />
-                            </Grid>
-                        </Card>
-                        {/* O resto do formulário permanece inalterado, mantendo a lógica existente. */}
+                                <ConditionalField
+                                    selectLabel="Possui carteira de pescador"
+                                    selectName="possuiCarteiraPescador"
+                                    selectValue={form.possuiCarteiraPescador}
+                                    onSelectChange={(e) => updateField("possuiCarteiraPescador", e.target.value)}
+                                    fieldLabel="Órgão emissor da carteira"
+                                    fieldName="orgaoEmissorCarteira"
+                                    fieldValue={form.orgaoEmissorCarteira}
+                                    onFieldChange={(e) => updateField("orgaoEmissorCarteira", e.target.value)}
+                                />
+                                <ConditionalField
+                                    selectLabel="Possui plano de saúde"
+                                    selectName="possuiPlanoSaude"
+                                    selectValue={form.possuiPlanoSaude}
+                                    onSelectChange={(e) => updateField("possuiPlanoSaude", e.target.value)}
+                                    fieldLabel="Especificar plano de saúde"
+                                    fieldName="planoSaudeEspecificar"
+                                    fieldValue={form.planoSaudeEspecificar}
+                                    onFieldChange={(e) => updateField("planoSaudeEspecificar", e.target.value)}
+                                />
+                            </FormGrid>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 5 · Comercialização
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Atividade comercial" title="Comercialização">
+                            <FormGrid cols={2}>
+                                <InputGroup label="Atividade comercial" name="atividadeComercial" value={form.atividadeComercial} onChange={(e) => updateField("atividadeComercial", e.target.value)} />
+                                <InputGroup label="Período de comercialização" name="periodoComercializacao" value={form.periodoComercializacao} onChange={(e) => updateField("periodoComercializacao", e.target.value)} />
+                                <InputGroup label="Forma de venda" name="formaVenda" value={form.formaVenda} onChange={(e) => updateField("formaVenda", e.target.value)} />
+                                <InputGroup label="Transporte" name="transporte" value={form.transporte} onChange={(e) => updateField("transporte", e.target.value)} />
+                            </FormGrid>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 6 · Despesas operacionais
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Custos operacionais" title="Despesas da peixaria">
+                            <SectionTitle>Itens de despesa</SectionTitle>
+                            {form.despesas.length === 0 && (
+                                <p className="mb-4 text-sm text-slate-500">Nenhuma despesa registrada.</p>
+                            )}
+                            <div className="space-y-4">
+                                {form.despesas.map((despesa, idx) => (
+                                    <div key={despesa.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <div className="mb-3 flex items-center justify-between">
+                                            <p className="text-sm font-semibold text-black">{despesa.descricao || `Item ${idx + 1}`}</p>
+                                        </div>
+                                        <FormGrid cols={3}>
+                                            <InputGroup label="Quantidade" name={`despesa_qtd_${idx}`} value={despesa.quantidade} onChange={(e) => updateArrayItem("despesas", idx, "quantidade", e.target.value)} placeholder="Ex.: 5" />
+                                            <InputGroup label="Custo (R$)" name={`despesa_custo_${idx}`} value={despesa.custo} onChange={(e) => updateArrayItem("despesas", idx, "custo", e.target.value)} placeholder="Ex.: 50,00" />
+                                            <InputGroup label="Frequência" name={`despesa_freq_${idx}`} value={despesa.frequencia} onChange={(e) => updateArrayItem("despesas", idx, "frequencia", e.target.value)} placeholder="Ex.: Mensal" />
+                                        </FormGrid>
+                                    </div>
+                                ))}
+                            </div>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 7 · Fornecedores
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Cadeia de fornecimento" title="Fornecedores">
+                            <div className="mb-4 flex items-center justify-between">
+                                <SectionTitle>Lista de fornecedores</SectionTitle>
+                                <button type="button" className={btnAdd} onClick={() => addRow("fornecedores", { nome: "", tipo: "", telefone: "" })}>
+                                    + Adicionar fornecedor
+                                </button>
+                            </div>
+                            {form.fornecedores.length === 0 && (
+                                <p className="mb-4 text-sm text-slate-500">Nenhum fornecedor adicionado.</p>
+                            )}
+                            <div className="space-y-4">
+                                {form.fornecedores.map((forn, idx) => (
+                                    <div key={forn.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <div className="mb-3 flex items-center justify-between">
+                                            <p className="text-sm font-semibold text-black">Fornecedor {idx + 1}</p>
+                                            <button type="button" className={btnDanger} onClick={() => removeRow("fornecedores", idx)}>Remover</button>
+                                        </div>
+                                        <FormGrid cols={3}>
+                                            <InputGroup label="Nome" name={`forn_nome_${idx}`} value={forn.nome} onChange={(e) => updateArrayItem("fornecedores", idx, "nome", e.target.value)} />
+                                            <InputGroup label="Tipo" name={`forn_tipo_${idx}`} value={forn.tipo} onChange={(e) => updateArrayItem("fornecedores", idx, "tipo", e.target.value)} />
+                                            <InputGroup label="Telefone" name={`forn_tel_${idx}`} value={forn.telefone} onChange={(e) => updateArrayItem("fornecedores", idx, "telefone", e.target.value)} />
+                                        </FormGrid>
+                                    </div>
+                                ))}
+                            </div>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 8 · Pescadores locais
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Vínculos locais" title="Pescadores locais fornecedores">
+                            <div className="mb-4 flex items-center justify-between">
+                                <SectionTitle>Pescadores que fornecem à peixaria</SectionTitle>
+                                <button type="button" className={btnAdd} onClick={() => addRow("pescadoresLocais", { nome: "", comunidade: "", volume: "" })}>
+                                    + Adicionar pescador
+                                </button>
+                            </div>
+                            {form.pescadoresLocais.length === 0 && (
+                                <p className="mb-4 text-sm text-slate-500">Nenhum pescador local cadastrado.</p>
+                            )}
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                    <thead className="bg-slate-50">
+                                        <tr>
+                                            {["#", "Nome", "Comunidade", "Volume médio", "Ações"].map((h) => (
+                                                <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 bg-white">
+                                        {form.pescadoresLocais.map((p, idx) => (
+                                            <tr key={p.id}>
+                                                <td className="px-4 py-3 text-sm font-semibold text-slate-600">{idx + 1}</td>
+                                                <td className="px-4 py-3"><input className={inputClass} value={p.nome} onChange={(e) => updateArrayItem("pescadoresLocais", idx, "nome", e.target.value)} placeholder="Nome" /></td>
+                                                <td className="px-4 py-3"><input className={inputClass} value={p.comunidade} onChange={(e) => updateArrayItem("pescadoresLocais", idx, "comunidade", e.target.value)} placeholder="Comunidade" /></td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={p.volume} onChange={(e) => updateArrayItem("pescadoresLocais", idx, "volume", e.target.value)} placeholder="0" min="0" /></td>
+                                                <td className="px-4 py-3"><button type="button" className={btnDanger} onClick={() => removeRow("pescadoresLocais", idx)}>Remover</button></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 9 · Pescadores que entregam
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Pescadores fornecedores" title="Pescadores que entregam pescado">
+                            <div className="mb-4 flex items-center justify-between">
+                                <SectionTitle>Dados das embarcações fornecedoras</SectionTitle>
+                                <button type="button" className={btnAdd} onClick={() => addRow("pescadoresEntregam", { apelido: "", tipoBarco: "", numeroPescadores: "", volumeMedio: "", regularidade: "" })}>
+                                    + Adicionar linha
+                                </button>
+                            </div>
+                            {form.pescadoresEntregam.length === 0 && (
+                                <p className="mb-4 text-sm text-slate-500">Nenhum registro adicionado.</p>
+                            )}
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                    <thead className="bg-slate-50">
+                                        <tr>
+                                            {["#", "Apelido", "Tipo de barco", "Nº pescadores", "Volume médio (kg)", "Regularidade", "Ações"].map((h) => (
+                                                <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 bg-white">
+                                        {form.pescadoresEntregam.map((p, idx) => (
+                                            <tr key={p.id}>
+                                                <td className="px-4 py-3 text-sm font-semibold text-slate-600">{idx + 1}</td>
+                                                <td className="px-4 py-3"><input className={inputClass} value={p.apelido} onChange={(e) => updateArrayItem("pescadoresEntregam", idx, "apelido", e.target.value)} placeholder="Apelido" /></td>
+                                                <td className="px-4 py-3"><input className={inputClass} value={p.tipoBarco} onChange={(e) => updateArrayItem("pescadoresEntregam", idx, "tipoBarco", e.target.value)} placeholder="Ex.: Lancha" /></td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={p.numeroPescadores} onChange={(e) => updateArrayItem("pescadoresEntregam", idx, "numeroPescadores", e.target.value)} placeholder="0" min="0" /></td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={p.volumeMedio} onChange={(e) => updateArrayItem("pescadoresEntregam", idx, "volumeMedio", e.target.value)} placeholder="0" min="0" step="0.01" /></td>
+                                                <td className="px-4 py-3"><input className={inputClass} value={p.regularidade} onChange={(e) => updateArrayItem("pescadoresEntregam", idx, "regularidade", e.target.value)} placeholder="Ex.: Semanal" /></td>
+                                                <td className="px-4 py-3"><button type="button" className={btnDanger} onClick={() => removeRow("pescadoresEntregam", idx)}>Remover</button></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 10 · Espécies comercializadas
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Produção e preços" title="Espécies comercializadas">
+                            <div className="mb-4 flex items-center justify-between">
+                                <SectionTitle>Lista de espécies</SectionTitle>
+                                <button type="button" className={btnAdd} onClick={() => addRow("especiesComerciais", { especie: "", quantidadeFresco: "", quantidadeCongelado: "", precoCompra: "", precoVenda: "" })}>
+                                    + Adicionar espécie
+                                </button>
+                            </div>
+                            {form.especiesComerciais.length === 0 && (
+                                <p className="mb-4 text-sm text-slate-500">Nenhuma espécie adicionada.</p>
+                            )}
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                    <thead className="bg-slate-50">
+                                        <tr>
+                                            {["#", "Espécie", "Qtd. fresco (kg)", "Qtd. congelado (kg)", "Preço compra (R$/kg)", "Preço venda (R$/kg)", "Ações"].map((h) => (
+                                                <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 bg-white">
+                                        {form.especiesComerciais.map((esp, idx) => (
+                                            <tr key={esp.id}>
+                                                <td className="px-4 py-3 text-sm font-semibold text-slate-600">{idx + 1}</td>
+                                                <td className="px-4 py-3"><input className={inputClass} value={esp.especie} onChange={(e) => updateArrayItem("especiesComerciais", idx, "especie", e.target.value)} placeholder="Ex.: Tilápia" /></td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={esp.quantidadeFresco} onChange={(e) => updateArrayItem("especiesComerciais", idx, "quantidadeFresco", e.target.value)} placeholder="0" min="0" step="0.01" /></td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={esp.quantidadeCongelado} onChange={(e) => updateArrayItem("especiesComerciais", idx, "quantidadeCongelado", e.target.value)} placeholder="0" min="0" step="0.01" /></td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={esp.precoCompra} onChange={(e) => updateArrayItem("especiesComerciais", idx, "precoCompra", e.target.value)} placeholder="0,00" min="0" step="0.01" /></td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={esp.precoVenda} onChange={(e) => updateArrayItem("especiesComerciais", idx, "precoVenda", e.target.value)} placeholder="0,00" min="0" step="0.01" /></td>
+                                                <td className="px-4 py-3"><button type="button" className={btnDanger} onClick={() => removeRow("especiesComerciais", idx)}>Remover</button></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 11 · Origem do pescado
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Procedência" title="Origem do pescado (%)">
+                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                    <thead className="bg-slate-50">
+                                        <tr>
+                                            {["Tipo", "Pescadores locais", "Outras localidades (PB)", "Outros estados", "Outro"].map((h) => (
+                                                <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 bg-white">
+                                        {form.origemPescado.map((row, idx) => (
+                                            <tr key={row.id}>
+                                                <td className="px-4 py-3 text-sm font-semibold text-slate-700">{row.tipo}</td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={row.pescadoresLocais} onChange={(e) => updateArrayItem("origemPescado", idx, "pescadoresLocais", e.target.value)} placeholder="0" min="0" max="100" /></td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={row.outrasLocalidadesPB} onChange={(e) => updateArrayItem("origemPescado", idx, "outrasLocalidadesPB", e.target.value)} placeholder="0" min="0" max="100" /></td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={row.outrosEstados} onChange={(e) => updateArrayItem("origemPescado", idx, "outrosEstados", e.target.value)} placeholder="0" min="0" max="100" /></td>
+                                                <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={row.outro} onChange={(e) => updateArrayItem("origemPescado", idx, "outro", e.target.value)} placeholder="0" min="0" max="100" /></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÃO 12 · Perdas por espécie
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        <SectionCard subtitle="Perdas" title="Perdas por espécie">
+                            <div className="space-y-6">
+                                {form.perdasPorEspecie.map((sp, si) => (
+                                    <div key={sp.id}>
+                                        <SectionDivider title={sp.titulo} />
+                                        <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                            <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                                <thead className="bg-slate-50">
+                                                    <tr>
+                                                        {["Causa da perda", "Estimativa (%)", "Destino do peixe perdido"].map((h) => (
+                                                            <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100 bg-white">
+                                                    {sp.linhas.map((linha, li) => (
+                                                        <tr key={`${sp.id}-${li}`}>
+                                                            <td className="px-4 py-3 font-medium text-slate-700">{linha.causa}</td>
+                                                            <td className="px-4 py-3">
+                                                                <input
+                                                                    className={`${inputClass} text-right`}
+                                                                    type="number"
+                                                                    value={linha.estimativa}
+                                                                    onChange={(e) => handlePercentInput(si, li, e.target.value)}
+                                                                    placeholder="0"
+                                                                    min="0"
+                                                                    max="100"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <input
+                                                                    className={inputClass}
+                                                                    value={linha.destino}
+                                                                    onChange={(e) => updatePerdaPorEspecie(si, li, "destino", e.target.value)}
+                                                                    placeholder="Ex.: Mercado local"
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </SectionCard>
+
+                        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            SEÇÕES 13–16 · Mercados (Local, Estadual, Nacional, Internacional)
+                        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+                        {[
+                            { key: "mercadoLocal", titulo: "Mercado local", subtitle: "Comercialização por mercado" },
+                            { key: "mercadoEstadual", titulo: "Mercado estadual", subtitle: "Comercialização por mercado" },
+                            { key: "mercadoNacional", titulo: "Mercado nacional", subtitle: "Comercialização por mercado" },
+                            { key: "mercadoInternacional", titulo: "Mercado internacional", subtitle: "Comercialização por mercado" },
+                        ].map(({ key, titulo, subtitle }) => (
+                            <SectionCard key={key} subtitle={subtitle} title={titulo}>
+                                <FormGrid cols={2}>
+                                    <InputGroup label="Volume total (kg)" name={`${key}_volume`} value={form[key].volume} type="number" onChange={(e) => updateNestedField(key, "volume", e.target.value)} placeholder="0" min="0" step="0.01" />
+                                    <InputGroup label="Valor total (R$)" name={`${key}_valor`} value={form[key].valor} type="number" onChange={(e) => updateNestedField(key, "valor", e.target.value)} placeholder="0,00" min="0" step="0.01" />
+                                    <TextareaGroup label="Observações" name={`${key}_obs`} value={form[key].observacoes} onChange={(e) => updateNestedField(key, "observacoes", e.target.value)} rows={2} />
+                                </FormGrid>
+
+                                <SectionDivider title="Detalhamento por espécie" />
+                                <div className="mb-4 flex justify-end">
+                                    <button type="button" className={btnAdd} onClick={() => addMarketRow(key)}>
+                                        + Adicionar linha
+                                    </button>
+                                </div>
+                                {form[key].linhas.length === 0 && (
+                                    <p className="mb-4 text-sm text-slate-500">Nenhuma linha adicionada.</p>
+                                )}
+                                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead className="bg-slate-50">
+                                            <tr>
+                                                {["#", "Espécie", "Forma de comercialização", "Destino", "Volume médio (kg)", "Preço de venda (R$/kg)", "Ações"].map((h) => (
+                                                    <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 bg-white">
+                                            {form[key].linhas.map((linha, idx) => (
+                                                <tr key={linha.id ?? idx}>
+                                                    <td className="px-4 py-3 text-sm font-semibold text-slate-600">{idx + 1}</td>
+                                                    <td className="px-4 py-3"><input className={inputClass} value={linha.especie} onChange={(e) => updateMarketRow(key, idx, "especie", e.target.value)} placeholder="Ex.: Tilápia" /></td>
+                                                    <td className="px-4 py-3">
+                                                        <select className={inputClass} value={linha.formaComercializacao} onChange={(e) => updateMarketRow(key, idx, "formaComercializacao", e.target.value)}>
+                                                            <option value="">Selecione</option>
+                                                            {optsFormaComercializacao.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-4 py-3"><input className={inputClass} value={linha.destino} onChange={(e) => updateMarketRow(key, idx, "destino", e.target.value)} placeholder="Ex.: Feirinha" /></td>
+                                                    <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={linha.volumeMedio} onChange={(e) => updateMarketRow(key, idx, "volumeMedio", e.target.value)} placeholder="0" min="0" step="0.01" /></td>
+                                                    <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={linha.precoVenda} onChange={(e) => updateMarketRow(key, idx, "precoVenda", e.target.value)} placeholder="0,00" min="0" step="0.01" /></td>
+                                                    <td className="px-4 py-3"><button type="button" className={btnDanger} onClick={() => removeMarketRow(key, idx)}>Remover</button></td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </SectionCard>
+                        ))}
+
+                        {/* ── Botões finais ─────────────────────────────────── */}
+                        <div className="flex flex-wrap items-center justify-end gap-3 pb-4">
+                            <button
+                                type="button"
+                                className={btnSecondary}
+                                onClick={() => { setForm(initialForm); setErroEnvio(""); setSucessoEnvio(""); }}
+                                disabled={enviando}
+                            >
+                                Limpar formulário
+                            </button>
+                            {isEditMode && (
+                                <button
+                                    type="button"
+                                    className="rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    onClick={() => setShowDeleteModal(true)}
+                                    disabled={enviando}
+                                >
+                                    Excluir peixaria
+                                </button>
+                            )}
+                            <button type="button" className={btnPrimary} onClick={handleSave} disabled={enviando}>
+                                {enviando ? "Salvando..." : isEditMode ? "Atualizar" : "Salvar"}
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             </main>
-            <DeleteConfirmModal open={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={handleDelete} loading={deletando} />
+
+            <DeleteConfirmModal
+                open={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleDelete}
+                loading={deletando}
+            />
         </ProtectedRoute>
     );
 }

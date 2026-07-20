@@ -305,6 +305,7 @@ export const listar = async (req, res) => {
     // por simplicidade filtramos na coleta se passado como query
 
     const { count, rows } = await SocioPescador.findAndCountAll({
+      distinct: true,
       include: [
         { model: SocioColeta,          as: 'coleta'  },
         { model: SocioSaude,           as: 'saude'   },
