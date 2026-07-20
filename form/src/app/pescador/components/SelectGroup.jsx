@@ -5,12 +5,13 @@ export default function SelectGroup({
     onChange,
     options,
     optionLabel,
-    optionValue
+    optionValue,
+    colSpan = 1
 }) {
 
     return (
 
-        <div>
+        <div className={colSpan === 2 ? "md:col-span-2" : ""}>
 
             <label className="block mb-2 text-sm font-semibold text-slate-700">
 

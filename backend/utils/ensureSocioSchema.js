@@ -4,6 +4,7 @@ const columnsByTable = {
   socio_pescadores: {
     cpf: { type: DataTypes.STRING(14), allowNull: true, unique: true },
     local_moradia_sede_municipal: { type: DataTypes.STRING(255), allowNull: true },
+    motivo_parou_estudar: { type: DataTypes.STRING(255), allowNull: true },
     tempo_atividade: { type: DataTypes.INTEGER, allowNull: true },
     horas_dia: { type: DataTypes.INTEGER, allowNull: true },
     fontes_renda: { type: DataTypes.TEXT, allowNull: true },

@@ -128,6 +128,18 @@ export default function CadastroPescador({ editId = null }) {
         { id: "nao", nome: "Não" }
     ];
 
+    const OPCOES_ESCOLARIDADE = [
+        { id: "fundamental_incompleto", nome: "Ensino Fundamental Incompleto" },
+        { id: "fundamental_completo", nome: "Ensino Fundamental Completo" },
+        { id: "medio_incompleto", nome: "Ensino Médio Incompleto" },
+        { id: "medio_completo", nome: "Ensino Médio Completo" },
+        { id: "superior_incompleto", nome: "Ensino Superior Incompleto" },
+        { id: "superior_completo", nome: "Ensino Superior Completo" },
+        { id: "especializacao", nome: "Especialização" },
+        { id: "mestrado", nome: "Mestrado" },
+        { id: "doutorado", nome: "Doutorado" }
+    ];
+
     const {
 
         formData,
@@ -249,6 +261,9 @@ export default function CadastroPescador({ editId = null }) {
 
     function validarEtapaAtual(etapa) {
         switch (etapa) {
+            case 2:
+                if (["fundamental_incompleto", "fundamental_completo", "medio_incompleto"].includes(formData.escolaridade) && !formData.motivoParouEstudar.trim()) return false;
+                return true;
             case 3:
                 if (formData.moradiaTipo === "outro" && !formData.moradiaOutro.trim()) return false;
                 if (formData.tipoConstrucao === "outro" && !formData.tipoConstrucaoOutro.trim()) return false;
@@ -784,13 +799,26 @@ export default function CadastroPescador({ editId = null }) {
                                     optionValue="id"
                                 />
 
-                                <InputGroup
+                                <SelectGroup
                                     label="Escolaridade"
                                     name="escolaridade"
                                     value={formData.escolaridade}
                                     onChange={handleInputChange}
+                                    options={OPCOES_ESCOLARIDADE}
+                                    optionLabel="nome"
+                                    optionValue="id"
                                     colSpan={2}
                                 />
+
+                                { ["fundamental_incompleto", "fundamental_completo", "medio_incompleto"].includes(formData.escolaridade) && (
+                                    <InputGroup
+                                        label="Por que parou de estudar?"
+                                        name="motivoParouEstudar"
+                                        value={formData.motivoParouEstudar}
+                                        onChange={handleInputChange}
+                                        colSpan={2}
+                                    />
+                                ) }
 
                                 <InputGroup
                                     label="Composição familiar"

@@ -185,6 +185,7 @@ const mapApiToFormData = (data) => {
         naturalidade: getTextValue(data, 'naturalidade', 'pescador.naturalidade'),
         estadoCivil: getTextValue(data, 'estado_civil', 'estadoCivil', 'pescador.estadoCivil'),
         escolaridade: getTextValue(data, 'escolaridade', 'pescador.escolaridade'),
+        motivoParouEstudar: getTextValue(data, 'motivo_parou_estudar', 'motivoParouEstudar', 'pescador.motivoParouEstudar'),
         composicaoFamiliar: getTextValue(data, 'composicao_familiar', 'composicaoFamiliar'),
         moradiaTipo: getTextValue(data, 'local_moradia', 'moradiaTipo', 'pescador.localMoradia'),
         moradiaSedeMunicipal: getTextValue(data, 'local_moradia_sede_municipal', 'moradiaSedeMunicipal', 'pescador.localMoradiaSedeMunicipal'),
@@ -355,7 +356,8 @@ export default function usePescadorForm(editId = null) {
             ...(name === "tipoConstrucao" && value !== "outro" ? { tipoConstrucaoOutro: "" } : {}),
             ...(name === "registroColonia" && value !== "sim" ? { qualColonia: "" } : {}),
             ...(name === "registroAssociacao" && value !== "sim" ? { qualAssociacao: "" } : {}),
-            ...(name === "possuiCarteira" && value !== "sim" ? { carteiraGrande: "", carteiraPequena: "" } : {})
+            ...(name === "possuiCarteira" && value !== "sim" ? { carteiraGrande: "", carteiraPequena: "" } : {}),
+            ...(name === "escolaridade" && !["fundamental_incompleto", "fundamental_completo", "medio_incompleto"].includes(value) ? { motivoParouEstudar: "" } : {})
         }));
     };
 

@@ -52,6 +52,10 @@ export const SocioPescador = sequelize.define('SocioPescador', {
     type: DataTypes.STRING(100),
     allowNull: true
   },
+  motivo_parou_estudar: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
   local_moradia_sede_municipal: {
     type: DataTypes.STRING(255),
     allowNull: true

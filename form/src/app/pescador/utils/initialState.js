@@ -15,6 +15,7 @@ export const initialState = {
     naturalidade: "",
     estadoCivil: "",
     escolaridade: "",
+    motivoParouEstudar: "",
     composicaoFamiliar: "",
 
     // ===== Perfil socioeconômico =====

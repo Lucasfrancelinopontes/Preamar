@@ -27,6 +27,7 @@ export function mapFormDataToPayload(formData) {
     naturalidade:          formData.naturalidade       || null,
     estadoCivil:           formData.estadoCivil        || null,
     escolaridade:          formData.escolaridade       || null,
+    motivoParouEstudar:    formData.motivoParouEstudar || null,
     atividadePrincipal:    formData.atividadePrincipal || null,
     atividadeSecundaria:   formData.atividadeSecundaria|| null,
     composicaoFamiliar:    formData.composicaoFamiliar || null,
