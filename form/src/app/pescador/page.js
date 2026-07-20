@@ -261,9 +261,6 @@ export default function CadastroPescador({ editId = null }) {
 
     function validarEtapaAtual(etapa) {
         switch (etapa) {
-            case 2:
-                if (["fundamental_incompleto", "fundamental_completo", "medio_incompleto"].includes(formData.escolaridade) && !formData.motivoParouEstudar.trim()) return false;
-                return true;
             case 3:
                 if (formData.moradiaTipo === "outro" && !formData.moradiaOutro.trim()) return false;
                 if (formData.tipoConstrucao === "outro" && !formData.tipoConstrucaoOutro.trim()) return false;
