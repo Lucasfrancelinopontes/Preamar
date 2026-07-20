@@ -868,11 +868,20 @@ export default function CadastroPescador({ editId = null }) {
                                     optionValue="id"
                                 />
 
-                                <InputGroup
-                                    label="Sede municipal"
-                                    name="moradiaSedeMunicipal"
-                                    value={formData.moradiaSedeMunicipal || ""}
+                                <SelectGroup
+                                    label="Qualidade da Moradia"
+                                    name="moradiaQualidade"
+                                    value={formData.moradiaQualidade}
                                     onChange={handleInputChange}
+                                    options={[
+                                        { id: "pessima", nome: "Péssima" },
+                                        { id: "ruim", nome: "Ruim" },
+                                        { id: "regular", nome: "Regular" },
+                                        { id: "boa", nome: "Boa" },
+                                        { id: "otima", nome: "Ótima" }
+                                    ]}
+                                    optionLabel="nome"
+                                    optionValue="id"
                                 />
 
                                 {

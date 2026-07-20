@@ -33,6 +33,7 @@ export function mapFormDataToPayload(formData) {
     composicaoFamiliar:    formData.composicaoFamiliar || null,
     localMoradia:          formData.moradiaTipo        || null,
     localMoradiaSedeMunicipal: formData.moradiaSedeMunicipal || null,
+    localMoradiaQualidade:  formData.moradiaQualidade   || null,
     localMoradiaOutro:     formData.moradiaOutro       || null,
     tipoConstrucao:        formData.tipoConstrucao     || null,
     tipoConstrucaoOutro:   formData.tipoConstrucaoOutro|| null,

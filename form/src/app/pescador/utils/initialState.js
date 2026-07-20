@@ -37,6 +37,7 @@ export const initialState = {
     // ===== Moradia =====
     moradiaTipo: "",
     moradiaSedeMunicipal: "",
+    moradiaQualidade: "",
     moradiaOutro: "",
     tipoConstrucao: "",
     tipoConstrucaoOutro: "",

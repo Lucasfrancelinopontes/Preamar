@@ -189,6 +189,7 @@ const mapApiToFormData = (data) => {
         composicaoFamiliar: getTextValue(data, 'composicao_familiar', 'composicaoFamiliar'),
         moradiaTipo: getTextValue(data, 'local_moradia', 'moradiaTipo', 'pescador.localMoradia'),
         moradiaSedeMunicipal: getTextValue(data, 'local_moradia_sede_municipal', 'moradiaSedeMunicipal', 'pescador.localMoradiaSedeMunicipal'),
+        moradiaQualidade: getTextValue(data, 'moradia_qualidade', 'moradiaQualidade', 'pescador.moradiaQualidade'),
         moradiaOutro: getTextValue(data, 'local_moradia_outro', 'moradiaOutro', 'pescador.localMoradiaOutro'),
         tipoConstrucao: getTextValue(data, 'tipo_construcao', 'tipoConstrucao', 'pescador.tipoConstrucao'),
         tipoConstrucaoOutro: getTextValue(data, 'tipo_construcao_outro', 'tipoConstrucaoOutro', 'pescador.tipoConstrucaoOutro'),
