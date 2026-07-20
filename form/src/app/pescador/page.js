@@ -249,8 +249,6 @@ export default function CadastroPescador({ editId = null }) {
 
     function validarEtapaAtual(etapa) {
         switch (etapa) {
-            case 1:
-                return Boolean(formData.municipio && formData.localidade);
             case 3:
                 if (formData.moradiaTipo === "outro" && !formData.moradiaOutro.trim()) return false;
                 if (formData.tipoConstrucao === "outro" && !formData.tipoConstrucaoOutro.trim()) return false;
