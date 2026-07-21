@@ -62,7 +62,9 @@ import {
   buscarPeixaria,
   criarPeixaria,
   atualizarPeixaria,
-  deletarPeixaria
+  deletarPeixaria,
+  gerarCodigoPeixariaEndpoint,
+  verificarCodigoPeixaria
 } from './controllers/peixariaController.js';
 
 // Socio
@@ -129,6 +131,8 @@ router.delete('/socio-pescadores/:id', verificarAutenticacao, removerSocioPescad
 
 // Rotas do módulo Peixaria (protegidas)
 router.post('/peixarias', verificarAutenticacao, criarPeixaria);
+router.get('/peixarias/gerar-codigo', verificarAutenticacao, gerarCodigoPeixariaEndpoint);
+router.get('/peixarias/verificar-codigo/:codigo', verificarAutenticacao, verificarCodigoPeixaria);
 router.get('/peixarias', verificarAutenticacao, listarPeixarias);
 router.get('/peixarias/:id', verificarAutenticacao, buscarPeixaria);
 router.put('/peixarias/:id', verificarAutenticacao, atualizarPeixaria);

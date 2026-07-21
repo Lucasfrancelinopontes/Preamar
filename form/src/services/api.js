@@ -699,6 +699,37 @@ const api = {
 
   // ==================== PEIXARIA ====================
 
+  // Gerar novo código de peixaria (PE00001, PE00002, etc.)
+  gerarCodigoPeixaria: async () => {
+    try {
+      const response = await fetch(`${API_URL}/peixarias/gerar-codigo`, {
+        headers: getAuthHeaders()
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao gerar código de peixaria:', error);
+      throw error;
+    }
+  },
+
+  // Verificar se um código de peixaria já existe
+  verificarCodigoPeixaria: async (codigo) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/peixarias/verificar-codigo/${encodeURIComponent(codigo)}`,
+        {
+          headers: getAuthHeaders()
+        }
+      );
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao verificar código de peixaria:', error);
+      throw error;
+    }
+  },
+
   listarPeixarias: async (filtros = {}) => {
     try {
       const params = new URLSearchParams(filtros);

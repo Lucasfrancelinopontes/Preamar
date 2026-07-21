@@ -26,6 +26,11 @@ export const Peixaria = sequelize.define('Peixaria', {
       key: 'ID_municipio'
     }
   },
+  cod_peixaria: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    unique: true
+  },
   responsavel: {
     type: DataTypes.STRING(255)
   },

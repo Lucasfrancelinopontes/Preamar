@@ -17,6 +17,114 @@ import {
   Especie
 } from '../models/index.js';
 
+// ─── GERAÇÃO DE CÓDIGO PE (Peixaria) ──────────────────────────────────────────
+// Reutiliza o mesmo padrão utilizado em Desembarques
+// Formato: PE00001, PE00002, etc.
+
+const gerarCodigoPeixaria = async (transaction = null) => {
+  try {
+    const lastPeixaria = await Peixaria.findOne(
+      {
+        attributes: ['cod_peixaria'],
+        order: [['ID_peixaria', 'DESC']],
+        raw: true
+      },
+      { transaction }
+    );
+
+    if (!lastPeixaria || !lastPeixaria.cod_peixaria) {
+      return 'PE00001';
+    }
+
+    const match = lastPeixaria.cod_peixaria.match(/^PE(\d+)$/);
+    if (!match) {
+      return 'PE00001';
+    }
+
+    const numeroAtual = parseInt(match[1], 10);
+    const proximoNumero = numeroAtual + 1;
+    const codigoGerado = `PE${String(proximoNumero).padStart(5, '0')}`;
+
+    // Verificar se já existe (concorrência)
+    const existe = await Peixaria.findOne(
+      { where: { cod_peixaria: codigoGerado } },
+      { transaction }
+    );
+
+    if (existe) {
+      // Se existir, tentar próximo (recursão limitada)
+      return gerarCodigoPeixaria(transaction);
+    }
+
+    return codigoGerado;
+  } catch (error) {
+    console.error('❌ Erro ao gerar código de peixaria:', error);
+    return null;
+  }
+};
+
+// Endpoint para gerar o próximo código disponível
+export const gerarCodigoPeixariaEndpoint = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const codigo = await gerarCodigoPeixaria(transaction);
+
+    if (!codigo) {
+      await transaction.rollback();
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao gerar código de peixaria'
+      });
+    }
+
+    await transaction.commit();
+
+    res.json({
+      success: true,
+      codigo
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('❌ Erro ao gerar código:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar código de peixaria',
+      error: error.message
+    });
+  }
+};
+
+// Verificar se um código já existe
+export const verificarCodigoPeixaria = async (req, res) => {
+  try {
+    const { codigo } = req.params;
+
+    if (!codigo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Código não informado'
+      });
+    }
+
+    const existe = await Peixaria.findOne(
+      { where: { cod_peixaria: codigo } },
+      { attributes: ['ID_peixaria'] }
+    );
+
+    res.json({
+      success: true,
+      existe: !!existe
+    });
+  } catch (error) {
+    console.error('❌ Erro ao verificar código:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao verificar código',
+      error: error.message
+    });
+  }
+};
+
 const txt = (value) => {
   if (value === undefined || value === null) return null;
   const text = String(value).trim();
@@ -432,7 +540,19 @@ export const criarPeixaria = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const payload = buildBasePayload(req.body || {}, req.usuario?.ID_usuario);
+
+    // Gerar código de peixaria automaticamente (padrão: PE00001, PE00002, etc.)
+    // Segue o mesmo padrão utilizado em Desembarques
+    if (!payload.cod_peixaria) {
+      const codigoGerado = await gerarCodigoPeixaria(transaction);
+      if (codigoGerado) {
+        payload.cod_peixaria = codigoGerado;
+      }
+    }
+
     const peixaria = await Peixaria.create(payload, { transaction });
+
+    console.log('✅ Peixaria criada:', peixaria.cod_peixaria, `(ID: ${peixaria.ID_peixaria})`);
 
     await createPeixariaDependencias(peixaria.ID_peixaria, req.body || {}, transaction);
 
@@ -473,6 +593,13 @@ export const atualizarPeixaria = async (req, res) => {
     }
 
     const payload = buildBasePayload(req.body || {}, req.usuario?.ID_usuario || peixaria.ID_usuario);
+
+    // Durante edição: NÃO gerar novo código, manter o existente
+    // Segue o padrão de Desembarques: nunca altera o código após criação
+    if (peixaria.cod_peixaria) {
+      payload.cod_peixaria = peixaria.cod_peixaria;
+    }
+
     await peixaria.update(payload, { transaction });
 
     // Upsert dependências: atualizar existentes, inserir novos, remover excluídos
