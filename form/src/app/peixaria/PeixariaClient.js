@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import api from "@/services/api";
 import { mapFormDataToPayload, mapApiToFormData } from "./utils/mapper";
 import DeleteConfirmModal from "./DeleteConfirmModal";
-import { useMemo } from "react";
 // ─────────────────────────────────────────────────────────────────────────────
 // Classes base padronizadas (alinhadas com Desembarque e Pescador)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -171,6 +170,13 @@ function DataTable({ headers, children, emptyMessage = "Nenhum registro encontra
     );
 }
 
+const mapToArray = (response) => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.result)) return response.result;
+    return [];
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Estado inicial
 // ─────────────────────────────────────────────────────────────────────────────
@@ -246,48 +252,6 @@ const initialForm = {
     mercadoNacional: { volume: "", valor: "", observacoes: "", linhas: [{ id: 1, especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }] },
     mercadoInternacional: { volume: "", valor: "", observacoes: "", linhas: [{ id: 1, especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }] },
 };
-const carregarMunicipios = async () => {
-    try {
-        const response = await api.buscarMunicipios();
-
-        setMunicipios(response.data);
-    } catch (err) {
-        console.error(err);
-    }
-};
-const handleMunicipioChange = async (e) => {
-    const id = e.target.value;
-
-    const municipio = municipios.find((m) => m.id == id);
-
-    setMunicipioSelecionado(municipio);
-
-    updateField("municipio", municipio.nome);
-
-    setLocalidadeSelecionada(null);
-
-    updateField("localidade", "");
-
-    carregarLocalidades(id);
-};
-const carregarLocalidades = async (municipioId) => {
-    try {
-        const response = await api.buscarLocalidades(municipioId);
-
-        setLocalidades(response.data);
-    } catch (err) {
-        console.error(err);
-    }
-};
-const handleLocalidadeChange = (e) => {
-    const id = e.target.value;
-
-    const localidade = localidades.find((l) => l.id == id);
-
-    setLocalidadeSelecionada(localidade);
-
-    updateField("localidade", localidade.nome);
-};
 // ─────────────────────────────────────────────────────────────────────────────
 // Definição dos steps do wizard
 // ─────────────────────────────────────────────────────────────────────────────
@@ -300,43 +264,6 @@ const STEPS = [
     { id: 5, title: "Perdas por espécie", subtitle: "Perdas" },
     { id: 6, title: "Mercados", subtitle: "Comercialização final" },
 ];
-
-
-const [municipios, setMunicipios] = useState([]);
-const [localidades, setLocalidades] = useState([]);
-
-const [municipioSelecionado, setMunicipioSelecionado] = useState(null);
-const [localidadeSelecionada, setLocalidadeSelecionada] = useState(null);
-
-const codigoColetaGerado = useMemo(() => {
-    const municipioCode = municipioSelecionado?.municipioCode?.trim();
-    const localidadeCode = localidadeSelecionada?.localidadeCode?.trim();
-
-    if (!municipioCode || !localidadeCode || !form.dataColeta) {
-        return "";
-    }
-
-    const partesData = form.dataColeta.split("-");
-    if (partesData.length !== 3) return "";
-
-    const [ano, mes, dia] = partesData;
-
-    const consecutivoNumero = Number(form.consecutivoColeta || 1);
-
-    if (!Number.isInteger(consecutivoNumero) || consecutivoNumero <= 0) {
-        return "";
-    }
-
-    const consecutivo = String(consecutivoNumero).padStart(2, "0");
-
-    return `${municipioCode} ${localidadeCode} ${dia} ${mes} ${ano.slice(-2)} ${consecutivo}`;
-}, [
-    municipioSelecionado,
-    localidadeSelecionada,
-    form.dataColeta,
-    form.consecutivoColeta,
-]);
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Componente de indicador de progresso (steps)
@@ -386,17 +313,163 @@ export default function PeixariaClient() {
     const [deletando, setDeletando] = useState(false);
     const router = useRouter();
 
-    // ── Carregamento em modo edição ──────────────────────────────────────────
+    const [municipios, setMunicipios] = useState([]);
+    const [localidades, setLocalidades] = useState([]);
+    const [municipioSelecionado, setMunicipioSelecionado] = useState(null);
+    const [localidadeSelecionada, setLocalidadeSelecionada] = useState(null);
+
+    const codigoColetaGerado = useMemo(() => {
+        const municipioCode = municipioSelecionado?.municipioCode?.trim();
+        const localidadeCode = localidadeSelecionada?.localidadeCode?.trim();
+
+        if (!municipioCode || !localidadeCode || !form.dataColeta) {
+            return "";
+        }
+
+        const partesData = form.dataColeta.split("-");
+        if (partesData.length !== 3) return "";
+
+        const [ano, mes, dia] = partesData;
+        const consecutivoNumero = Number(form.consecutivoColeta || 1);
+
+        if (!Number.isInteger(consecutivoNumero) || consecutivoNumero <= 0) {
+            return "";
+        }
+
+        const consecutivo = String(consecutivoNumero).padStart(2, "0");
+
+        return `${municipioCode} ${localidadeCode} ${dia} ${mes} ${ano.slice(-2)} ${consecutivo}`;
+    }, [municipioSelecionado, localidadeSelecionada, form.dataColeta, form.consecutivoColeta]);
+
+    const carregarMunicipios = useCallback(async () => {
+        try {
+            const response = await api.getMunicipios();
+            setMunicipios(mapToArray(response));
+        } catch (err) {
+            console.error(err);
+        }
+    }, []);
+
+    const updateField = useCallback((field, value) => setForm((prev) => ({ ...prev, [field]: value })), []);
+
+    const updateNumericField = useCallback((field, value) =>
+        setForm((prev) => ({ ...prev, [field]: value.replace(/\D/g, "") })), []);
+
+    const updateNestedField = useCallback((group, field, value) =>
+        setForm((prev) => ({ ...prev, [group]: { ...prev[group], [field]: value } })), []);
+
+    const updateArrayItem = useCallback((key, index, field, value) =>
+        setForm((prev) => ({
+            ...prev,
+            [key]: prev[key].map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+        })), []);
+
+    const updateMarketRow = useCallback((group, index, field, value) =>
+        setForm((prev) => ({
+            ...prev,
+            [group]: {
+                ...prev[group],
+                linhas: prev[group].linhas.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+            },
+        })), []);
+
+    const addMarketRow = useCallback((group) =>
+        setForm((prev) => ({
+            ...prev,
+            [group]: {
+                ...prev[group],
+                linhas: [...prev[group].linhas, { id: Date.now(), especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }],
+            },
+        })), []);
+
+    const removeMarketRow = useCallback((group, index) =>
+        setForm((prev) => ({
+            ...prev,
+            [group]: {
+                ...prev[group],
+                linhas: prev[group].linhas.filter((_, i) => i !== index),
+            },
+        })), []);
+
+    const updatePerdaPorEspecie = useCallback((speciesIndex, rowIndex, field, value) =>
+        setForm((prev) => ({
+            ...prev,
+            perdasPorEspecie: prev.perdasPorEspecie.map((sp, si) =>
+                si === speciesIndex
+                    ? { ...sp, linhas: sp.linhas.map((row, ri) => (ri === rowIndex ? { ...row, [field]: value } : row)) }
+                    : sp
+            ),
+        })), []);
+
+    const handlePercentInput = useCallback((speciesIndex, rowIndex, value) => {
+        const num = Math.min(100, Math.max(0, Number(value.replace(/[^0-9]/g, "") || 0)));
+        updatePerdaPorEspecie(speciesIndex, rowIndex, "estimativa", String(num));
+    }, [updatePerdaPorEspecie]);
+
+    const addRow = useCallback((key, template) =>
+        setForm((prev) => ({ ...prev, [key]: [...prev[key], { ...template, id: Date.now() }] })), []);
+
+    const removeRow = useCallback((key, index) =>
+        setForm((prev) => ({ ...prev, [key]: prev[key].filter((_, i) => i !== index) })), []);
+
+    const handleMunicipioChange = useCallback((e) => {
+        const nomeMunicipio = e.target.value;
+        const municipio = municipios.find((m) => m.municipio === nomeMunicipio);
+
+        if (!municipio) {
+            setMunicipioSelecionado(null);
+            updateField("municipio", "");
+            updateField("ID_municipio", "");
+            setLocalidadeSelecionada(null);
+            updateField("localidade", "");
+            setLocalidades([]);
+            return;
+        }
+
+        setMunicipioSelecionado(municipio);
+        updateField("municipio", municipio.municipio || "");
+        updateField("ID_municipio", municipio.ID_municipio || "");
+        setLocalidadeSelecionada(null);
+        updateField("localidade", "");
+        setLocalidades(Array.isArray(municipio.localidades) ? municipio.localidades : []);
+    }, [municipios, updateField]);
+
+    const handleLocalidadeChange = useCallback((e) => {
+        const nomeLocalidade = e.target.value;
+        const localidade = localidades.find((l) => l.localidade === nomeLocalidade);
+
+        if (!localidade) {
+            setLocalidadeSelecionada(null);
+            updateField("localidade", "");
+            return;
+        }
+
+        setLocalidadeSelecionada(localidade);
+        updateField("localidade", localidade.localidade || "");
+    }, [localidades, updateField]);
+
+    useEffect(() => {
+        const municipio = municipios.find((m) => m.municipio === form.municipio) || null;
+        setMunicipioSelecionado(municipio);
+
+        const localidadesDoMunicipio = Array.isArray(municipio?.localidades) ? municipio.localidades : [];
+        setLocalidades(localidadesDoMunicipio);
+
+        const localidade = localidadesDoMunicipio.find((l) => l.localidade === form.localidade) || null;
+        setLocalidadeSelecionada(localidade);
+    }, [municipios, form.municipio, form.localidade]);
+
     useEffect(() => {
         carregarMunicipios();
-        // carregarLocalidades();
-        if (!isEditMode) { setForm(initialForm); return; }
+
+        if (!isEditMode) {
+            setForm(initialForm);
+            setMunicipioSelecionado(null);
+            setLocalidadeSelecionada(null);
+            return;
+        }
+
         const carregar = async () => {
-            setMunicipioSelecionado(municipioEncontrado);
-
-            await carregarLocalidades(municipioEncontrado.id);
-
-            setLocalidadeSelecionada(localidadeEncontrada);
             setCarregandoEdicao(true);
             setErroEnvio("");
             try {
@@ -409,71 +482,11 @@ export default function PeixariaClient() {
                 setCarregandoEdicao(false);
             }
         };
+
         carregar();
-    }, [editId, isEditMode]);
+    }, [carregarMunicipios, editId, isEditMode]);
 
     // ── Helpers de atualização de estado ────────────────────────────────────
-    const updateField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
-
-    const updateNumericField = (field, value) =>
-        setForm((prev) => ({ ...prev, [field]: value.replace(/\D/g, "") }));
-
-    const updateNestedField = (group, field, value) =>
-        setForm((prev) => ({ ...prev, [group]: { ...prev[group], [field]: value } }));
-
-    const updateArrayItem = (key, index, field, value) =>
-        setForm((prev) => ({
-            ...prev,
-            [key]: prev[key].map((item, i) => (i === index ? { ...item, [field]: value } : item)),
-        }));
-
-    const updateMarketRow = (group, index, field, value) =>
-        setForm((prev) => ({
-            ...prev,
-            [group]: {
-                ...prev[group],
-                linhas: prev[group].linhas.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
-            },
-        }));
-
-    const addMarketRow = (group) =>
-        setForm((prev) => ({
-            ...prev,
-            [group]: {
-                ...prev[group],
-                linhas: [...prev[group].linhas, { id: Date.now(), especie: "", formaComercializacao: "", destino: "", volumeMedio: "", precoVenda: "" }],
-            },
-        }));
-
-    const removeMarketRow = (group, index) =>
-        setForm((prev) => ({
-            ...prev,
-            [group]: {
-                ...prev[group],
-                linhas: prev[group].linhas.filter((_, i) => i !== index),
-            },
-        }));
-
-    const updatePerdaPorEspecie = (speciesIndex, rowIndex, field, value) =>
-        setForm((prev) => ({
-            ...prev,
-            perdasPorEspecie: prev.perdasPorEspecie.map((sp, si) =>
-                si === speciesIndex
-                    ? { ...sp, linhas: sp.linhas.map((row, ri) => (ri === rowIndex ? { ...row, [field]: value } : row)) }
-                    : sp
-            ),
-        }));
-
-    const handlePercentInput = (speciesIndex, rowIndex, value) => {
-        const num = Math.min(100, Math.max(0, Number(value.replace(/[^0-9]/g, "") || 0)));
-        updatePerdaPorEspecie(speciesIndex, rowIndex, "estimativa", String(num));
-    };
-
-    const addRow = (key, template) =>
-        setForm((prev) => ({ ...prev, [key]: [...prev[key], { ...template, id: Date.now() }] }));
-
-    const removeRow = (key, index) =>
-        setForm((prev) => ({ ...prev, [key]: prev[key].filter((_, i) => i !== index) }));
 
     // ── Validação ────────────────────────────────────────────────────────────
     const validarCamposObrigatorios = () => {
@@ -660,8 +673,8 @@ export default function PeixariaClient() {
                                             value={form.municipio}
                                             onChange={handleMunicipioChange}
                                             options={municipios.map((m) => ({
-                                                value: m.id,
-                                                label: m.nome,
+                                                value: m.municipio,
+                                                label: m.municipio,
                                             }))}
                                         />
                                         <SelectGroup
@@ -670,8 +683,8 @@ export default function PeixariaClient() {
                                             value={form.localidade}
                                             onChange={handleLocalidadeChange}
                                             options={localidades.map((l) => ({
-                                                value: l.id,
-                                                label: l.nome,
+                                                value: l.localidade,
+                                                label: l.localidade,
                                             }))}
                                         />
                                         <InputGroup label="Data da coleta" name="dataColeta" value={form.dataColeta} onChange={(e) => updateField("dataColeta", e.target.value)} type="date" />
