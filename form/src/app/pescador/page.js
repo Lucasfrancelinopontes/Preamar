@@ -258,33 +258,6 @@ export default function CadastroPescador({ editId = null }) {
             </main>
         );
     }
-
-    function validarEtapaAtual(etapa) {
-        switch (etapa) {
-            case 3:
-                if (formData.moradiaTipo === "outro" && !formData.moradiaOutro.trim()) return false;
-                if (formData.tipoConstrucao === "outro" && !formData.tipoConstrucaoOutro.trim()) return false;
-                return true;
-            case 4:
-                return !formData.saude.outros || Boolean(formData.saudeOutros.trim());
-            case 5:
-                if (formData.registroColonia === "sim" && !formData.qualColonia.trim()) return false;
-                if (formData.registroAssociacao === "sim" && !formData.qualAssociacao.trim()) return false;
-                return true;
-            case 8:
-                return !(formData.especies || []).some((esp) => {
-                    const temDados = Boolean(
-                        String(esp.buscaTexto || "").trim() ||
-                        String(esp.inicioSafra || "").trim() ||
-                        String(esp.fimSafra || "").trim()
-                    );
-                    return temDados && !esp.id_especie;
-                });
-            default:
-                return true;
-        }
-    }
-
     function scrollToTop() {
         if (typeof window !== "undefined") {
             window.scrollTo(0, 0);
@@ -292,7 +265,7 @@ export default function CadastroPescador({ editId = null }) {
     }
 
     function handleNext() {
-        if (etapaAtual >= TOTAL_ETAPAS || !validarEtapaAtual(etapaAtual)) return;
+        if (etapaAtual >= TOTAL_ETAPAS) return;
         setEtapaAtual((e) => e + 1);
         scrollToTop();
     }
@@ -307,7 +280,6 @@ export default function CadastroPescador({ editId = null }) {
         e.preventDefault();
 
         if (salvando || etapaAtual !== TOTAL_ETAPAS) return;
-        if (!validarEtapaAtual(etapaAtual)) return;
 
         const ok = await submitForm();
         if (ok) {
