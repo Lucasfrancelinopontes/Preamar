@@ -1,4 +1,5 @@
 import sequelize from '../db.js';
+import { Op } from 'sequelize';
 import {
   SocioColeta,
   SocioPescador,
@@ -12,6 +13,36 @@ import {
   SocioQuadrante,
   SocioPescadorEspecie
 } from '../models/Socio.js';
+
+export const verificarCodigoColeta = async (req, res) => {
+  try {
+    const codigo = txt(req.params?.codigo);
+
+    if (!codigo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Código não informado'
+      });
+    }
+
+    const coleta = await SocioColeta.findOne({
+      where: { codigo_coleta: codigo },
+      attributes: ['id']
+    });
+
+    return res.json({
+      success: true,
+      existe: !!coleta
+    });
+  } catch (err) {
+    console.error('[socioPescadorController] verificarCodigoColeta:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao verificar código de coleta',
+      error: err.message
+    });
+  }
+};
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -301,14 +332,43 @@ export const listar = async (req, res) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit || '20', 10)));
     const offset = (page - 1) * limit;
 
+    const codigo = txt(req.query.codigo_coleta ?? req.query.codigo ?? req.query.cod);
+    const nome = txt(req.query.nome);
+    const municipio = txt(req.query.municipio);
+    const localidade = txt(req.query.localidade);
+
     const where = {};
-    // filtros opcionais via join com SocioColeta
-    // por simplicidade filtramos na coleta se passado como query
+    if (nome) {
+      where.nome = { [Op.like]: `%${nome}%` };
+    }
+
+    const whereColeta = {};
+    if (codigo) {
+      whereColeta.codigo_coleta = { [Op.like]: `%${codigo}%` };
+    }
+    if (municipio) {
+      whereColeta.ID_municipio = Number.isFinite(Number(municipio))
+        ? Number(municipio)
+        : { [Op.like]: `%${municipio}%` };
+    }
+    if (localidade) {
+      whereColeta.localidade = { [Op.like]: `%${localidade}%` };
+    }
+
+    const includeColeta = {
+      model: SocioColeta,
+      as: 'coleta'
+    };
+
+    if (Object.keys(whereColeta).length > 0) {
+      includeColeta.where = whereColeta;
+      includeColeta.required = true;
+    }
 
     const { count, rows } = await SocioPescador.findAndCountAll({
       distinct: true,
       include: [
-        { model: SocioColeta,          as: 'coleta'  },
+        includeColeta,
         { model: SocioSaude,           as: 'saude'   },
         { model: SocioRegistro,        as: 'registro' },
         { model: SocioEmbarcacao,      as: 'embarcacao' },

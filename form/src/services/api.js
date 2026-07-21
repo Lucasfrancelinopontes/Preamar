@@ -697,6 +697,22 @@ const api = {
     }
   },
 
+  verificarCodigoSocioPescador: async (codigo) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/socio-pescadores/verificar-codigo/${encodeURIComponent(codigo)}`,
+        {
+          headers: getAuthHeaders()
+        }
+      );
+
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Erro ao verificar código do cadastro socioeconômico:', error);
+      throw error;
+    }
+  },
+
   // ==================== PEIXARIA ====================
 
   // Gerar novo código de peixaria (PE00001, PE00002, etc.)

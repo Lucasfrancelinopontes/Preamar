@@ -7,68 +7,56 @@ import api from "@/services/api";
 
 const LIMITE_POR_PAGINA = 12;
 
-export default function MeusPescadoresPage() {
+export default function MeusPeixariasPage() {
     const router = useRouter();
 
-    const [pescadores, setPescadores] = useState([]);
+    const [peixarias, setPeixarias] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
     const [deletandoId, setDeletandoId] = useState(null);
-    const [pescadorParaExcluir, setPescadorParaExcluir] = useState(null);
+    const [peixariaParaExcluir, setPeixariaParaExcluir] = useState(null);
     const [paginaAtual, setPaginaAtual] = useState(1);
     const [totalPaginas, setTotalPaginas] = useState(1);
     const [totalRegistros, setTotalRegistros] = useState(0);
     const [inputCodigo, setInputCodigo] = useState("");
     const [filtroCodigo, setFiltroCodigo] = useState("");
 
-    const carregarPescadores = useCallback(async (pagina = 1, codigo = "") => {
+    const carregarPeixarias = useCallback(async (pagina = 1, codigo = "") => {
         try {
             setLoading(true);
             setError("");
 
-            const resposta = await api.listarSocioPescadores({
+            const resposta = await api.listarPeixarias({
                 page: pagina,
                 limit: LIMITE_POR_PAGINA,
                 ...(codigo ? { codigo } : {})
             });
 
-            setPescadores(Array.isArray(resposta?.data) ? resposta.data : []);
-            setTotalPaginas(Number(resposta?.pages || 1));
-            setTotalRegistros(Number(resposta?.total || 0));
+            setPeixarias(Array.isArray(resposta?.data) ? resposta.data : []);
+            setTotalPaginas(Number(resposta?.pagination?.pages || 1));
+            setTotalRegistros(Number(resposta?.pagination?.total || 0));
         } catch (err) {
-            setError(err?.message || "Erro ao carregar pescadores socioeconômicos.");
+            setError(err?.message || "Erro ao carregar peixarias.");
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        carregarPescadores(paginaAtual, filtroCodigo);
-    }, [paginaAtual, filtroCodigo, carregarPescadores]);
-
-    const formatarMunicipio = (pescador) => {
-        const municipio = pescador?.coleta?.ID_municipio || pescador?.coleta?.municipio || pescador?.coleta?.municipioInfo?.municipio;
-        const localidade = pescador?.coleta?.localidade || pescador?.coleta?.localidadeInfo?.localidade;
-        if (!municipio && !localidade) return "-";
-        if (municipio && localidade) return `${municipio} / ${localidade}`;
-        return municipio || localidade || "-";
-    };
-
-    const formatarEmbarcacao = (pescador) => pescador?.embarcacao?.nome_embarcacao || pescador?.embarcacao?.tipo_embarcacao || "-";
+        carregarPeixarias(paginaAtual, filtroCodigo);
+    }, [paginaAtual, filtroCodigo, carregarPeixarias]);
 
     const formatarResumo = (valor) => (valor ? String(valor) : "-");
 
-    const formatarCodigo = (pescador) => {
-        return pescador?.coleta?.codigo_coleta || pescador?.coleta?.codigoColeta || "-";
-    };
+    const formatarCodigo = (peixaria) => peixaria?.cod_peixaria || "-";
 
     const handleEditar = (id) => {
-        router.push(`/pescador/editar/${id}`);
+        router.push(`/peixaria?edit=${id}`);
     };
 
     const handleNovo = () => {
-        router.push("/pescador");
+        router.push("/peixaria");
     };
 
     const handleExcluir = async (id) => {
@@ -76,30 +64,29 @@ export default function MeusPescadoresPage() {
         setError("");
 
         try {
-            await api.excluirSocioPescador(id);
+            await api.excluirPeixaria(id);
 
-            const novaPagina = pescadores.length === 1 && paginaAtual > 1
+            const novaPagina = peixarias.length === 1 && paginaAtual > 1
                 ? paginaAtual - 1
                 : paginaAtual;
 
-            setPescadores((itens) => itens.filter((pescador) => pescador.id !== id));
+            setPeixarias((itens) => itens.filter((peixaria) => peixaria.ID_peixaria !== id));
             setTotalRegistros((valor) => Math.max(0, valor - 1));
-            setPescadorParaExcluir(null);
+            setPeixariaParaExcluir(null);
             setPaginaAtual(novaPagina);
-            await carregarPescadores(novaPagina, filtroCodigo);
-            setSuccessMessage("Cadastro excluído com sucesso.");
+            await carregarPeixarias(novaPagina, filtroCodigo);
+            setSuccessMessage("Peixaria excluída com sucesso.");
         } catch (err) {
-            console.error(err);
-            setError(err?.message || "Erro ao excluir cadastro socioeconômico.");
-            setPescadorParaExcluir(null);
+            setError(err?.message || "Erro ao excluir peixaria.");
+            setPeixariaParaExcluir(null);
         } finally {
             setDeletandoId(null);
         }
     };
 
-    const abrirConfirmacaoExclusao = (pescador, event) => {
+    const abrirConfirmacaoExclusao = (peixaria, event) => {
         event?.stopPropagation();
-        setPescadorParaExcluir(pescador);
+        setPeixariaParaExcluir(peixaria);
     };
 
     const aplicarBuscaCodigo = () => {
@@ -131,12 +118,8 @@ export default function MeusPescadoresPage() {
                                     </svg>
                                 </button>
                                 <div>
-                                    <h1 className="text-3xl font-bold text-slate-800">
-                                        Meus Pescadores
-                                    </h1>
-                                    <p className="text-slate-500 mt-2">
-                                        Cadastro socioeconômico dos pescadores existentes
-                                    </p>
+                                    <h1 className="text-3xl font-bold text-slate-800">Minhas Peixarias</h1>
+                                    <p className="text-slate-500 mt-2">Cadastros de peixarias com pré-visualização dos dados principais</p>
                                 </div>
                             </div>
                             <button
@@ -144,7 +127,7 @@ export default function MeusPescadoresPage() {
                                 onClick={handleNovo}
                                 className="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
                             >
-                                Novo Cadastro
+                                Nova Peixaria
                             </button>
                         </div>
 
@@ -175,29 +158,21 @@ export default function MeusPescadoresPage() {
 
                     {loading && (
                         <div className="flex items-center justify-center py-16">
-                            <div className="text-lg text-slate-600">
-                                Carregando pescadores...
-                            </div>
+                            <div className="text-lg text-slate-600">Carregando peixarias...</div>
                         </div>
                     )}
 
                     {!loading && error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                            {error}
-                        </div>
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>
                     )}
 
                     {successMessage && (
-                        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
-                            {successMessage}
-                        </div>
+                        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">{successMessage}</div>
                     )}
 
-                    {!loading && !error && pescadores.length === 0 && (
+                    {!loading && !error && peixarias.length === 0 && (
                         <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-slate-200">
-                            <p className="text-lg text-slate-600">
-                                Nenhum pescador cadastrado ainda.
-                            </p>
+                            <p className="text-lg text-slate-600">Nenhuma peixaria cadastrada.</p>
                             <button
                                 type="button"
                                 onClick={handleNovo}
@@ -208,43 +183,43 @@ export default function MeusPescadoresPage() {
                         </div>
                     )}
 
-                    {!loading && !error && pescadores.length > 0 && (
+                    {!loading && !error && peixarias.length > 0 && (
                         <div className="space-y-4">
-                            {pescadores.map((pescador) => (
+                            {peixarias.map((peixaria) => (
                                 <div
-                                    key={pescador.id}
+                                    key={peixaria.ID_peixaria}
                                     className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition"
                                 >
                                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                         <div className="space-y-3 flex-1">
                                             <div className="flex flex-wrap items-center gap-3">
                                                 <div className="text-sm font-mono px-3 py-1 rounded bg-blue-100 text-blue-800">
-                                                    #{formatarResumo(pescador.id)}
+                                                    #{formatarResumo(peixaria.ID_peixaria)}
                                                 </div>
                                                 <div className="text-sm font-mono px-3 py-1 rounded bg-emerald-100 text-emerald-800">
-                                                    Código: {formatarCodigo(pescador)}
+                                                    Código: {formatarCodigo(peixaria)}
                                                 </div>
                                                 <div className="text-sm text-slate-500">
-                                                    {formatarMunicipio(pescador)}
+                                                    {formatarResumo(peixaria.municipio)} / {formatarResumo(peixaria.localidade)}
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                                                 <div>
+                                                    <p className="text-xs text-slate-500 uppercase tracking-wide">Responsável</p>
+                                                    <p className="font-semibold text-slate-800">{formatarResumo(peixaria.responsavel)}</p>
+                                                </div>
+                                                <div>
                                                     <p className="text-xs text-slate-500 uppercase tracking-wide">Nome</p>
-                                                    <p className="font-semibold text-slate-800">{formatarResumo(pescador.nome)}</p>
+                                                    <p className="font-semibold text-slate-800">{formatarResumo(peixaria.nome)}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-slate-500 uppercase tracking-wide">CPF</p>
-                                                    <p className="font-semibold text-slate-800">{formatarResumo(pescador.cpf)}</p>
+                                                    <p className="text-xs text-slate-500 uppercase tracking-wide">Contato</p>
+                                                    <p className="font-semibold text-slate-800">{formatarResumo(peixaria.contato)}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-slate-500 uppercase tracking-wide">Embarcação</p>
-                                                    <p className="font-semibold text-slate-800">{formatarEmbarcacao(pescador)}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-slate-500 uppercase tracking-wide">Categoria</p>
-                                                    <p className="font-semibold text-slate-800">{formatarResumo(pescador.categoria_pesca)}</p>
+                                                    <p className="text-xs text-slate-500 uppercase tracking-wide">Tipo</p>
+                                                    <p className="font-semibold text-slate-800">{formatarResumo(peixaria.tipo_estabelecimento)}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -252,23 +227,18 @@ export default function MeusPescadoresPage() {
                                         <div className="flex items-center gap-3">
                                             <button
                                                 type="button"
-                                                onClick={() => handleEditar(pescador.id)}
-                                                className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+                                                onClick={() => handleEditar(peixaria.ID_peixaria)}
+                                                className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                                             >
-                                                <span>✏️</span> Editar
+                                                Editar
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={(event) => abrirConfirmacaoExclusao(pescador, event)}
-                                                disabled={deletandoId === pescador.id}
-                                                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60 ${deletandoId === pescador.id ? 'bg-red-200 text-red-900' : 'bg-red-100 hover:bg-red-200 text-red-800'}`}
+                                                onClick={(event) => abrirConfirmacaoExclusao(peixaria, event)}
+                                                disabled={deletandoId === peixaria.ID_peixaria}
+                                                className={`px-4 py-2 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${deletandoId === peixaria.ID_peixaria ? 'bg-red-200 text-red-900' : 'bg-red-100 hover:bg-red-200 text-red-800'}`}
                                             >
-                                                {deletandoId === pescador.id ? (
-                                                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-red-700 border-t-transparent" />
-                                                ) : (
-                                                    <span>🗑️</span>
-                                                )}
-                                                {deletandoId === pescador.id ? 'Excluindo...' : 'Excluir'}
+                                                {deletandoId === peixaria.ID_peixaria ? 'Excluindo...' : 'Excluir'}
                                             </button>
                                         </div>
                                     </div>
@@ -276,9 +246,7 @@ export default function MeusPescadoresPage() {
                             ))}
 
                             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                                <p className="text-sm text-slate-600">
-                                    Total de registros: {totalRegistros}
-                                </p>
+                                <p className="text-sm text-slate-600">Total de registros: {totalRegistros}</p>
                                 <div className="flex items-center gap-3">
                                     <button
                                         type="button"
@@ -288,9 +256,7 @@ export default function MeusPescadoresPage() {
                                     >
                                         Anterior
                                     </button>
-                                    <span className="text-sm text-slate-600">
-                                        Página {paginaAtual} de {totalPaginas}
-                                    </span>
+                                    <span className="text-sm text-slate-600">Página {paginaAtual} de {totalPaginas}</span>
                                     <button
                                         type="button"
                                         onClick={() => setPaginaAtual((atual) => Math.min(totalPaginas, atual + 1))}
@@ -305,31 +271,27 @@ export default function MeusPescadoresPage() {
                     )}
                 </div>
 
-                {pescadorParaExcluir && (
+                {peixariaParaExcluir && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
                         <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-200">
-                            <h2 className="text-xl font-semibold text-slate-800">Excluir cadastro</h2>
-                            <p className="mt-3 text-sm text-slate-600">
-                                Tem certeza que deseja excluir este cadastro socioeconômico?
-                            </p>
-                            <p className="mt-2 text-sm text-slate-600">
-                                Esta ação não poderá ser desfeita.
-                            </p>
+                            <h2 className="text-xl font-semibold text-slate-800">Excluir peixaria</h2>
+                            <p className="mt-3 text-sm text-slate-600">Tem certeza que deseja excluir esta peixaria?</p>
+                            <p className="mt-2 text-sm text-slate-600">Esta ação não poderá ser desfeita.</p>
                             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                                 <button
                                     type="button"
-                                    onClick={() => setPescadorParaExcluir(null)}
+                                    onClick={() => setPeixariaParaExcluir(null)}
                                     className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => handleExcluir(pescadorParaExcluir.id)}
-                                    disabled={deletandoId === pescadorParaExcluir.id}
+                                    onClick={() => handleExcluir(peixariaParaExcluir.ID_peixaria)}
+                                    disabled={deletandoId === peixariaParaExcluir.ID_peixaria}
                                     className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    {deletandoId === pescadorParaExcluir.id ? 'Excluindo...' : 'Excluir'}
+                                    {deletandoId === peixariaParaExcluir.ID_peixaria ? 'Excluindo...' : 'Excluir'}
                                 </button>
                             </div>
                         </div>

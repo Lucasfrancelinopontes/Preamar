@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import api from "@/services/api";
@@ -25,6 +25,19 @@ const btnAdd =
     "rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700";
 
 const labelClass = "mb-1.5 block text-sm font-semibold text-black";
+
+const TIPO_ESTABELECIMENTO_OPTIONS = [
+    { value: "PEIXARIA", label: "Peixaria" },
+    { value: "FEIRA_LIVRE", label: "Feira livre" },
+    { value: "MERCADO", label: "Mercado" },
+];
+
+const RELACOES_TRABALHO_OPTIONS = [
+    "Familiar",
+    "Artesanal com vizinhos/amigos",
+    "Armador ou embarcado",
+    "Assalariado (carteira assinada)",
+];
 
 
 
@@ -181,6 +194,8 @@ const mapToArray = (response) => {
 // Estado inicial
 // ─────────────────────────────────────────────────────────────────────────────
 const initialForm = {
+    codPeixaria: "",
+    tipoEstabelecimento: "",
     responsavel: "",
     contato: "",
     municipio: "",
@@ -311,6 +326,8 @@ export default function PeixariaClient() {
     const [enviando, setEnviando] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletando, setDeletando] = useState(false);
+    const [verificandoCodigoPeixaria, setVerificandoCodigoPeixaria] = useState(false);
+    const ultimoCodigoAlertadoRef = useRef("");
     const router = useRouter();
 
     const [municipios, setMunicipios] = useState([]);
@@ -340,6 +357,37 @@ export default function PeixariaClient() {
 
         return `${municipioCode} ${localidadeCode} ${dia} ${mes} ${ano.slice(-2)} ${consecutivo}`;
     }, [municipioSelecionado, localidadeSelecionada, form.dataColeta, form.consecutivoColeta]);
+
+    const validarCodigoPeixaria = useCallback(async () => {
+        const codigo = (codigoColetaGerado || "").trim();
+        if (!codigo) {
+            const msg = "Preencha município, localidade, data e consecutivo para gerar o código da peixaria.";
+            setErroEnvio(msg);
+            window.alert(msg);
+            return false;
+        }
+
+        if (isEditMode) return true;
+
+        try {
+            setVerificandoCodigoPeixaria(true);
+            const resultado = await api.verificarCodigoPeixaria(codigo);
+            if (resultado?.existe) {
+                const msg = `O código ${codigo} já existe. Gere um novo código para continuar.`;
+                setErroEnvio(msg);
+                window.alert(msg);
+                return false;
+            }
+            return true;
+        } catch (error) {
+            const msg = error?.message || "Não foi possível validar o código da peixaria.";
+            setErroEnvio(msg);
+            window.alert(msg);
+            return false;
+        } finally {
+            setVerificandoCodigoPeixaria(false);
+        }
+    }, [codigoColetaGerado, isEditMode]);
 
     const carregarMunicipios = useCallback(async () => {
         try {
@@ -412,6 +460,19 @@ export default function PeixariaClient() {
     const removeRow = useCallback((key, index) =>
         setForm((prev) => ({ ...prev, [key]: prev[key].filter((_, i) => i !== index) })), []);
 
+    const toggleRelacaoTrabalho = useCallback((tipo) => {
+        setForm((prev) => {
+            const atuais = Array.isArray(prev.relacoesTrabalho) ? prev.relacoesTrabalho : [];
+            const jaSelecionado = atuais.includes(tipo);
+            return {
+                ...prev,
+                relacoesTrabalho: jaSelecionado
+                    ? atuais.filter((item) => item !== tipo)
+                    : [...atuais, tipo],
+            };
+        });
+    }, []);
+
     const handleMunicipioChange = useCallback((e) => {
         const nomeMunicipio = e.target.value;
         const municipio = municipios.find((m) => m.municipio === nomeMunicipio);
@@ -460,6 +521,34 @@ export default function PeixariaClient() {
     }, [municipios, form.municipio, form.localidade]);
 
     useEffect(() => {
+        if (isEditMode) return;
+        const codigo = (codigoColetaGerado || "").trim();
+        if (!codigo || codigo === ultimoCodigoAlertadoRef.current) return;
+
+        let cancelado = false;
+
+        const verificar = async () => {
+            try {
+                const resultado = await api.verificarCodigoPeixaria(codigo);
+                if (!cancelado && resultado?.existe) {
+                    ultimoCodigoAlertadoRef.current = codigo;
+                    const msg = `O código ${codigo} já existe. Gere um novo código para continuar.`;
+                    setErroEnvio(msg);
+                    window.alert(msg);
+                }
+            } catch {
+                // Não interrompe fluxo de digitação/edição por falha de verificação automática.
+            }
+        };
+
+        verificar();
+
+        return () => {
+            cancelado = true;
+        };
+    }, [codigoColetaGerado, isEditMode]);
+
+    useEffect(() => {
         carregarMunicipios();
 
         if (!isEditMode) {
@@ -503,8 +592,10 @@ export default function PeixariaClient() {
     };
 
     // ── Navegação de steps ──────────────────────────────────────────────────
-    const handleNext = () => {
+    const handleNext = async () => {
         if (!validarStep()) return;
+        const codigoValido = await validarCodigoPeixaria();
+        if (!codigoValido) return;
         setCurrentStep(Math.min(currentStep + 1, STEPS.length - 1));
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -515,11 +606,29 @@ export default function PeixariaClient() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
+    const handleStepClick = async (idx) => {
+        if (idx <= currentStep) {
+            setCurrentStep(idx);
+            setErroEnvio("");
+            return;
+        }
+
+        if (!validarStep()) return;
+        const codigoValido = await validarCodigoPeixaria();
+        if (!codigoValido) return;
+
+        setCurrentStep(idx);
+        setErroEnvio("");
+    };
+
     // ── Salvar / Excluir ─────────────────────────────────────────────────────
     const handleSave = async () => {
-        if (enviando) return;
+        if (enviando || verificandoCodigoPeixaria) return;
         validarCamposObrigatorios();
+        const codigoValido = await validarCodigoPeixaria();
+        if (!codigoValido) return;
         const payload = mapFormDataToPayload(form);
+        payload.cod_peixaria = codigoColetaGerado || null;
         setEnviando(true);
         setErroEnvio("");
         setSucessoEnvio("");
@@ -529,6 +638,9 @@ export default function PeixariaClient() {
                 : await api.criarPeixaria(payload);
             if (response?.success) {
                 setSucessoEnvio(isEditMode ? "Peixaria atualizada com sucesso." : "Peixaria criada com sucesso.");
+                if (!isEditMode) {
+                    setTimeout(() => router.push("/"), 800);
+                }
             } else {
                 throw new Error(response?.message || "Falha ao salvar peixaria.");
             }
@@ -616,7 +728,12 @@ export default function PeixariaClient() {
                                 <button
                                     type="button"
                                     className={btnSecondary}
-                                    onClick={() => { setForm(initialForm); setCurrentStep(0); setErroEnvio(""); setSucessoEnvio(""); }}
+                                    onClick={() => {
+                                        setForm(initialForm);
+                                        setCurrentStep(0);
+                                        setErroEnvio("");
+                                        setSucessoEnvio("");
+                                    }}
                                     disabled={enviando}
                                 >
                                     Limpar
@@ -648,7 +765,7 @@ export default function PeixariaClient() {
                     )}
 
                     {/* ── Indicador de Steps ──────────────────────────────────── */}
-                    <StepIndicator steps={STEPS} currentStep={currentStep} onStepClick={(idx) => { setCurrentStep(idx); setErroEnvio(""); }} />
+                    <StepIndicator steps={STEPS} currentStep={currentStep} onStepClick={handleStepClick} />
 
                     {/* ── Conteúdo do Step Atual ──────────────────────────────── */}
                     <div className="space-y-6 min-h-96">
@@ -660,6 +777,24 @@ export default function PeixariaClient() {
                             <>
                                 <SectionCard subtitle="Identificação da coleta" title="Localização e responsável">
                                     <FormGrid cols={2}>
+                                        <div className="md:col-span-2">
+                                            <label className={labelClass}>Tipo de estabelecimento</label>
+                                            <div className="flex flex-wrap gap-3">
+                                                {TIPO_ESTABELECIMENTO_OPTIONS.map((opt) => (
+                                                    <label key={opt.value} className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50">
+                                                        <input
+                                                            type="radio"
+                                                            name="tipoEstabelecimento"
+                                                            value={opt.value}
+                                                            checked={form.tipoEstabelecimento === opt.value}
+                                                            onChange={(e) => updateField("tipoEstabelecimento", e.target.value)}
+                                                            className="h-4 w-4 accent-blue-600"
+                                                        />
+                                                        {opt.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
                                         <InputGroup
                                             label="Código da coleta"
                                             name="codigoColeta"
@@ -768,6 +903,25 @@ export default function PeixariaClient() {
                                             fieldValue={form.planoSaudeEspecificar}
                                             onFieldChange={(e) => updateField("planoSaudeEspecificar", e.target.value)}
                                         />
+                                        <div className="md:col-span-2">
+                                            <label className={labelClass}>Relações de trabalho (múltipla seleção)</label>
+                                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                {RELACOES_TRABALHO_OPTIONS.map((tipo) => {
+                                                    const checked = (form.relacoesTrabalho || []).includes(tipo);
+                                                    return (
+                                                        <label key={tipo} className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={checked}
+                                                                onChange={() => toggleRelacaoTrabalho(tipo)}
+                                                                className="h-4 w-4 accent-blue-600"
+                                                            />
+                                                            {tipo}
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     </FormGrid>
                                 </SectionCard>
                             </>
@@ -1046,39 +1200,39 @@ export default function PeixariaClient() {
                     </div>
 
                     {/* ── Botões de navegação ──────────────────────────────── */}
-                    <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-                        <button
-                            type="button"
-                            className={btnSecondary}
-                            onClick={handlePrev}
-                            disabled={currentStep === 0 || enviando}
-                        >
-                            Voltar
-                        </button>
+                    <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <button
+                                type="button"
+                                className={`${btnSecondary} w-full sm:w-auto`}
+                                onClick={handlePrev}
+                                disabled={currentStep === 0 || enviando || verificandoCodigoPeixaria}
+                            >
+                                Voltar
+                            </button>
 
-                        <div className="flex flex-wrap items-center justify-center gap-3">
+                            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
                             {currentStep < STEPS.length - 1 ? (
                                 <button
                                     type="button"
-                                    className={btnPrimary}
+                                    className={`${btnPrimary} w-full sm:w-auto`}
                                     onClick={handleNext}
-                                    disabled={enviando}
+                                    disabled={enviando || verificandoCodigoPeixaria}
                                 >
                                     Próximo Passo
                                 </button>
                             ) : (
                                 <button
                                     type="button"
-                                    className={btnPrimary}
+                                    className={`${btnPrimary} w-full sm:w-auto`}
                                     onClick={handleSave}
-                                    disabled={enviando}
+                                    disabled={enviando || verificandoCodigoPeixaria}
                                 >
                                     {enviando ? "Salvando..." : isEditMode ? "Atualizar" : "Salvar"}
                                 </button>
                             )}
+                            </div>
                         </div>
-
-                        <div />
                     </div>
 
                 </div>

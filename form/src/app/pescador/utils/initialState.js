@@ -1,6 +1,7 @@
 export const initialState = {
     // ===== Informações iniciais =====
     codigoColeta: "",
+    numConsecutivo: "1",
     codigoFoto: "",
     municipio: "",
     localidade: "",

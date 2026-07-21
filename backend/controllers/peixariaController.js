@@ -172,8 +172,17 @@ const normalizeFornecedorTipo = (value) => {
   return normalized === 'LOCAL' || normalized === 'ENTREGA' ? normalized : null;
 };
 
+const ESTABELECIMENTOS_VALIDOS = new Set(['PEIXARIA', 'FEIRA_LIVRE', 'MERCADO']);
+const normalizeTipoEstabelecimento = (value) => {
+  if (!value) return null;
+  const normalized = String(value).trim().toUpperCase();
+  return ESTABELECIMENTOS_VALIDOS.has(normalized) ? normalized : null;
+};
+
 const buildBasePayload = (body, userId) => ({
   ID_usuario: userId || null,
+  cod_peixaria: txt(body.cod_peixaria ?? body.codPeixaria),
+  tipo_estabelecimento: normalizeTipoEstabelecimento(body.tipo_estabelecimento ?? body.tipoEstabelecimento),
   ID_municipio: num(body.ID_municipio ?? body.municipioId ?? body.municipio_id),
   responsavel: txt(body.responsavel),
   contato: txt(body.contato),
@@ -470,6 +479,8 @@ export const listarPeixarias = async (req, res) => {
       nome,
       responsavel,
       municipio,
+      cod_peixaria,
+      codigo,
       page = 1,
       limit = 50
     } = req.query;
@@ -478,6 +489,10 @@ export const listarPeixarias = async (req, res) => {
     if (nome) where.nome = { [Op.like]: `%${String(nome).trim()}%` };
     if (responsavel) where.responsavel = { [Op.like]: `%${String(responsavel).trim()}%` };
     if (municipio) where.municipio = { [Op.like]: `%${String(municipio).trim()}%` };
+    if (cod_peixaria || codigo) {
+      const termoCodigo = String(cod_peixaria || codigo).trim();
+      where.cod_peixaria = { [Op.like]: `%${termoCodigo}%` };
+    }
 
     const { count, rows } = await Peixaria.findAndCountAll({
       where,

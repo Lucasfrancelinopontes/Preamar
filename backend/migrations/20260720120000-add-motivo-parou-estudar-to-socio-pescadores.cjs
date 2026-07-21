@@ -1,10 +1,18 @@
-export async function up(queryInterface, Sequelize) {
-  await queryInterface.addColumn('socio_pescadores', 'motivo_parou_estudar', {
-    type: Sequelize.STRING(255),
-    allowNull: true
-  });
-}
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    const table = await queryInterface.describeTable('socio_pescadores');
+    if (!table.motivo_parou_estudar) {
+      await queryInterface.addColumn('socio_pescadores', 'motivo_parou_estudar', {
+        type: Sequelize.STRING(255),
+        allowNull: true
+      });
+    }
+  },
 
-export async function down(queryInterface) {
-  await queryInterface.removeColumn('socio_pescadores', 'motivo_parou_estudar');
-}
+  async down(queryInterface) {
+    const table = await queryInterface.describeTable('socio_pescadores');
+    if (table.motivo_parou_estudar) {
+      await queryInterface.removeColumn('socio_pescadores', 'motivo_parou_estudar');
+    }
+  }
+};

@@ -12,7 +12,7 @@ import CheckboxGroup from "./components/CheckboxGroup";
 import usePescadorForm from "./hooks/usePescadorForm";
 
 import api from "@/services/api";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const TOTAL_ETAPAS = 20;
@@ -169,6 +169,8 @@ export default function CadastroPescador({ editId = null }) {
     const [carregando, setCarregando] = useState(true);
 
     const [erro, setErro] = useState("");
+    const [verificandoCodigoRegistro, setVerificandoCodigoRegistro] = useState(false);
+    const ultimoCodigoAlertadoRef = useRef("");
 
     useEffect(() => {
 
@@ -213,6 +215,102 @@ export default function CadastroPescador({ editId = null }) {
         return municipioSelecionado?.localidades || [];
 
     }, [municipioSelecionado]);
+
+    const localidadeSelecionada = useMemo(() => {
+        const atual = String(formData.localidade || "").trim();
+        if (!atual) return null;
+        return localidades.find((l) => String(l.localidade || "").trim() === atual) || null;
+    }, [localidades, formData.localidade]);
+
+    const codigoRegistroGerado = useMemo(() => {
+        const municipioCode = String(municipioSelecionado?.municipioCode || "").trim();
+        const localidadeCode = String(localidadeSelecionada?.localidadeCode || "").trim();
+
+        if (!municipioCode || !localidadeCode || !formData.dataColeta) {
+            return "";
+        }
+
+        const partesData = formData.dataColeta.split("-");
+        if (partesData.length !== 3) return "";
+
+        const [ano, mes, dia] = partesData;
+        const consecutivoNumero = Number(formData.numConsecutivo || 1);
+
+        if (!Number.isInteger(consecutivoNumero) || consecutivoNumero <= 0) {
+            return "";
+        }
+
+        const consecutivo = String(consecutivoNumero).padStart(2, "0");
+
+        return `${municipioCode} ${localidadeCode} ${dia} ${mes} ${ano.slice(-2)} ${consecutivo}`;
+    }, [municipioSelecionado, localidadeSelecionada, formData.dataColeta, formData.numConsecutivo]);
+
+    useEffect(() => {
+        if ((formData.codigoColeta || "") === codigoRegistroGerado) return;
+        setFormData((prev) => ({
+            ...prev,
+            codigoColeta: codigoRegistroGerado
+        }));
+    }, [codigoRegistroGerado, formData.codigoColeta, setFormData]);
+
+    async function validarCodigoRegistro() {
+        const codigo = (codigoRegistroGerado || "").trim();
+        if (!codigo) {
+            const msg = "Preencha município, localidade, data da coleta e número consecutivo para gerar o código de registro.";
+            setErro(msg);
+            window.alert(msg);
+            return false;
+        }
+
+        if (editId) return true;
+
+        try {
+            setVerificandoCodigoRegistro(true);
+            const resultado = await api.verificarCodigoSocioPescador(codigo);
+            if (resultado?.existe) {
+                const msg = `O código ${codigo} já existe. Ajuste o número consecutivo para continuar.`;
+                setErro(msg);
+                window.alert(msg);
+                return false;
+            }
+            return true;
+        } catch (error) {
+            const msg = error?.message || "Não foi possível validar o código de registro.";
+            setErro(msg);
+            window.alert(msg);
+            return false;
+        } finally {
+            setVerificandoCodigoRegistro(false);
+        }
+    }
+
+    useEffect(() => {
+        if (editId) return;
+        const codigo = (codigoRegistroGerado || "").trim();
+        if (!codigo || codigo === ultimoCodigoAlertadoRef.current) return;
+
+        let cancelado = false;
+
+        const verificar = async () => {
+            try {
+                const resultado = await api.verificarCodigoSocioPescador(codigo);
+                if (!cancelado && resultado?.existe) {
+                    ultimoCodigoAlertadoRef.current = codigo;
+                    const msg = `O código ${codigo} já existe. Ajuste o número consecutivo para continuar.`;
+                    setErro(msg);
+                    window.alert(msg);
+                }
+            } catch {
+                // Não bloquear por falha de validação automática.
+            }
+        };
+
+        verificar();
+
+        return () => {
+            cancelado = true;
+        };
+    }, [codigoRegistroGerado, editId]);
 
     // Garante ao menos uma linha ao entrar na etapa 8
     useEffect(() => {
@@ -264,8 +362,10 @@ export default function CadastroPescador({ editId = null }) {
         }
     }
 
-    function handleNext() {
+    async function handleNext() {
         if (etapaAtual >= TOTAL_ETAPAS) return;
+        const codigoValido = await validarCodigoRegistro();
+        if (!codigoValido) return;
         setEtapaAtual((e) => e + 1);
         scrollToTop();
     }
@@ -280,6 +380,9 @@ export default function CadastroPescador({ editId = null }) {
         e.preventDefault();
 
         if (salvando || etapaAtual !== TOTAL_ETAPAS) return;
+
+        const codigoValido = await validarCodigoRegistro();
+        if (!codigoValido) return;
 
         const ok = await submitForm();
         if (ok) {
@@ -358,7 +461,17 @@ export default function CadastroPescador({ editId = null }) {
                                 <InputGroup
                                     label="Código da Coleta"
                                     name="codigoColeta"
-                                    value={formData.codigoColeta}
+                                    value={codigoRegistroGerado}
+                                    onChange={handleInputChange}
+                                    readOnly
+                                />
+
+                                <InputGroup
+                                    label="Nº consecutivo"
+                                    name="numConsecutivo"
+                                    type="number"
+                                    min="1"
+                                    value={formData.numConsecutivo || ""}
                                     onChange={handleInputChange}
                                 />
 
@@ -386,7 +499,15 @@ export default function CadastroPescador({ editId = null }) {
                                     onChange={handleInputChange}
                                     options={localidades}
                                     optionLabel="localidade"
-                                    optionValue="ID_localidade"
+                                    optionValue="localidade"
+                                />
+
+                                <InputGroup
+                                    label="Data da coleta"
+                                    name="dataColeta"
+                                    type="date"
+                                    value={formData.dataColeta || ""}
+                                    onChange={handleInputChange}
                                 />
 
                             </div>
@@ -673,7 +794,7 @@ export default function CadastroPescador({ editId = null }) {
                                 <button
                                     type="button"
                                     onClick={handleSubmit}
-                                    disabled={salvando || sucessoSubmit}
+                                    disabled={salvando || sucessoSubmit || verificandoCodigoRegistro}
                                     className="px-8 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-50"
                                 >
                                     {salvando ? "Salvando..." : editId ? "Salvar Alterações" : "Salvar Cadastro"}
@@ -1761,7 +1882,7 @@ export default function CadastroPescador({ editId = null }) {
 
                             onClick={handleNext}
 
-                            disabled={etapaAtual === TOTAL_ETAPAS}
+                            disabled={etapaAtual === TOTAL_ETAPAS || verificandoCodigoRegistro}
 
                             className="px-6 py-3 rounded-lg bg-blue-600 text-white"
 

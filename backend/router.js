@@ -73,7 +73,8 @@ import {
   listar as listarSocioPescadores,
   buscar as buscarSocioPescador,
   atualizar as atualizarSocioPescador,
-  remover as removerSocioPescador
+  remover as removerSocioPescador,
+  verificarCodigoColeta
 } from './controllers/SociopescadorController.js';
 
 // Debug
@@ -125,6 +126,7 @@ router.delete('/pescadores/:id', verificarAutenticacao, deletarPescador);
 // Rotas de Cadastro Socioeconômico (protegidas)
 router.post('/socio-pescadores', verificarAutenticacao, criarSocioPescador);
 router.get('/socio-pescadores', verificarAutenticacao, listarSocioPescadores);
+router.get('/socio-pescadores/verificar-codigo/:codigo', verificarAutenticacao, verificarCodigoColeta);
 router.get('/socio-pescadores/:id', verificarAutenticacao, buscarSocioPescador);
 router.put('/socio-pescadores/:id', verificarAutenticacao, atualizarSocioPescador);
 router.delete('/socio-pescadores/:id', verificarAutenticacao, removerSocioPescador);

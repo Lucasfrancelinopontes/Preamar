@@ -54,6 +54,22 @@ const toText = (value) => (value === undefined || value === null ? "" : String(v
 
 const toNumberText = (value) => (value === undefined || value === null || value === "" ? "" : String(value));
 
+const extractConsecutivo = (codigoColeta) => {
+    if (typeof codigoColeta !== "string") return "1";
+    const codigo = codigoColeta.trim();
+    if (!codigo) return "1";
+
+    const partes = codigo.split(/\s+/).filter(Boolean);
+    const ultimo = partes[partes.length - 1] || "";
+    const numero = Number(ultimo);
+
+    if (Number.isInteger(numero) && numero > 0) {
+        return String(numero);
+    }
+
+    return "1";
+};
+
 const unwrapRecord = (value) => {
     if (!value || typeof value !== "object") return value;
     if (value.dataValues && typeof value.dataValues === "object") {
@@ -173,6 +189,7 @@ const mapApiToFormData = (data) => {
     return {
         ...initialState,
         codigoColeta: getTextValue(coleta, 'codigo_coleta', 'codigoColeta'),
+        numConsecutivo: extractConsecutivo(getTextValue(coleta, 'codigo_coleta', 'codigoColeta')),
         codigoFoto: getTextValue(coleta, 'codigo_foto', 'codigoFoto'),
         municipio: getTextValue(coleta, 'ID_municipio', 'id_municipio', 'municipio') || "",
         localidade: getTextValue(coleta, 'localidade', 'localidadeInfo.localidade'),

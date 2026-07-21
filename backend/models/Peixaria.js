@@ -31,6 +31,10 @@ export const Peixaria = sequelize.define('Peixaria', {
     allowNull: true,
     unique: true
   },
+  tipo_estabelecimento: {
+    type: DataTypes.STRING(30),
+    allowNull: true
+  },
   responsavel: {
     type: DataTypes.STRING(255)
   },

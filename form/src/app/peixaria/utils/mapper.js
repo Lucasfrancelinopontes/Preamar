@@ -89,6 +89,8 @@ const mapPerdasPorEspecie = (items = []) =>
 
 export const mapFormDataToPayload = (formData = {}) => {
   return {
+    cod_peixaria: toText(formData.codPeixaria),
+    tipo_estabelecimento: toText(formData.tipoEstabelecimento),
     ID_municipio: toNumber(formData.municipioId ?? formData.ID_municipio ?? formData.municipio_id),
     responsavel: toText(formData.responsavel),
     contato: toText(formData.contato),
@@ -222,6 +224,8 @@ export const mapApiToFormData = (apiData = {}) => {
   };
 
   return {
+    codPeixaria: toText(data.cod_peixaria ?? data.codPeixaria),
+    tipoEstabelecimento: toText(data.tipo_estabelecimento ?? data.tipoEstabelecimento),
     ID_municipio: data.ID_municipio ?? data.ID_municipio,
     responsavel: toText(data.responsavel),
     contato: toText(data.contato),
