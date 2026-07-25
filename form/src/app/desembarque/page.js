@@ -203,6 +203,19 @@ const toDatetimeLocal = (dateValue, timeValue) => {
     return `${date}T${time}`;
 };
 
+const validarDataChegadaNaoMaiorQueSaida = (dataSaida, dataChegada) => {
+    if (!dataSaida || !dataChegada) return true;
+
+    const saida = new Date(dataSaida);
+    const chegada = new Date(dataChegada);
+
+    if (Number.isNaN(saida.getTime()) || Number.isNaN(chegada.getTime())) {
+        return false;
+    }
+
+    return chegada <= saida;
+};
+
 const splitDateTimeLocal = (value) => {
     if (!value) return { date: null, time: null };
     const str = String(value);
@@ -778,6 +791,16 @@ function DesembarqueContent() {
         });
     };
 
+    const validarDatasDoDesembarque = () => {
+        if (!validarDataChegadaNaoMaiorQueSaida(formData.dataSaida, formData.dataChegada)) {
+            setErroEnvio("Data de chegada nao pode ser maior que a data de saida.");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return false;
+        }
+
+        return true;
+    };
+
     useEffect(() => {
         setFormData((prev) => {
             const especiesValidas = new Set(
@@ -799,6 +822,7 @@ function DesembarqueContent() {
     }, [formData.capturas]);
 
     const proximaEtapa = () => {
+        if (etapaAtual === 1 && !validarDatasDoDesembarque()) return;
         if (etapaAtual < TOTAL_ETAPAS) setEtapaAtual((atual) => atual + 1);
         window.scrollTo(0, 0);
     };
@@ -937,6 +961,11 @@ function DesembarqueContent() {
         if (etapaAtual !== TOTAL_ETAPAS) return;
         setErroEnvio("");
         setSucessoEnvio("");
+
+        if (!validarDatasDoDesembarque()) {
+            return;
+        }
+
         setCarregandoEnvio(true);
         try {
             const payload = montarPayload();
