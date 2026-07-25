@@ -81,7 +81,7 @@ export const validarDataSaidaChegada = (dataSaida, dataChegada) => {
   if (!dataSaida || !dataChegada) return true;
   const saida = new Date(dataSaida);
   const chegada = new Date(dataChegada);
-  return chegada >= saida;
+  return saida < chegada;
 };
 
 export const gerarCodigoDesembarque = (municipio, localidade, data, consecutivo) => {

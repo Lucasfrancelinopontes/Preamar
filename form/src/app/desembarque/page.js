@@ -213,7 +213,7 @@ const validarDataChegadaNaoMaiorQueSaida = (dataSaida, dataChegada) => {
         return false;
     }
 
-    return chegada <= saida;
+    return saida < chegada;
 };
 
 const splitDateTimeLocal = (value) => {
@@ -793,7 +793,7 @@ function DesembarqueContent() {
 
     const validarDatasDoDesembarque = () => {
         if (!validarDataChegadaNaoMaiorQueSaida(formData.dataSaida, formData.dataChegada)) {
-            setErroEnvio("Data de chegada nao pode ser maior que a data de saida.");
+            setErroEnvio("Data/Hora Saida tem que ser menor que Data/Hora Chegada.");
             window.scrollTo({ top: 0, behavior: "smooth" });
             return false;
         }

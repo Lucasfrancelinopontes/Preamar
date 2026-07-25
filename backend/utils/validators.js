@@ -49,10 +49,10 @@ export const validarDesembarque = (dados) => {
   
   // Validar datas
   if (dados.data_saida && dados.data_chegada) {
-    const saida = String(dados.data_saida).split('T')[0];
-    const chegada = String(dados.data_chegada).split('T')[0];
-    if (chegada < saida) {
-      erros.push('Data de chegada não pode ser anterior à data de saída');
+    const saida = new Date(dados.data_saida);
+    const chegada = new Date(dados.data_chegada);
+    if (Number.isNaN(saida.getTime()) || Number.isNaN(chegada.getTime()) || saida >= chegada) {
+      erros.push('Data/Hora Saida tem que ser menor que Data/Hora Chegada');
     }
   }
   
