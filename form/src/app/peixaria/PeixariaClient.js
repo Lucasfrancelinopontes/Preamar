@@ -195,6 +195,9 @@ const mapToArray = (response) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const initialForm = {
     codPeixaria: "",
+    dataColeta: "",
+    consecutivoColeta: "",
+    ID_municipio: "",
     tipoEstabelecimento: "",
     responsavel: "",
     contato: "",

@@ -28,6 +28,131 @@ const isPopulated = (record) => {
 
 const normalizeArray = (value) => (Array.isArray(value) ? value : []);
 
+const PERDA_CAUSAS_PADRAO = [
+  'Deterioração',
+  'Falta de mercado',
+  'Transporte'
+];
+
+const buildDefaultPerdasPorEspecie = () => (
+  [1, 2, 3].map((num) => ({
+    id: num,
+    titulo: `Espécie ${num}`,
+    linhas: PERDA_CAUSAS_PADRAO.map((causa) => ({
+      causa,
+      estimativa: '',
+      destino: ''
+    }))
+  }))
+);
+
+const parseDataEConsecutivoFromCodigo = (codigo) => {
+  const valor = String(codigo || '').trim();
+  const partes = valor.split(/\s+/);
+  if (partes.length < 6) return { dataColeta: '', consecutivoColeta: '' };
+
+  const dia = partes[2];
+  const mes = partes[3];
+  const anoRaw = partes[4];
+  const consecutivo = partes[5];
+
+  if (!/^\d{1,2}$/.test(dia) || !/^\d{1,2}$/.test(mes) || !/^\d{2,4}$/.test(anoRaw) || !/^\d{1,3}$/.test(consecutivo)) {
+    return { dataColeta: '', consecutivoColeta: '' };
+  }
+
+  const ano = anoRaw.length === 2 ? `20${anoRaw}` : anoRaw;
+  const dataColeta = `${ano.padStart(4, '0')}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+
+  return {
+    dataColeta,
+    consecutivoColeta: String(Number(consecutivo))
+  };
+};
+
+const mapPerdasPorEspecieFromApi = (items = []) => {
+  const defaults = buildDefaultPerdasPorEspecie();
+  const rows = normalizeArray(items);
+
+  if (!rows.length) {
+    return defaults;
+  }
+
+  const possuiEstruturaComLinhas = rows.some((item) => Array.isArray(item?.linhas));
+  if (possuiEstruturaComLinhas) {
+    const normalized = rows.map((item, index) => {
+      const fallback = defaults[index] || {
+        id: index + 1,
+        titulo: `Espécie ${index + 1}`,
+        linhas: PERDA_CAUSAS_PADRAO.map((causa) => ({ causa, estimativa: '', destino: '' }))
+      };
+
+      const linhasByCausa = new Map(
+        normalizeArray(item.linhas).map((linha) => [
+          String(linha?.causa || '').trim().toLowerCase(),
+          linha
+        ])
+      );
+
+      return {
+        id: item.id || item.ID_perda_por_especie || fallback.id,
+        titulo: toText(item.titulo) || fallback.titulo,
+        linhas: PERDA_CAUSAS_PADRAO.map((causa) => {
+          const linha = linhasByCausa.get(causa.toLowerCase()) || {};
+          return {
+            causa,
+            estimativa: toText(linha.estimativa),
+            destino: toText(linha.destino)
+          };
+        })
+      };
+    });
+
+    while (normalized.length < 3) {
+      normalized.push(defaults[normalized.length]);
+    }
+
+    return normalized;
+  }
+
+  const grouped = new Map();
+  rows.forEach((item) => {
+    const titulo = toText(item.titulo) || 'Espécie 1';
+    if (!grouped.has(titulo)) grouped.set(titulo, []);
+    grouped.get(titulo).push(item);
+  });
+
+  const normalized = Array.from(grouped.entries()).map(([titulo, groupRows], index) => {
+    const fallback = defaults[index] || {
+      id: index + 1,
+      titulo,
+      linhas: PERDA_CAUSAS_PADRAO.map((causa) => ({ causa, estimativa: '', destino: '' }))
+    };
+
+    const rowsByCausa = new Map(
+      groupRows.map((row) => [String(row?.causa || '').trim().toLowerCase(), row])
+    );
+
+    return {
+      id: groupRows[0]?.id || groupRows[0]?.ID_perda_por_especie || fallback.id,
+      titulo,
+      linhas: PERDA_CAUSAS_PADRAO.map((causa) => {
+        const row = rowsByCausa.get(causa.toLowerCase()) || {};
+        return {
+          causa,
+          estimativa: toText(row.estimativa),
+          destino: toText(row.destino)
+        };
+      })
+    };
+  });
+
+  while (normalized.length < 3) {
+    normalized.push(defaults[normalized.length]);
+  }
+
+  return normalized;
+};
+
 const mapMarketSection = (market = {}) => {
   const linhas = normalizeArray(market.linhas)
     .map((item) => ({
@@ -212,6 +337,8 @@ const mapMarketRecords = (mercados = [], tipoEsperado) =>
 
 export const mapApiToFormData = (apiData = {}) => {
   const data = normalizeApiRecord(apiData);
+  const codigoPeixaria = toText(data.cod_peixaria ?? data.codPeixaria);
+  const { dataColeta, consecutivoColeta } = parseDataEConsecutivoFromCodigo(codigoPeixaria);
 
   const pescadoresFornecedores = normalizeArray(data.pescadores_fornecedores || data.pescadores_fornecedores || []);
   const locais = pescadoresFornecedores.filter((item) => String(item.tipo || '').toUpperCase() === 'LOCAL');
@@ -224,9 +351,11 @@ export const mapApiToFormData = (apiData = {}) => {
   };
 
   return {
-    codPeixaria: toText(data.cod_peixaria ?? data.codPeixaria),
+    codPeixaria: codigoPeixaria,
     tipoEstabelecimento: toText(data.tipo_estabelecimento ?? data.tipoEstabelecimento),
     ID_municipio: data.ID_municipio ?? data.ID_municipio,
+    dataColeta,
+    consecutivoColeta,
     responsavel: toText(data.responsavel),
     contato: toText(data.contato),
     municipio: toText(data.municipio),
@@ -313,18 +442,7 @@ export const mapApiToFormData = (apiData = {}) => {
         quantidade: toText(item.quantidade),
         causa: toText(item.causa)
       })),
-    perdasPorEspecie: normalizeArray(data.perdas_por_especie)
-      .map((item) => ({
-        id: item.id || item.ID_perda_por_especie || Date.now(),
-        titulo: toText(item.titulo),
-        linhas: normalizeArray(item.linhas)
-          .map((linha) => ({
-            id: linha.id || linha.ID_perda_por_especie_linha || Date.now(),
-            causa: toText(linha.causa),
-            estimativa: toText(linha.estimativa),
-            destino: toText(linha.destino)
-          }))
-      })),
+    perdasPorEspecie: mapPerdasPorEspecieFromApi(data.perdas_por_especie),
     origemPescado: normalizeArray(data.origens_pescado)
       .map((item) => ({
         id: item.id || item.ID_origem_pescado || Date.now(),

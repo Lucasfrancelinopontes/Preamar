@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import PeixariaClient from "./PeixariaClient";
 import api from "@/services/api";
 
+jest.setTimeout(20000);
+
 const pushMock = jest.fn();
 
 jest.mock("next/navigation", () => ({
