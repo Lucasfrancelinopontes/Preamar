@@ -468,15 +468,15 @@ const createPeixariaDependencias = async (ID_peixaria, body, transaction) => {
 const getPeixariaIncludes = () => ([
   { model: Usuario, as: 'usuario' },
   { model: Municipio, as: 'municipioInfo' },
-  { model: PeixariaDespesa, as: 'despesas' },
-  { model: PeixariaFornecedor, as: 'fornecedores' },
-  { model: PeixariaPescadorFornecedor, as: 'pescadores_fornecedores' },
-  { model: PeixariaEspecieComercial, as: 'especies_comerciais', include: [{ model: Especie, as: 'especieInfo' }] },
-  { model: PeixariaPerda, as: 'perdas' },
-  { model: PeixariaPerdaPorEspecie, as: 'perdas_por_especie' },
-  { model: PeixariaOrigemPescado, as: 'origens_pescado' },
-  { model: PeixariaMercado, as: 'mercados', include: [{ model: PeixariaMercadoLinha, as: 'linhas' }] },
-  { model: PeixariaRelacaoTrabalho, as: 'relacoes_trabalho' }
+  { model: PeixariaDespesa, as: 'despesas', separate: true, order: [['ID_despesa', 'ASC']] },
+  { model: PeixariaFornecedor, as: 'fornecedores', separate: true, order: [['ID_fornecedor', 'ASC']] },
+  { model: PeixariaPescadorFornecedor, as: 'pescadores_fornecedores', separate: true, order: [['ID_pescador_fornecedor', 'ASC']] },
+  { model: PeixariaEspecieComercial, as: 'especies_comerciais', separate: true, include: [{ model: Especie, as: 'especieInfo' }], order: [['ID_especie_comercial', 'ASC']] },
+  { model: PeixariaPerda, as: 'perdas', separate: true, order: [['ID_perda', 'ASC']] },
+  { model: PeixariaPerdaPorEspecie, as: 'perdas_por_especie', separate: true, order: [['ID_perda_por_especie', 'ASC']] },
+  { model: PeixariaOrigemPescado, as: 'origens_pescado', separate: true, order: [['ID_origem_pescado', 'ASC']] },
+  { model: PeixariaMercado, as: 'mercados', separate: true, include: [{ model: PeixariaMercadoLinha, as: 'linhas', separate: true, order: [['ID_mercado_linha', 'ASC']] }], order: [['ID_mercado', 'ASC']] },
+  { model: PeixariaRelacaoTrabalho, as: 'relacoes_trabalho', separate: true, order: [['ID_relacao_trabalho', 'ASC']] }
 ]);
 
 export const listarPeixarias = async (req, res) => {
