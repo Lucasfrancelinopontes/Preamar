@@ -219,9 +219,11 @@ const buildBasePayload = (body, userId) => ({
   atividades_renda_familia: txt(body.atividades_renda_familia ?? body.atividadesRendaFamilia),
   quem_trabalha_familia: txt(body.quem_trabalha_familia ?? body.quemTrabalhaFamilia),
   tempo_atividade: num(body.tempo_atividade ?? body.tempoAtividade),
+  observacoes_especies: txt(body.observacoes_especies ?? body.observacoesEspecies),
   atividade_comercial: txt(body.atividade_comercial ?? body.atividadeComercial),
   periodo_comercializacao: txt(body.periodo_comercializacao ?? body.periodoComercializacao),
   forma_venda: txt(body.forma_venda ?? body.formaVenda),
+  descricao_processo_comercio: txt(body.descricao_processo_comercio ?? body.descricaoProcessoComercio),
   transporte: txt(body.transporte)
 });
 
@@ -230,6 +232,7 @@ const buildDespesaRecords = (ID_peixaria, despesas = []) =>
     .map((item) => ({
       ID_peixaria,
       descricao: txt(item.descricao),
+      nome_outros: txt(item.nome_outros ?? item.nomeOutros),
       quantidade: parseDecimal(item.quantidade),
       custo: parseDecimal(item.custo),
       frequencia: txt(item.frequencia)

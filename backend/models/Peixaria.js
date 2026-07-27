@@ -122,6 +122,9 @@ export const Peixaria = sequelize.define('Peixaria', {
   tempo_atividade: {
     type: DataTypes.INTEGER
   },
+  observacoes_especies: {
+    type: DataTypes.TEXT
+  },
   atividade_comercial: {
     type: DataTypes.STRING(255)
   },
@@ -130,6 +133,9 @@ export const Peixaria = sequelize.define('Peixaria', {
   },
   forma_venda: {
     type: DataTypes.STRING(100)
+  },
+  descricao_processo_comercio: {
+    type: DataTypes.TEXT
   },
   transporte: {
     type: DataTypes.STRING(100)
@@ -154,6 +160,9 @@ export const PeixariaDespesa = sequelize.define('PeixariaDespesa', {
     }
   },
   descricao: {
+    type: DataTypes.STRING(255)
+  },
+  nome_outros: {
     type: DataTypes.STRING(255)
   },
   quantidade: {

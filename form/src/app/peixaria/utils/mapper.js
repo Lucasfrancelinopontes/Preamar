@@ -245,15 +245,18 @@ export const mapFormDataToPayload = (formData = {}) => {
     plano_saude_especificar: toText(formData.planoSaudeEspecificar),
     atividades_renda_familia: toText(formData.atividadesRendaFamilia),
     quem_trabalha_familia: toText(formData.quemTrabalhaFamilia),
-    tempo_atividade: toNumber(formData.tempoAtividade),
+        tempo_atividade: toNumber(formData.tempoAtividade),
+        observacoes_especies: toText(formData.observacoesEspecies),
     atividade_comercial: toText(formData.atividadeComercial),
     periodo_comercializacao: toText(formData.periodoComercializacao),
     forma_venda: toText(formData.formaVenda),
+        descricao_processo_comercio: toText(formData.descricaoProcessoComercio),
     transporte: toText(formData.transporte),
     despesas: normalizeArray(formData.despesas)
       .map((item) => ({
         id: item.id ?? item.ID_despesa ?? null,
         descricao: toText(item.descricao),
+        nome_outros: toText(item.nomeOutros ?? item.nome_outros),
         quantidade: toNumber(item.quantidade),
         custo: toNumber(item.custo),
         frequencia: toText(item.frequencia)
@@ -385,14 +388,17 @@ export const mapApiToFormData = (apiData = {}) => {
     atividadesRendaFamilia: toText(data.atividades_renda_familia),
     quemTrabalhaFamilia: toText(data.quem_trabalha_familia),
     tempoAtividade: toText(data.tempo_atividade),
+    observacoesEspecies: toText(data.observacoes_especies),
     atividadeComercial: toText(data.atividade_comercial),
     periodoComercializacao: toText(data.periodo_comercializacao),
     formaVenda: toText(data.forma_venda),
+    descricaoProcessoComercio: toText(data.descricao_processo_comercio),
     transporte: toText(data.transporte),
     despesas: normalizeArray(data.despesas)
       .map((item) => ({
         id: item.id || item.ID_despesa || Date.now(),
         descricao: toText(item.descricao),
+        nomeOutros: toText(item.nome_outros),
         quantidade: toText(item.quantidade),
         custo: toText(item.custo),
         frequencia: toText(item.frequencia)
@@ -418,13 +424,14 @@ export const mapApiToFormData = (apiData = {}) => {
     pescadoresEntregam: entregas.map((item) => ({
       id: item.id || item.ID_pescador_fornecedor || Date.now(),
       nome: toText(item.nome),
-      apelido: toText(item.apelido),
+        observacoes_especies: toText(formData.observacoesEspecies),
+        descricao_processo_comercio: toText(formData.descricaoProcessoComercio),
       comunidade: toText(item.comunidade),
       tipoBarco: toText(item.tipo_barco),
       numeroPescadores: toText(item.numero_pescadores),
       volume: toText(item.volume),
       volumeMedio: toText(item.volume_medio),
-      regularidade: toText(item.regularidade)
+            nome_outros: toText(item.nomeOutros ?? item.nome_outros),
     })),
     especiesComerciais: normalizeArray(data.especies_comerciais)
       .map((item) => ({

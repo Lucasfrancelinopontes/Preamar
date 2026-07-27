@@ -256,7 +256,7 @@ const initialForm = {
         { id: 3, descricao: "Energia", quantidade: "", custo: "", frequencia: "" },
         { id: 4, descricao: "Aluguel", quantidade: "", custo: "", frequencia: "" },
         { id: 5, descricao: "Salários", quantidade: "", custo: "", frequencia: "" },
-        { id: 6, descricao: "Outros", quantidade: "", custo: "", frequencia: "" },
+        { id: 6, descricao: "Outros", nomeOutros: "", quantidade: "", custo: "", frequencia: "" },
     ],
     fornecedores: [{ id: 1, nome: "", tipo: "", telefone: "" }],
     pescadoresLocais: [{ id: 1, nome: "", comunidade: "", volume: "" }],
@@ -746,9 +746,7 @@ export default function PeixariaClient() {
                 : await api.criarPeixaria(payload);
             if (response?.success) {
                 setSucessoEnvio(isEditMode ? "Peixaria atualizada com sucesso." : "Peixaria criada com sucesso.");
-                if (!isEditMode) {
-                    setTimeout(() => router.push("/"), 800);
-                }
+                setTimeout(() => router.push("/"), 800);
             } else {
                 throw new Error(response?.message || "Falha ao salvar peixaria.");
             }
@@ -962,7 +960,7 @@ export default function PeixariaClient() {
                                         <InputGroup label="Atividade secundária" name="atividadeSecundaria" value={form.atividadeSecundaria} onChange={(e) => updateField("atividadeSecundaria", e.target.value)} />
                                         <InputGroup label="Número total de peixarias/boxes" name="totalPeixariasBoxes" value={form.totalPeixariasBoxes} type="number" inputMode="numeric" onChange={(e) => updateNumericField("totalPeixariasBoxes", e.target.value)} />
                                         <InputGroup label="Quantos você possui" name="quantosPossui" value={form.quantosPossui} type="number" inputMode="numeric" onChange={(e) => updateNumericField("quantosPossui", e.target.value)} />
-                                        <InputGroup label="Tempo de atividade" name="tempoAtividade" value={form.tempoAtividade} onChange={(e) => updateField("tempoAtividade", e.target.value)} />
+                                        <InputGroup label="Tempo de atividade" name="tempoAtividade" value={form.tempoAtividade} type="number" inputMode="numeric" onChange={(e) => updateNumericField("tempoAtividade", e.target.value)} />
                                         <TextareaGroup label="Atividades de renda da família" name="atividadesRendaFamilia" value={form.atividadesRendaFamilia} onChange={(e) => updateField("atividadesRendaFamilia", e.target.value)} rows={2} />
                                         <InputGroup label="Quem trabalha na família" name="quemTrabalhaFamilia" value={form.quemTrabalhaFamilia} onChange={(e) => updateField("quemTrabalhaFamilia", e.target.value)} />
                                     </FormGrid>
@@ -1048,9 +1046,16 @@ export default function PeixariaClient() {
                                     {form.despesas.map((despesa, idx) => (
                                         <div key={despesa.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                                             <div className="mb-3 flex items-center justify-between">
-                                                <p className="text-sm font-semibold text-black">{despesa.descricao || `Item ${idx + 1}`}</p>
+                                                <p className="text-sm font-semibold text-black">
+                                                    {despesa.descricao === "Outros" && despesa.nomeOutros
+                                                        ? `Outros - ${despesa.nomeOutros}`
+                                                        : despesa.descricao || `Item ${idx + 1}`}
+                                                </p>
                                             </div>
                                             <FormGrid cols={3}>
+                                                {despesa.descricao === "Outros" && (
+                                                    <InputGroup label="Nome do outro custo" name={`despesa_outros_nome_${idx}`} value={despesa.nomeOutros} onChange={(e) => updateArrayItem("despesas", idx, "nomeOutros", e.target.value)} placeholder="Ex.: Água, manutenção, embalagem" colSpan={3} />
+                                                )}
                                                 <InputGroup label="Quantidade" name={`despesa_qtd_${idx}`} value={despesa.quantidade} onChange={(e) => updateArrayItem("despesas", idx, "quantidade", e.target.value)} placeholder="Ex.: 5" />
                                                 <InputGroup label="Custo (R$)" name={`despesa_custo_${idx}`} value={despesa.custo} onChange={(e) => updateArrayItem("despesas", idx, "custo", e.target.value)} placeholder="Ex.: 50,00" />
                                                 <InputGroup label="Frequência" name={`despesa_freq_${idx}`} value={despesa.frequencia} onChange={(e) => updateArrayItem("despesas", idx, "frequencia", e.target.value)} placeholder="Ex.: Mensal" />
