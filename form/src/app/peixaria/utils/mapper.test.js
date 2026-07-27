@@ -38,4 +38,23 @@ describe("mapApiToFormData (peixaria)", () => {
       destino: "Venda local"
     });
   });
+
+  it("traz de volta os campos textuais novos da peixaria na edição", () => {
+    const result = mapApiToFormData({
+      observacoes_especies: "Observação salva",
+      descricao_processo_comercio: "Descrição salva",
+      despesas: [
+        {
+          ID_despesa: 10,
+          descricao: "Outros",
+          nome_outros: "Embalagem"
+        }
+      ]
+    });
+
+    expect(result.observacoesEspecies).toBe("Observação salva");
+    expect(result.descricaoProcessoComercio).toBe("Descrição salva");
+    expect(result.despesas).toHaveLength(1);
+    expect(result.despesas[0].nomeOutros).toBe("Embalagem");
+  });
 });

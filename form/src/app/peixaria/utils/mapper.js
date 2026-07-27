@@ -424,14 +424,12 @@ export const mapApiToFormData = (apiData = {}) => {
     pescadoresEntregam: entregas.map((item) => ({
       id: item.id || item.ID_pescador_fornecedor || Date.now(),
       nome: toText(item.nome),
-        observacoes_especies: toText(formData.observacoesEspecies),
-        descricao_processo_comercio: toText(formData.descricaoProcessoComercio),
       comunidade: toText(item.comunidade),
       tipoBarco: toText(item.tipo_barco),
       numeroPescadores: toText(item.numero_pescadores),
       volume: toText(item.volume),
       volumeMedio: toText(item.volume_medio),
-            nome_outros: toText(item.nomeOutros ?? item.nome_outros),
+      regularidade: toText(item.regularidade)
     })),
     especiesComerciais: normalizeArray(data.especies_comerciais)
       .map((item) => ({
