@@ -190,7 +190,7 @@ const mapPescadorFornecedorRows = (rows = [], tipo) =>
 const mapEspeciesComerciais = (especies = []) =>
   normalizeArray(especies)
     .map((item) => ({
-      ID_especie: toNumber(item.ID_especie ?? item.id_especie ?? item.id ?? item.ID),
+      ID_especie: toNumber(item.ID_especie ?? item.id_especie),
       especie: toText(item.especie),
       quantidade_fresco: toNumber(item.quantidadeFresco ?? item.quantidade),
       quantidade_congelado: toNumber(item.quantidadeCongelado),
@@ -429,7 +429,13 @@ export const mapApiToFormData = (apiData = {}) => {
     especiesComerciais: normalizeArray(data.especies_comerciais)
       .map((item) => ({
         id: item.id || item.ID_especie_comercial || Date.now(),
-        especie: toText(item.especie),
+        id_especie: item.id_especie ?? item.ID_especie ?? item.especieInfo?.ID_especie ?? item.especieInfo?.ID ?? null,
+        buscaTexto: item.id_especie ?? item.ID_especie ?? item.especieInfo?.ID_especie ?? item.especieInfo?.ID != null
+          ? String(item.id_especie ?? item.ID_especie ?? item.especieInfo?.ID_especie ?? item.especieInfo?.ID)
+          : toText(item.especie),
+        especie: toText(item.especieInfo?.Nome_popular ?? item.especieInfo?.nome_popular ?? item.especie),
+        nome_popular: toText(item.especieInfo?.Nome_popular ?? item.especieInfo?.nome_popular ?? item.especie),
+        sugestoesvisiveis: false,
         quantidadeFresco: toText(item.quantidade_fresco),
         quantidadeCongelado: toText(item.quantidade_congelado),
         precoCompra: toText(item.preco_compra),

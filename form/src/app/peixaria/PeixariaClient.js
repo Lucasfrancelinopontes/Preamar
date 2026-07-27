@@ -183,6 +183,21 @@ function DataTable({ headers, children, emptyMessage = "Nenhum registro encontra
     );
 }
 
+const normalizeText = (value) => (value === undefined || value === null ? "" : String(value).trim());
+
+const buildEspecieLabel = (especie) => {
+    const id = especie?.IDD ?? especie?.ID ?? "";
+    const nome = especie?.Nome_popular ?? especie?.nome_popular ?? "";
+    const cientifico = especie?.Nome_cientifico ?? especie?.nome_cientifico ?? "";
+
+    return {
+        id: String(id || ""),
+        nome,
+        cientifico,
+        texto: [id, nome].filter(Boolean).join(" - ")
+    };
+};
+
 const mapToArray = (response) => {
     if (Array.isArray(response)) return response;
     if (Array.isArray(response?.data)) return response.data;
@@ -333,6 +348,9 @@ export default function PeixariaClient() {
     const ultimoCodigoAlertadoRef = useRef("");
     const router = useRouter();
 
+    const [especiesDisponiveis, setEspeciesDisponiveis] = useState([]);
+    const [carregandoEspecies, setCarregandoEspecies] = useState(false);
+
     const [municipios, setMunicipios] = useState([]);
     const [localidades, setLocalidades] = useState([]);
     const [municipioSelecionado, setMunicipioSelecionado] = useState(null);
@@ -401,6 +419,36 @@ export default function PeixariaClient() {
         }
     }, []);
 
+    const carregarEspecies = useCallback(async () => {
+        setCarregandoEspecies(true);
+        try {
+            const response = await api.getEspecies();
+            setEspeciesDisponiveis(mapToArray(response));
+        } catch (err) {
+            console.error(err);
+            setEspeciesDisponiveis([]);
+        } finally {
+            setCarregandoEspecies(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        carregarEspecies();
+    }, [carregarEspecies]);
+
+    const especiesSugeridas = useCallback((texto) => {
+        const termo = normalizeText(texto).toLowerCase();
+        if (!termo) return [];
+
+        return especiesDisponiveis
+            .filter((especie) => {
+                const id = String(especie?.IDD ?? especie?.ID ?? "").toLowerCase();
+                const nome = String(especie?.Nome_popular ?? especie?.nome_popular ?? "").toLowerCase();
+                return id.includes(termo) || nome.includes(termo);
+            })
+            .slice(0, 10);
+    }, [especiesDisponiveis]);
+
     const updateField = useCallback((field, value) => setForm((prev) => ({ ...prev, [field]: value })), []);
 
     const updateNumericField = useCallback((field, value) =>
@@ -414,6 +462,55 @@ export default function PeixariaClient() {
             ...prev,
             [key]: prev[key].map((item, i) => (i === index ? { ...item, [field]: value } : item)),
         })), []);
+
+    const handleEspecieBusca = useCallback((index, value) => {
+        setForm((prev) => ({
+            ...prev,
+            especiesComerciais: prev.especiesComerciais.map((item, i) => (
+                i === index
+                    ? { ...item, buscaTexto: value, id_especie: null, especie: "", nome_popular: "", sugestoesvisiveis: true }
+                    : item
+            ))
+        }));
+    }, []);
+
+    const handleEspecieFocus = useCallback((index) => {
+        setForm((prev) => ({
+            ...prev,
+            especiesComerciais: prev.especiesComerciais.map((item, i) => (
+                i === index ? { ...item, sugestoesvisiveis: true } : item
+            ))
+        }));
+    }, []);
+
+    const handleEspecieBlur = useCallback((index) => {
+        setForm((prev) => ({
+            ...prev,
+            especiesComerciais: prev.especiesComerciais.map((item, i) => (
+                i === index ? { ...item, sugestoesvisiveis: false } : item
+            ))
+        }));
+    }, []);
+
+    const handleEspecieSelecionada = useCallback((index, especie) => {
+        const label = buildEspecieLabel(especie);
+
+        setForm((prev) => ({
+            ...prev,
+            especiesComerciais: prev.especiesComerciais.map((item, i) => (
+                i === index
+                    ? {
+                        ...item,
+                        id_especie: especie?.ID ?? especie?.IDD ?? null,
+                        buscaTexto: label.id,
+                        especie: label.nome,
+                        nome_popular: label.nome,
+                        sugestoesvisiveis: false
+                    }
+                    : item
+            ))
+        }));
+    }, []);
 
     const updateMarketRow = useCallback((group, index, field, value) =>
         setForm((prev) => ({
@@ -458,7 +555,15 @@ export default function PeixariaClient() {
     }, [updatePerdaPorEspecie]);
 
     const addRow = useCallback((key, template) =>
-        setForm((prev) => ({ ...prev, [key]: [...prev[key], { ...template, id: Date.now() }] })), []);
+        setForm((prev) => ({
+            ...prev,
+            [key]: [
+                ...prev[key],
+                key === "especiesComerciais"
+                    ? { ...template, id: Date.now(), id_especie: null, buscaTexto: "", nome_popular: "", sugestoesvisiveis: false }
+                    : { ...template, id: Date.now() }
+            ]
+        })), []);
 
     const removeRow = useCallback((key, index) =>
         setForm((prev) => ({ ...prev, [key]: prev[key].filter((_, i) => i !== index) })), []);
@@ -1061,7 +1166,47 @@ export default function PeixariaClient() {
                                                 {form.especiesComerciais.map((esp, idx) => (
                                                     <tr key={esp.id}>
                                                         <td className="px-4 py-3 text-sm font-semibold text-slate-600">{idx + 1}</td>
-                                                        <td className="px-4 py-3"><input className={inputClass} value={esp.especie} onChange={(e) => updateArrayItem("especiesComerciais", idx, "especie", e.target.value)} placeholder="Ex.: Tilápia" /></td>
+                                                        <td className="px-4 py-3 align-top">
+                                                            <div className="relative">
+                                                                <input
+                                                                    className={inputClass}
+                                                                    value={esp.buscaTexto ?? ""}
+                                                                    onChange={(e) => handleEspecieBusca(idx, e.target.value)}
+                                                                    onFocus={() => handleEspecieFocus(idx)}
+                                                                    onBlur={() => setTimeout(() => handleEspecieBlur(idx), 180)}
+                                                                    placeholder="ID ou nome popular"
+                                                                />
+                                                                {esp.sugestoesvisiveis && especiesSugeridas(esp.buscaTexto).length > 0 && (
+                                                                    <div className="absolute left-0 top-full z-50 mt-1 max-h-60 w-80 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl">
+                                                                        {especiesSugeridas(esp.buscaTexto).map((s) => {
+                                                                            const label = buildEspecieLabel(s);
+                                                                            return (
+                                                                                <button
+                                                                                    key={String(s?.ID ?? s?.IDD ?? label.nome)}
+                                                                                    type="button"
+                                                                                    onMouseDown={(e) => { e.preventDefault(); handleEspecieSelecionada(idx, s); }}
+                                                                                    className="w-full border-b border-slate-100 px-3 py-2 text-left text-sm last:border-0 hover:bg-blue-50"
+                                                                                >
+                                                                                    <span className="font-medium text-blue-700">{label.id}</span>
+                                                                                    <span className="text-slate-600"> — {label.nome}</span>
+                                                                                    {label.cientifico && (
+                                                                                        <span className="block text-xs italic text-slate-400">{label.cientifico}</span>
+                                                                                    )}
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                                {esp.sugestoesvisiveis && carregandoEspecies && (
+                                                                    <div className="absolute left-0 top-full z-50 mt-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 shadow-xl">
+                                                                        Carregando espécies...
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="mt-1 text-xs text-slate-500">
+                                                                {esp.nome_popular ? `Selecionada: ${esp.nome_popular}` : "Digite ID ou nome popular"}
+                                                            </div>
+                                                        </td>
                                                         <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={esp.quantidadeFresco} onChange={(e) => updateArrayItem("especiesComerciais", idx, "quantidadeFresco", e.target.value)} placeholder="0" min="0" step="0.01" /></td>
                                                         <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={esp.quantidadeCongelado} onChange={(e) => updateArrayItem("especiesComerciais", idx, "quantidadeCongelado", e.target.value)} placeholder="0" min="0" step="0.01" /></td>
                                                         <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={esp.precoCompra} onChange={(e) => updateArrayItem("especiesComerciais", idx, "precoCompra", e.target.value)} placeholder="0,00" min="0" step="0.01" /></td>

@@ -137,6 +137,12 @@ const num = (value) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const toValidEspecieId = (value) => {
+  const parsed = num(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return null;
+  return parsed <= 2147483647 ? parsed : null;
+};
+
 const bool = (value) => {
   if (typeof value === 'boolean') return value;
   if (value === undefined || value === null || value === '') return null;
@@ -282,7 +288,7 @@ const buildEspecieComercialRecords = (ID_peixaria, especies = []) =>
   (Array.isArray(especies) ? especies : [])
     .map((item) => ({
       ID_peixaria,
-      ID_especie: num(item.ID_especie ?? item.id_especie),
+      ID_especie: toValidEspecieId(item.ID_especie ?? item.id_especie),
       especie: txt(item.especie),
       quantidade_fresco: parseDecimal(item.quantidade_fresco ?? item.quantidadeFresco),
       quantidade_congelado: parseDecimal(item.quantidade_congelado ?? item.quantidadeCongelado),
