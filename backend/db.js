@@ -2,6 +2,7 @@ import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import mysql2 from 'mysql2'; // Importação direta do driver
 import { ensureSocioSchema } from './utils/ensureSocioSchema.js';
+import { ensurePeixariaSchema } from './utils/ensurePeixariaSchema.js';
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ export const connectDB = async () => {
     console.log('Conexão com o banco de dados estabelecida com sucesso.');
     await sequelize.sync();
     await ensureSocioSchema(sequelize);
+    await ensurePeixariaSchema(sequelize);
     return sequelize;
   } catch (error) {
     console.error('Não foi possível conectar ao banco de dados:', error);
