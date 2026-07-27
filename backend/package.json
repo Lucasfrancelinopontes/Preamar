@@ -26,6 +26,7 @@
     "db:populate-especies": "node scripts/popularEspecies.js",
     "db:fix-enum": "node scripts/corrigirEnumDestino.js",
     "db:migrate-destino-captura-null": "node scripts/migrarDestinoMultiploECapturaNula.js",
+    "test:peixaria:heavy": "node scripts/createPeixariaHeavyPayloadTestDirect.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:watch": "nodemon examples/testarAPI.js"
   },

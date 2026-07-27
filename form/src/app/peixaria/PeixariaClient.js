@@ -1157,7 +1157,7 @@ export default function PeixariaClient() {
                                         <table className="min-w-full divide-y divide-slate-200 text-sm">
                                             <thead className="bg-slate-50">
                                                 <tr>
-                                                    {["#", "Espécie", "Qtd. fresco (kg)", "Qtd. congelado (kg)", "Preço compra (R$/kg)", "Preço venda (R$/kg)", "Ações"].map((h) => (
+                                                    {["#", "Espécie comercial", "Qtd. fresco (kg)", "Qtd. congelado (kg)", "Preço compra (R$/kg)", "Preço venda (R$/kg)", "Ações"].map((h) => (
                                                         <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
                                                     ))}
                                                 </tr>
@@ -1167,7 +1167,17 @@ export default function PeixariaClient() {
                                                     <tr key={esp.id}>
                                                         <td className="px-4 py-3 text-sm font-semibold text-slate-600">{idx + 1}</td>
                                                         <td className="px-4 py-3 align-top">
-                                                            <div className="relative">
+                                                            <div className="relative rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-3 shadow-sm">
+                                                                <div className="mb-2 flex items-center justify-between gap-3">
+                                                                    <span className="text-xs font-semibold uppercase tracking-wide text-blue-700">Busca por ID ou nome popular</span>
+                                                                    {esp.nome_popular ? (
+                                                                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                                                            {esp.nome_popular}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="text-xs text-slate-400">Nenhuma espécie selecionada</span>
+                                                                    )}
+                                                                </div>
                                                                 <input
                                                                     className={inputClass}
                                                                     value={esp.buscaTexto ?? ""}
@@ -1202,9 +1212,6 @@ export default function PeixariaClient() {
                                                                         Carregando espécies...
                                                                     </div>
                                                                 )}
-                                                            </div>
-                                                            <div className="mt-1 text-xs text-slate-500">
-                                                                {esp.nome_popular ? `Selecionada: ${esp.nome_popular}` : "Digite ID ou nome popular"}
                                                             </div>
                                                         </td>
                                                         <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={esp.quantidadeFresco} onChange={(e) => updateArrayItem("especiesComerciais", idx, "quantidadeFresco", e.target.value)} placeholder="0" min="0" step="0.01" /></td>
