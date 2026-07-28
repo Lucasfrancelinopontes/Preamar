@@ -148,13 +148,7 @@ const getNumberTextValue = (source, ...paths) => {
 
 const getEspecieBuscaTexto = (item) => {
     const idd = getTextValue(item, 'especie.IDD', 'especie.idd', 'IDD', 'idd');
-    const id = getTextValue(item, 'id_especie', 'id', 'especie.ID', 'especie.id');
-
-    if (idd && id && idd !== id) {
-        return `${idd} (${id})`;
-    }
-
-    return idd || id;
+    return idd || getTextValue(item, 'id_especie', 'id', 'especie.ID', 'especie.id');
 };
 
 const getBooleanValue = (source, ...paths) => {
