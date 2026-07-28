@@ -74,6 +74,7 @@ export function mapFormDataToPayload(formData) {
 
   // ── embarcacao ────────────────────────────────────────────────────────────
   const emb = formData.embarcacao || {};
+  const comprimento = emb.comprimento !== '' ? Number(emb.comprimento) : null;
   const embarcacao = {
     pescaEmbarcada:       emb.pescaEmbarcada       || null,
     embarcacaoPropria:    emb.embarcacaoPropria    || null,
@@ -86,7 +87,8 @@ export function mapFormDataToPayload(formData) {
     portoDesembarque:     emb.portoDesembarque     || null,
     nomeEmbarcacao:       emb.nomeEmbarcacao       || null,
     numeroRegistro:       emb.numeroRegistro       || null,
-    comprimentoM:         emb.comprimento !== '' ? Number(emb.comprimento) : null,
+    comprimentoM:         comprimento,
+    comprimento:          comprimento,
     largura:              emb.largura !== '' ? Number(emb.largura) : null,
     tonelagemBruta:       emb.tonelagemBruta !== '' ? Number(emb.tonelagemBruta) : null,
     capacidadeTripulacao: emb.capacidadeTripulacao !== '' ? Number(emb.capacidadeTripulacao) : null,
@@ -133,12 +135,25 @@ export function mapFormDataToPayload(formData) {
     : [];
 
   // ── producao ──────────────────────────────────────────────────────────────
+  const producaoMediaPorEspecie = (formData.producaoMediaPorEspecie || [])
+    .filter((item) => String(item?.especie || "").trim() || item?.producao !== "")
+    .map((item) => ({
+      especie: String(item?.especie || "").trim() || null,
+      producao: item?.producao !== "" ? Number(item.producao) : null
+    }));
+
+  const totalProducaoMediaKg = producaoMediaPorEspecie.reduce((total, item) => {
+    const valor = Number(item.producao || 0);
+    return total + (Number.isFinite(valor) ? valor : 0);
+  }, 0);
+
   const producao = {
     mediaDiasEmbarcado:    formData.mediaDiasEmbarcado !== '' ? Number(formData.mediaDiasEmbarcado) : null,
     viagensMes:            formData.viagensPorMes !== '' ? Number(formData.viagensPorMes) : null,
-    producaoMediaKg:       formData.producaoMedia !== ''      ? Number(formData.producaoMedia)      : null,
-    producaoMediaViagemKg: formData.producaoMediaViagemKg !== '' ? Number(formData.producaoMediaViagemKg) : null,
-    producaoMediaUnidades: formData.producaoMediaUnidades !== '' ? Number(formData.producaoMediaUnidades) : null,
+    producaoMediaKg:       totalProducaoMediaKg > 0
+      ? totalProducaoMediaKg
+      : (formData.producaoMedia !== '' ? Number(formData.producaoMedia) : null),
+    producaoMediaPorEspecie,
     valorPrimeira:         formData.valorPrimeiraQualidade !== '' ? Number(formData.valorPrimeiraQualidade) : null,
     valorSegunda:          formData.valorSegundaQualidade !== '' ? Number(formData.valorSegundaQualidade) : null,
     valorTerceira:         formData.valorTerceiraQualidade !== '' ? Number(formData.valorTerceiraQualidade) : null,

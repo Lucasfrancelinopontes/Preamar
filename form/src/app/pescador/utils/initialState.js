@@ -124,10 +124,9 @@ export const initialState = {
     // ===== Produção =====
     mediaDiasEmbarcado: "",
     producaoMedia: "",
+    producaoMediaPorEspecie: [],
     valorMedio: "",
     viagensPorMes: "",
-    producaoMediaViagemKg: "",
-    producaoMediaUnidades: "",
     valorPrimeiraQualidade: "",
     valorSegundaQualidade: "",
     valorTerceiraQualidade: "",

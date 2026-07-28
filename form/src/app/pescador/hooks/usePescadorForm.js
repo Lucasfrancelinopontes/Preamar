@@ -26,6 +26,12 @@ const createEspecieItem = () => ({
     sugestoesvisiveis: false
 });
 
+const createProducaoEspecieItem = () => ({
+    rowId: Date.now(),
+    especie: "",
+    producao: ""
+});
+
 const parsePropulsoes = (value) => {
     if (Array.isArray(value)) {
         return value.map((item) => String(item)).filter(Boolean);
@@ -140,6 +146,17 @@ const getNumberTextValue = (source, ...paths) => {
     return value === undefined || value === null || value === "" ? "" : String(value);
 };
 
+const getEspecieBuscaTexto = (item) => {
+    const idd = getTextValue(item, 'especie.IDD', 'especie.idd', 'IDD', 'idd');
+    const id = getTextValue(item, 'id_especie', 'id', 'especie.ID', 'especie.id');
+
+    if (idd && id && idd !== id) {
+        return `${idd} (${id})`;
+    }
+
+    return idd || id;
+};
+
 const getBooleanValue = (source, ...paths) => {
     const value = getValue(source, ...paths);
 
@@ -184,6 +201,11 @@ const mapApiToFormData = (data) => {
         ? normalized.pescador_especies
         : Array.isArray(normalized?.especies)
             ? normalized.especies
+            : [];
+    const producaoMediaPorEspecieRaw = Array.isArray(producao?.producaoMediaPorEspecie)
+        ? producao.producaoMediaPorEspecie
+        : Array.isArray(producao?.producao_media_por_especie)
+            ? producao.producao_media_por_especie
             : [];
 
     return {
@@ -272,9 +294,14 @@ const mapApiToFormData = (data) => {
             : initialState.quadrantes,
         mediaDiasEmbarcado: getNumberTextValue(producao, 'media_dias_embarcado', 'mediaDiasEmbarcado'),
         producaoMedia: getNumberTextValue(producao, 'producao_media_kg', 'producaoMedia'),
+        producaoMediaPorEspecie: producaoMediaPorEspecieRaw.length > 0
+            ? producaoMediaPorEspecieRaw.map((item) => ({
+                rowId: item?.rowId || Date.now(),
+                especie: getTextValue(item, 'especie', 'nome', 'nomeEspecie'),
+                producao: getNumberTextValue(item, 'producao', 'valor', 'quantidade')
+            }))
+            : [createProducaoEspecieItem()],
         viagensPorMes: getNumberTextValue(producao, 'viagens_mes', 'viagensMes', 'viagensPorMes'),
-        producaoMediaViagemKg: getNumberTextValue(producao, 'producao_media_viagem_kg', 'producaoMediaViagemKg'),
-        producaoMediaUnidades: getNumberTextValue(producao, 'producao_media_unidades', 'producaoMediaUnidades'),
         valorPrimeiraQualidade: getNumberTextValue(producao, 'valor_primeira', 'valorPrimeiraQualidade'),
         valorSegundaQualidade: getNumberTextValue(producao, 'valor_segunda', 'valorSegundaQualidade'),
         valorTerceiraQualidade: getNumberTextValue(producao, 'valor_terceira', 'valorTerceiraQualidade'),
@@ -311,7 +338,7 @@ const mapApiToFormData = (data) => {
             ? especies.map((item) => ({
                 rowId: item?.id || Date.now(),
                 id_especie: item?.id_especie || item?.id || null,
-                buscaTexto: item?.id_especie != null ? String(item.id_especie) : item?.id != null ? String(item.id) : "",
+                buscaTexto: getEspecieBuscaTexto(item),
                 nome_popular: getTextValue(item, 'especie.Nome_popular', 'especie.nome_popular', 'nome_popular', 'nomePopular'),
                 inicioSafra: getTextValue(item, 'inicio_safra', 'inicioSafra'),
                 fimSafra: getTextValue(item, 'fim_safra', 'fimSafra'),

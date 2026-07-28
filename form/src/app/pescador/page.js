@@ -74,6 +74,31 @@ export default function CadastroPescador({ editId = null }) {
         }));
     }
 
+    function adicionarProducaoEspecieLinha() {
+        setFormData((prev) => ({
+            ...prev,
+            producaoMediaPorEspecie: [
+                ...(prev.producaoMediaPorEspecie || []),
+                { rowId: Date.now(), especie: "", producao: "" }
+            ]
+        }));
+    }
+
+    function removerProducaoEspecieLinha(idx) {
+        setFormData((prev) => ({
+            ...prev,
+            producaoMediaPorEspecie: (prev.producaoMediaPorEspecie || []).filter((_, i) => i !== idx)
+        }));
+    }
+
+    function handleProducaoEspecieChange(idx, campo, valor) {
+        setFormData((prev) => {
+            const novas = [...(prev.producaoMediaPorEspecie || [])];
+            novas[idx] = { ...novas[idx], [campo]: valor };
+            return { ...prev, producaoMediaPorEspecie: novas };
+        });
+    }
+
     // Atualiza campo livre (inicioSafra / fimSafra)
     function handleEspecieCampo(idx, campo, valor) {
         setFormData((prev) => {
@@ -587,6 +612,8 @@ export default function CadastroPescador({ editId = null }) {
                                 <InputGroup
                                     label="Comprimento"
                                     name="comprimento"
+                                    type="number"
+                                    step="0.01"
                                     value={formData.embarcacao.comprimento || ""}
                                     onChange={handleEmbarcacaoInputChange}
                                 />
@@ -1776,31 +1803,60 @@ export default function CadastroPescador({ editId = null }) {
                                     onChange={handleInputChange}
                                 />
 
-                                <InputGroup
-                                    label="Produção média (kg)"
-                                    name="producaoMedia"
-                                    type="number"
-                                    value={formData.producaoMedia}
-                                    onChange={handleInputChange}
-                                />
+                                <div className="md:col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50/70">
+                                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-3">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700">
+                                                Produção média por espécies (kg)
+                                            </label>
+                                            <p className="text-xs text-slate-500 mt-1">
+                                                Adicione o nome da espécie e sua produção média em kg.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={adicionarProducaoEspecieLinha}
+                                            className="px-3 py-2 rounded-lg border border-blue-500 text-blue-600 text-sm font-medium hover:bg-blue-50 transition"
+                                        >
+                                            + Adicionar espécie
+                                        </button>
+                                    </div>
 
-                                <InputGroup
-                                    label="Produção média por viagem (kg)"
-                                    name="producaoMediaViagemKg"
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.producaoMediaViagemKg || ""}
-                                    onChange={handleInputChange}
-                                />
+                                    <div className="space-y-2">
+                                        {(formData.producaoMediaPorEspecie || []).length === 0 && (
+                                            <p className="text-sm text-slate-400 py-2">
+                                                Nenhuma espécie adicionada.
+                                            </p>
+                                        )}
 
-                                <InputGroup
-                                    label="Produção média unidades"
-                                    name="producaoMediaUnidades"
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.producaoMediaUnidades || ""}
-                                    onChange={handleInputChange}
-                                />
+                                        {(formData.producaoMediaPorEspecie || []).map((item, idx) => (
+                                            <div key={item.rowId} className="flex flex-col md:flex-row gap-2 items-start">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nome da espécie"
+                                                    value={item.especie}
+                                                    onChange={(e) => handleProducaoEspecieChange(idx, "especie", e.target.value)}
+                                                    className="w-full md:flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    placeholder="Produção (kg)"
+                                                    value={item.producao}
+                                                    onChange={(e) => handleProducaoEspecieChange(idx, "producao", e.target.value)}
+                                                    className="w-full md:w-40 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removerProducaoEspecieLinha(idx)}
+                                                    className="px-3 py-2 rounded-lg border border-red-400 text-red-500 text-sm hover:bg-red-50 transition"
+                                                >
+                                                    Remover
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
 
                                 <InputGroup
                                     label="Valor primeira qualidade"
