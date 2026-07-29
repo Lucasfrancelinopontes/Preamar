@@ -98,6 +98,7 @@ export const initialState = {
         nomeEmbarcacao: "",
         numeroRegistro: "",
         comprimento: "",
+        comprimentoM: "",
         largura: "",
         tonelagemBruta: "",
         capacidadeTripulacao: "",

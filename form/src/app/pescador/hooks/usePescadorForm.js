@@ -28,7 +28,10 @@ const createEspecieItem = () => ({
 
 const createProducaoEspecieItem = () => ({
     rowId: Date.now(),
+    id_especie: null,
+    buscaTexto: "",
     especie: "",
+    nome_popular: "",
     producao: ""
 });
 
@@ -270,6 +273,7 @@ const mapApiToFormData = (data) => {
             nomeEmbarcacao: getTextValue(embarcacao, 'nome_embarcacao', 'nomeEmbarcacao'),
             numeroRegistro: getTextValue(embarcacao, 'numero_registro', 'numeroRegistro'),
             comprimento: getNumberTextValue(embarcacao, 'comprimento_m', 'comprimento', 'comprimentoM'),
+            comprimentoM: getNumberTextValue(embarcacao, 'comprimento_m', 'comprimentoM', 'comprimento'),
             largura: getNumberTextValue(embarcacao, 'largura'),
             tonelagemBruta: getNumberTextValue(embarcacao, 'tonelagem_bruta', 'tonelagemBruta'),
             capacidadeTripulacao: getNumberTextValue(embarcacao, 'capacidade_tripulacao', 'capacidadeTripulacao'),
@@ -291,7 +295,10 @@ const mapApiToFormData = (data) => {
         producaoMediaPorEspecie: producaoMediaPorEspecieRaw.length > 0
             ? producaoMediaPorEspecieRaw.map((item) => ({
                 rowId: item?.rowId || Date.now(),
+                id_especie: getValue(item, 'id_especie', 'ID_especie', 'especie.id_especie', 'especie.ID_especie') ?? null,
+                buscaTexto: getEspecieBuscaTexto(item),
                 especie: getTextValue(item, 'especie', 'nome', 'nomeEspecie'),
+                nome_popular: getTextValue(item, 'nome_popular', 'nomePopular', 'especie.Nome_popular', 'especie.nome_popular'),
                 producao: getNumberTextValue(item, 'producao', 'valor', 'quantidade')
             }))
             : [createProducaoEspecieItem()],
@@ -420,7 +427,8 @@ export default function usePescadorForm(editId = null) {
             ...prev,
             embarcacao: {
                 ...prev.embarcacao,
-                [name]: value
+                [name]: value,
+                ...(name === "comprimento" || name === "comprimentoM" ? { comprimento: value, comprimentoM: value } : {})
             }
         }));
     };

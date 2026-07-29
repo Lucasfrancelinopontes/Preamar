@@ -75,6 +75,7 @@ export function mapFormDataToPayload(formData) {
   // ── embarcacao ────────────────────────────────────────────────────────────
   const emb = formData.embarcacao || {};
   const comprimento = emb.comprimento !== '' ? Number(emb.comprimento) : null;
+  const comprimentoM = emb.comprimentoM !== '' ? Number(emb.comprimentoM) : comprimento;
   const embarcacao = {
     pescaEmbarcada:       emb.pescaEmbarcada       || null,
     embarcacaoPropria:    emb.embarcacaoPropria    || null,
@@ -87,8 +88,8 @@ export function mapFormDataToPayload(formData) {
     portoDesembarque:     emb.portoDesembarque     || null,
     nomeEmbarcacao:       emb.nomeEmbarcacao       || null,
     numeroRegistro:       emb.numeroRegistro       || null,
-    comprimentoM:         comprimento,
-    comprimento:          comprimento,
+    comprimentoM:         comprimentoM,
+    comprimento:          comprimentoM,
     largura:              emb.largura !== '' ? Number(emb.largura) : null,
     tonelagemBruta:       emb.tonelagemBruta !== '' ? Number(emb.tonelagemBruta) : null,
     capacidadeTripulacao: emb.capacidadeTripulacao !== '' ? Number(emb.capacidadeTripulacao) : null,
@@ -136,9 +137,9 @@ export function mapFormDataToPayload(formData) {
 
   // ── producao ──────────────────────────────────────────────────────────────
   const producaoMediaPorEspecie = (formData.producaoMediaPorEspecie || [])
-    .filter((item) => String(item?.especie || "").trim() || item?.producao !== "")
+    .filter((item) => String(item?.especie || item?.nome_popular || item?.buscaTexto || "").trim() || item?.producao !== "")
     .map((item) => ({
-      especie: String(item?.especie || "").trim() || null,
+      especie: String(item?.especie || item?.nome_popular || item?.buscaTexto || "").trim() || null,
       producao: item?.producao !== "" ? Number(item.producao) : null
     }));
 

@@ -78,6 +78,13 @@ const buildEmbarcacaoPayload = (embarcacao) => {
   };
 };
 
+const temDadosEmbarcacao = (embarcacao = {}) => Object.entries(embarcacao).some(([chave, valor]) => {
+  if (chave === 'ID_embarcacao') return false;
+  if (valor === null || valor === undefined) return false;
+  if (typeof valor === 'string') return valor.trim() !== '';
+  return true;
+});
+
 const upsertPescador = async (pescador, transaction) => {
   if (!pescador) return null;
 
@@ -376,17 +383,18 @@ export const criarDesembarque = async (req, res) => {
       embarcacaoDb = await Embarcacao.findByPk(embarcacaoPayload.ID_embarcacao, { transaction: t });
     }
 
-    if (embarcacaoPayload?.nome_embarcacao && embarcacaoPayload?.tipo) {
-      const { ID_embarcacao: _embId, ...embarcacaoData } = embarcacaoPayload;
+    const { ID_embarcacao: _embId, ...embarcacaoData } = embarcacaoPayload || {};
+    const possuiDadosEmbarcacao = temDadosEmbarcacao(embarcacaoData);
 
+    if (embarcacaoDb && possuiDadosEmbarcacao) {
+      await embarcacaoDb.update(embarcacaoData, { transaction: t });
+    } else if (embarcacaoData.codigo_embarcacao && embarcacaoData.tipo && possuiDadosEmbarcacao) {
       if (embarcacaoData.codigo_embarcacao) {
         [embarcacaoDb] = await Embarcacao.findOrCreate({
           where: { codigo_embarcacao: embarcacaoData.codigo_embarcacao },
           defaults: embarcacaoData,
           transaction: t
         });
-        await embarcacaoDb.update(embarcacaoData, { transaction: t });
-      } else if (embarcacaoDb) {
         await embarcacaoDb.update(embarcacaoData, { transaction: t });
       } else {
         embarcacaoDb = await Embarcacao.create(embarcacaoData, { transaction: t });
@@ -762,7 +770,7 @@ export const buscarDesembarque = async (req, res) => {
           include: [{
             model: Especie,
             as: 'especie',
-            attributes: ['ID_especie', 'nome_popular', 'nome_cientifico', 'familia']
+            attributes: ['ID_especie', 'idd', 'nome_popular', 'nome_cientifico', 'familia']
           }]
         },
         {
@@ -772,7 +780,7 @@ export const buscarDesembarque = async (req, res) => {
           include: [{
             model: Especie,
             as: 'especie',
-            attributes: ['ID_especie', 'nome_popular', 'nome_cientifico']
+            attributes: ['ID_especie', 'idd', 'nome_popular', 'nome_cientifico']
           }]
         }
       ],
@@ -892,8 +900,29 @@ export const atualizarDesembarque = async (req, res) => {
     let pescadorDb = null;
     const pescadorIdToUpdate = pescador?.ID_pescador || pescador?.ID || desembarqueDados?.ID_pescador || desembarqueDb.ID_pescador || null;
     const pescadorPayload = pescador ? buildPescadorPayload({ ...pescador, cpf: cpfNorm }) : null;
-    if (pescadorPayload && !cpfNorm) {
-      delete pescadorPayload.cpf;
+    let embarcacaoDb = null;
+    const embarcacaoPayload = buildEmbarcacaoPayload(embarcacao);
+    if (embarcacaoPayload) {
+      const { ID_embarcacao: embarcacaoPayloadId, ...embarcacaoData } = embarcacaoPayload;
+      const embarcacaoIdToUpdate = embarcacaoPayloadId || desembarqueDados?.ID_embarcacao || desembarqueDb.ID_embarcacao || null;
+      const possuiDados = temDadosEmbarcacao(embarcacaoData);
+
+      if (embarcacaoIdToUpdate) {
+        embarcacaoDb = await Embarcacao.findByPk(embarcacaoIdToUpdate, { transaction: t });
+      }
+
+      if (embarcacaoDb && possuiDados) {
+        await embarcacaoDb.update(embarcacaoData, { transaction: t });
+      } else if (embarcacaoData.codigo_embarcacao && embarcacaoData.tipo && possuiDados) {
+        [embarcacaoDb] = await Embarcacao.findOrCreate({
+          where: { codigo_embarcacao: embarcacaoData.codigo_embarcacao },
+          defaults: embarcacaoData,
+          transaction: t
+        });
+        await embarcacaoDb.update(embarcacaoData, { transaction: t });
+      } else if (embarcacaoData.tipo && possuiDados) {
+        embarcacaoDb = await Embarcacao.create(embarcacaoData, { transaction: t });
+      }
     }
 
     if (cpfNorm && (pescadorPayload?.nome || pescadorPayload?.apelido)) {
@@ -908,34 +937,11 @@ export const atualizarDesembarque = async (req, res) => {
       pescadorDb = await Pescador.findByPk(pescadorIdToUpdate, { transaction: t });
       if (pescadorDb) {
         await pescadorDb.update(pescadorPayload, { transaction: t });
+      } else if (pescadorPayload?.nome || pescadorPayload?.apelido) {
+        pescadorDb = await Pescador.create(pescadorPayload, { transaction: t });
       }
     } else if (pescadorPayload?.nome || pescadorPayload?.apelido) {
       pescadorDb = await Pescador.create(pescadorPayload, { transaction: t });
-    }
-
-    let embarcacaoDb = null;
-    const embarcacaoPayload = buildEmbarcacaoPayload(embarcacao);
-    if (embarcacaoPayload) {
-      const { ID_embarcacao: embarcacaoPayloadId, ...embarcacaoData } = embarcacaoPayload;
-      const embarcacaoIdToUpdate = embarcacaoPayloadId || desembarqueDados?.ID_embarcacao || desembarqueDb.ID_embarcacao || null;
-      const hasRequiredFields = Boolean(embarcacaoData.nome_embarcacao && embarcacaoData.tipo);
-
-      if (embarcacaoIdToUpdate) {
-        embarcacaoDb = await Embarcacao.findByPk(embarcacaoIdToUpdate, { transaction: t });
-      }
-
-      if (hasRequiredFields && embarcacaoData.codigo_embarcacao) {
-        [embarcacaoDb] = await Embarcacao.findOrCreate({
-          where: { codigo_embarcacao: embarcacaoData.codigo_embarcacao },
-          defaults: embarcacaoData,
-          transaction: t
-        });
-        await embarcacaoDb.update(embarcacaoData, { transaction: t });
-      } else if (hasRequiredFields && embarcacaoDb) {
-        await embarcacaoDb.update(embarcacaoData, { transaction: t });
-      } else if (hasRequiredFields) {
-        embarcacaoDb = await Embarcacao.create(embarcacaoData, { transaction: t });
-      }
     }
 
     const updatePayload = {

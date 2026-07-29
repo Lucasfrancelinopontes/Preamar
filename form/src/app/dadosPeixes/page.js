@@ -3,13 +3,22 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useFormContext } from '../contexts/FormContext';
+import SpeciesAutocomplete, { buildSpeciesLabel } from '@/components/SpeciesAutocomplete';
 import api from '@/services/api';
 import { gerarCodigoDesembarque } from '@/utils/validations';
+
+const createEspecieItem = () => ({
+    id_especie: "",
+    buscaTexto: "",
+    nome_popular: "",
+    peso: "",
+    preco: ""
+});
 
 export default function DadosPeixes() {
     const router = useRouter();
     const { formData, updateFormData, resetForm } = useFormContext();
-    const [especies, setEspecies] = useState(formData.especies || [{ id: "", peso: "", preco: "" }]);
+    const [especies, setEspecies] = useState(formData.especies || [createEspecieItem()]);
     const [especiesDisponiveis, setEspeciesDisponiveis] = useState([]);
     const [loading, setLoading] = useState(false);
     const [enviando, setEnviando] = useState(false);
@@ -21,7 +30,7 @@ export default function DadosPeixes() {
             try {
                 setLoading(true);
                 const data = await api.getEspecies();
-                setEspeciesDisponiveis(data);
+                setEspeciesDisponiveis(Array.isArray(data) ? data : data?.data || []);
             } catch (err) {
                 console.error('Erro ao carregar espécies:', err);
                 setErro('Erro ao carregar lista de espécies');
@@ -34,7 +43,7 @@ export default function DadosPeixes() {
     }, []);
 
     function adicionarEspecie() {
-        setEspecies((s) => [...s, { id: "", peso: "", preco: "" }]);
+        setEspecies((s) => [...s, createEspecieItem()]);
     }
 
     function removerEspecie(index) {
@@ -45,9 +54,23 @@ export default function DadosPeixes() {
         setEspecies((s) => s.map((e, i) => (i === index ? { ...e, [field]: value } : e)));
     }
 
+    function selecionarEspecie(index, especie) {
+        const label = buildSpeciesLabel(especie);
+        setEspecies((s) => s.map((e, i) => (
+            i === index
+                ? {
+                    ...e,
+                    id_especie: especie?.ID ?? especie?.IDD ?? "",
+                    buscaTexto: label.textoBusca,
+                    nome_popular: label.nome
+                }
+                : e
+        )));
+    }
+
     const validarEspecies = () => {
         // Filtrar apenas espécies preenchidas
-        const especiesPreenchidas = especies.filter(e => e.id && e.peso);
+        const especiesPreenchidas = especies.filter(e => e.id_especie && e.peso);
         
         if (especiesPreenchidas.length === 0) {
             setErro('Adicione pelo menos uma espécie capturada');
@@ -55,7 +78,7 @@ export default function DadosPeixes() {
         }
 
         for (const especie of especiesPreenchidas) {
-            if (!especie.id) {
+            if (!especie.id_especie) {
                 setErro('Selecione a espécie');
                 return false;
             }
@@ -138,9 +161,9 @@ export default function DadosPeixes() {
 
         // Preparar capturas
         const capturas = especies
-            .filter(e => e.id && e.peso)
+            .filter(e => e.id_especie && e.peso)
             .map(especie => ({
-                especie_id: especie.id,
+                especie_id: especie.id_especie,
                 peso: parseFloat(especie.peso),
                 preco: especie.preco ? parseFloat(especie.preco) : null
             }));
@@ -282,19 +305,20 @@ export default function DadosPeixes() {
                                     <label className="text-sm font-medium text-gray-700 mb-2">
                                         Espécie {idx === 0 && <span className="text-red-500">*</span>}
                                     </label>
-                                    <select
-                                        value={esp.id}
-                                        onChange={(e) => atualizarEspecie(idx, "id", e.target.value)}
-                                        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
-                                        disabled={loading}
-                                    >
-                                        <option value="">Selecione uma espécie</option>
-                                        {especiesDisponiveis.map((especie) => (
-                                            <option key={`option-${especie.ID}`} value={especie.ID}>
-                                                {especie.Nome_popular} ({especie.Nome_cientifico})
-                                            </option>
-                                        ))}
-                                    </select>
+                                            <SpeciesAutocomplete
+                                                options={especiesDisponiveis}
+                                                value={esp.buscaTexto}
+                                                onChange={(value) => {
+                                                    atualizarEspecie(idx, "buscaTexto", value);
+                                                    atualizarEspecie(idx, "id_especie", "");
+                                                    atualizarEspecie(idx, "nome_popular", "");
+                                                }}
+                                                onSelect={(especie) => selecionarEspecie(idx, especie)}
+                                                placeholder="IDD ou nome popular"
+                                                disabled={loading}
+                                                inputClassName="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                                dropdownClassName="w-96"
+                                            />
                                 </div>
 
                                 <div className="flex flex-col">

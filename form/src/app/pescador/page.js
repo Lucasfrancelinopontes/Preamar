@@ -12,6 +12,7 @@ import CheckboxGroup from "./components/CheckboxGroup";
 import usePescadorForm from "./hooks/usePescadorForm";
 
 import api from "@/services/api";
+import SpeciesAutocomplete, { buildSpeciesLabel } from "@/components/SpeciesAutocomplete";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -79,7 +80,7 @@ export default function CadastroPescador({ editId = null }) {
             ...prev,
             producaoMediaPorEspecie: [
                 ...(prev.producaoMediaPorEspecie || []),
-                { rowId: Date.now(), especie: "", producao: "" }
+                { rowId: Date.now(), id_especie: null, buscaTexto: "", especie: "", nome_popular: "", producao: "" }
             ]
         }));
     }
@@ -94,7 +95,26 @@ export default function CadastroPescador({ editId = null }) {
     function handleProducaoEspecieChange(idx, campo, valor) {
         setFormData((prev) => {
             const novas = [...(prev.producaoMediaPorEspecie || [])];
+            if (campo === "buscaTexto") {
+                novas[idx] = { ...novas[idx], buscaTexto: valor, id_especie: null, especie: "", nome_popular: "" };
+                return { ...prev, producaoMediaPorEspecie: novas };
+            }
             novas[idx] = { ...novas[idx], [campo]: valor };
+            return { ...prev, producaoMediaPorEspecie: novas };
+        });
+    }
+
+    function handleProducaoEspecieSelecionada(idx, especie) {
+        const label = buildSpeciesLabel(especie);
+        setFormData((prev) => {
+            const novas = [...(prev.producaoMediaPorEspecie || [])];
+            novas[idx] = {
+                ...novas[idx],
+                id_especie: especie?.ID ?? especie?.IDD ?? null,
+                buscaTexto: label.titulo || label.textoBusca,
+                especie: label.nome,
+                nome_popular: label.nome
+            };
             return { ...prev, producaoMediaPorEspecie: novas };
         });
     }
@@ -614,7 +634,7 @@ export default function CadastroPescador({ editId = null }) {
                                     name="comprimento"
                                     type="number"
                                     step="0.01"
-                                    value={formData.embarcacao.comprimento || ""}
+                                    value={formData.embarcacao.comprimento || formData.embarcacao.comprimentoM || ""}
                                     onChange={handleEmbarcacaoInputChange}
                                 />
                                 <InputGroup
@@ -1831,12 +1851,14 @@ export default function CadastroPescador({ editId = null }) {
 
                                         {(formData.producaoMediaPorEspecie || []).map((item, idx) => (
                                             <div key={item.rowId} className="flex flex-col md:flex-row gap-2 items-start">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Nome da espécie"
-                                                    value={item.especie}
-                                                    onChange={(e) => handleProducaoEspecieChange(idx, "especie", e.target.value)}
-                                                    className="w-full md:flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400"
+                                                <SpeciesAutocomplete
+                                                    options={especiesDisponiveis}
+                                                    value={item.buscaTexto || item.especie || item.nome_popular || ""}
+                                                    onChange={(value) => handleProducaoEspecieChange(idx, "buscaTexto", value)}
+                                                    onSelect={(especie) => handleProducaoEspecieSelecionada(idx, especie)}
+                                                    placeholder="IDD ou nome popular"
+                                                    inputClassName="w-full md:flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400"
+                                                    dropdownClassName="w-96"
                                                 />
                                                 <input
                                                     type="number"

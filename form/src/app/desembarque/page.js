@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/services/api";
 import { useAuth } from "@/app/contexts/AuthContext";
+import SpeciesAutocomplete from "@/components/SpeciesAutocomplete";
 
 const TOTAL_ETAPAS = 6;
 
@@ -68,6 +69,7 @@ const createCapturaItem = () => ({
 const createIndividuoItem = () => ({
     ID_individuo: null,
     especieId: "",
+    especieBuscaTexto: "",
     numeroIndividuo: "",
     comprimentoIndividuo: "",
     pesoIndividuo: ""
@@ -259,6 +261,11 @@ const normalizeTipoEmbarcacao = (value) => {
     return map[raw] ?? "outro";
 };
 
+const getEmbarcacaoComprimento = (embarcacao = {}) => {
+    const valor = embarcacao?.comprimento ?? embarcacao?.comprimento_m ?? embarcacao?.comprimentoM;
+    return valor != null ? String(valor) : "";
+};
+
 const mapToArray = (response) => {
     if (Array.isArray(response)) return response;
     if (Array.isArray(response?.data)) return response.data;
@@ -324,7 +331,7 @@ const mapApiToFormData = (data) => {
         numPesqueiros: data?.pesqueiros != null ? String(data.pesqueiros) : "",
         tipoEmbarcacao: normalizeTipoEmbarcacao(data?.embarcacao?.tipo),
         tipoEmbarcacaoOutro: data?.embarcacao?.tipo_outro || "",
-        comprimento: data?.embarcacao?.comprimento != null ? String(data.embarcacao.comprimento) : "",
+        comprimento: getEmbarcacaoComprimento(data?.embarcacao),
         capacidadeEstocagem: data?.embarcacao?.capacidade != null ? String(data.embarcacao.capacidade) : "",
         forcaMotor: data?.embarcacao?.hp != null ? String(data.embarcacao.hp) : "",
         conservacao: normalizeConservacaoValue(data?.embarcacao?.possui),
@@ -348,7 +355,13 @@ const mapApiToFormData = (data) => {
         capturas: capturasApi.length > 0
             ? capturasApi.map((captura) => ({
                 ID_captura: captura?.ID_captura || null,
-                especieIdd: captura?.ID_especie != null ? String(captura.ID_especie) : "",
+                especieIdd: captura?.especie?.idd != null
+                    ? String(captura.especie.idd)
+                    : captura?.especie?.IDD != null
+                        ? String(captura.especie.IDD)
+                        : captura?.ID_especie != null
+                            ? String(captura.ID_especie)
+                            : "",
                 especieId: captura?.ID_especie != null ? String(captura.ID_especie) : "",
                 pesoTotalEspecie: captura?.peso_kg != null ? String(captura.peso_kg) : "",
                 precoKg: captura?.preco_kg != null ? String(captura.preco_kg) : "",
@@ -363,6 +376,11 @@ const mapApiToFormData = (data) => {
             ? individuosApi.map((individuo, index) => ({
                 ID_individuo: individuo?.ID_individuo || null,
                 especieId: individuo?.ID_especie != null ? String(individuo.ID_especie) : "",
+                especieBuscaTexto: individuo?.especie?.idd != null
+                    ? `#${individuo.especie.idd} - ${individuo.especie.nome_popular || individuo.especie.Nome_popular || ""}`.trim()
+                    : individuo?.especie?.IDD != null
+                        ? `#${individuo.especie.IDD} - ${individuo.especie.nome_popular || individuo.especie.Nome_popular || ""}`.trim()
+                        : individuo?.especie?.nome_popular || individuo?.especie?.Nome_popular || "",
                 numeroIndividuo: individuo?.numero_individuo != null
                     ? String(individuo.numero_individuo)
                     : String(index + 1),
@@ -660,7 +678,7 @@ function DesembarqueContent() {
                 const tipo = normalizeTipoEmbarcacao(embarcacao.tipo);
                 return tipo === "outro" ? (embarcacao.tipo || "") : (embarcacao.tipo_outro || "");
             })(),
-            comprimento: embarcacao.comprimento != null ? String(embarcacao.comprimento) : "",
+            comprimento: getEmbarcacaoComprimento(embarcacao),
             capacidadeEstocagem: embarcacao.capacidade != null ? String(embarcacao.capacidade) : "",
             forcaMotor: embarcacao.hp != null ? String(embarcacao.hp) : "",
             conservacao: normalizeConservacaoValue(embarcacao.possui),
@@ -770,7 +788,30 @@ function DesembarqueContent() {
     const handleIndividuoChange = (index, field, value) => {
         setFormData((prev) => {
             const individuos = Array.isArray(prev.individuos) ? [...prev.individuos] : [createIndividuoItem()];
+            if (field === "especieBuscaTexto") {
+                individuos[index] = { ...individuos[index], especieBuscaTexto: value, especieId: "" };
+                return { ...prev, individuos };
+            }
             individuos[index] = { ...individuos[index], [field]: value };
+            return { ...prev, individuos };
+        });
+    };
+
+    const handleIndividuoEspecieSelecionada = (index, especie) => {
+        const idEspecie = especie?.ID != null ? String(especie.ID) : especie?.IDD != null ? String(especie.IDD) : "";
+        const labelId = especie?.IDD != null ? String(especie.IDD) : idEspecie;
+        const nomePopular = especie?.Nome_popular || especie?.nome_popular || "";
+        const textoBusca = labelId
+            ? `#${labelId}${nomePopular ? ` - ${nomePopular}` : ""}`
+            : nomePopular;
+
+        setFormData((prev) => {
+            const individuos = Array.isArray(prev.individuos) ? [...prev.individuos] : [createIndividuoItem()];
+            individuos[index] = {
+                ...individuos[index],
+                especieId: idEspecie,
+                especieBuscaTexto: textoBusca
+            };
             return { ...prev, individuos };
         });
     };
@@ -1066,18 +1107,17 @@ function DesembarqueContent() {
         return labels[value] || valorResumo(value);
     };
 
-    const formatarEspecieResumo = (especieId, especieIdd) => {
-        const key = possuiValor(especieId) ? String(especieId).trim() : "";
-        const especie = key ? especiesPorId.get(key) : null;
+    const formatarEspecieResumo = (especieIdd, especieId) => {
+        const iddKey = possuiValor(especieIdd) ? String(especieIdd).trim() : "";
+        const especiePorIdd = iddKey ? especiesPorIdd.get(iddKey) : null;
+        const especiePorId = possuiValor(especieId) ? especiesPorId.get(String(especieId).trim()) : null;
+        const especie = especiePorIdd || especiePorId;
         const nomePopular = especie?.Nome_popular || especie?.nome_popular || "";
-        const idd = possuiValor(especieIdd)
-            ? String(especieIdd).trim()
-            : String(especie?.IDD ?? especie?.ID ?? "").trim();
-        if (!idd && !nomePopular && !key) return "-";
+        const idd = iddKey || String(especie?.IDD ?? especie?.idd ?? especie?.ID ?? "").trim();
+        if (!idd && !nomePopular) return "-";
         if (idd && nomePopular) return `#${idd} - ${nomePopular}`;
         if (nomePopular) return nomePopular;
-        if (idd) return `#${idd}`;
-        return `ID ${key}`;
+        return `#${idd}`;
     };
 
     const capturasDigitadas = (formData.capturas || []).filter((captura) =>
@@ -1602,13 +1642,6 @@ function DesembarqueContent() {
                                             <h3 className="text-base font-bold text-black">Registro Geral das Especies</h3>
                                         </div>
                                         <div className="space-y-4">
-                                            <datalist id="captura-especies-idd-options">
-                                                {especies.map((esp) => (
-                                                    <option key={`idd-option-${esp.ID}`} value={String(esp.IDD ?? esp.ID ?? "")}>
-                                                        {esp.Nome_popular} ({esp.Nome_cientifico})
-                                                    </option>
-                                                ))}
-                                            </datalist>
                                             {(formData.capturas || []).map((captura, index) => (
                                                 <div key={`captura-${captura.ID_captura || index}`} className="rounded-lg border border-slate-200 bg-white p-4">
                                                     <div className="mb-3 flex items-center justify-between gap-3">
@@ -1624,31 +1657,20 @@ function DesembarqueContent() {
                                                     </div>
                                                     <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
                                                         <div>
-                                                            <label className="mb-1.5 block text-sm font-semibold text-black">IDD da especie</label>
-                                                            <input
-                                                                type="text"
-                                                                inputMode="numeric"
+                                                            <label className="mb-1.5 block text-sm font-semibold text-black">Especie</label>
+                                                            <SpeciesAutocomplete
+                                                                options={especies}
                                                                 value={captura.especieIdd || ""}
-                                                                onChange={(e) => handleCapturaChange(index, "especieIdd", e.target.value)}
-                                                                list="captura-especies-idd-options"
-                                                                placeholder="Digite ou selecione IDD"
-                                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
+                                                                onChange={(value) => handleCapturaChange(index, "especieIdd", value)}
+                                                                onSelect={(especie) => {
+                                                                    const idd = especie?.IDD ?? especie?.ID ?? "";
+                                                                    handleCapturaChange(index, "especieIdd", String(idd));
+                                                                    handleCapturaChange(index, "especieId", especie?.ID != null ? String(especie.ID) : String(especie?.IDD ?? ""));
+                                                                }}
+                                                                placeholder="IDD ou nome popular"
+                                                                inputClassName="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
+                                                                dropdownClassName="w-96"
                                                             />
-                                                        </div>
-                                                        <div>
-                                                            <label className="mb-1.5 block text-sm font-semibold text-black">Nome da especie</label>
-                                                            <select
-                                                                value={captura.especieId}
-                                                                onChange={(e) => handleCapturaChange(index, "especieId", e.target.value)}
-                                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600"
-                                                            >
-                                                                <option value="">Selecione...</option>
-                                                                {especies.map((esp) => (
-                                                                    <option key={esp.ID} value={esp.ID}>
-                                                                        {esp.Nome_popular} ({esp.Nome_cientifico})
-                                                                    </option>
-                                                                ))}
-                                                            </select>
                                                         </div>
                                                         <InputGroup
                                                             label="Peso Total (kg)"
@@ -1713,19 +1735,16 @@ function DesembarqueContent() {
                                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                                                         <div>
                                                             <label className="mb-1.5 block text-sm font-semibold text-black">Especie vinculada</label>
-                                                            <select
-                                                                value={individuo.especieId}
-                                                                onChange={(e) => handleIndividuoChange(index, "especieId", e.target.value)}
+                                                            <SpeciesAutocomplete
+                                                                options={especiesSelecionadasNaCaptura}
+                                                                value={individuo.especieBuscaTexto || ""}
+                                                                onChange={(value) => handleIndividuoChange(index, "especieBuscaTexto", value)}
+                                                                onSelect={(especie) => handleIndividuoEspecieSelecionada(index, especie)}
+                                                                placeholder="IDD ou nome popular"
                                                                 disabled={especiesSelecionadasNaCaptura.length === 0}
-                                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
-                                                            >
-                                                                <option value="">Selecione...</option>
-                                                                {especiesSelecionadasNaCaptura.map((esp) => (
-                                                                    <option key={`ind-esp-${esp.ID}`} value={esp.ID}>
-                                                                        #{esp.IDD ?? esp.ID} - {esp.Nome_popular}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
+                                                                inputClassName="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100 disabled:text-slate-400"
+                                                                dropdownClassName="w-80"
+                                                            />
                                                         </div>
                                                         <InputGroup label="N do individuo" name={`numeroIndividuo-${index}`} type="float" value={individuo.numeroIndividuo} onChange={(e) => handleIndividuoChange(index, "numeroIndividuo", e.target.value)} />
                                                         <InputGroup label="Comprimento (cm)" name={`comprimentoIndividuo-${index}`} type="float" value={individuo.comprimentoIndividuo} onChange={(e) => handleIndividuoChange(index, "comprimentoIndividuo", e.target.value)} />
@@ -1828,9 +1847,8 @@ function DesembarqueContent() {
                                                         <div key={`resumo-captura-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                                                             <p className="mb-2 font-semibold text-black">Captura {index + 1}</p>
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                                                                <p><span className="font-semibold">Especie:</span> {formatarEspecieResumo(captura.especieId, captura.especieIdd)}</p>
+                                                                <p><span className="font-semibold">Especie:</span> {formatarEspecieResumo(captura.especieIdd, captura.especieId)}</p>
                                                                 <p><span className="font-semibold">IDD informado:</span> {valorResumo(captura.especieIdd)}</p>
-                                                                <p><span className="font-semibold">ID especie:</span> {valorResumo(captura.especieId)}</p>
                                                                 <p><span className="font-semibold">Peso total da especie (kg):</span> {valorResumo(captura.pesoTotalEspecie)}</p>
                                                                 <p><span className="font-semibold">Preco por kg:</span> {valorResumo(captura.precoKg)}</p>
                                                                 <p><span className="font-semibold">Condicao do peixe:</span> {formatarCondicaoPeixeResumo(captura.condicaoPeixe)}</p>
@@ -1851,8 +1869,7 @@ function DesembarqueContent() {
                                                         <div key={`resumo-individuo-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                                                             <p className="mb-2 font-semibold text-black">Individuo {index + 1}</p>
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                                                                <p><span className="font-semibold">Especie vinculada:</span> {formatarEspecieResumo(individuo.especieId, null)}</p>
-                                                                <p><span className="font-semibold">ID especie:</span> {valorResumo(individuo.especieId)}</p>
+                                                                <p><span className="font-semibold">Especie vinculada:</span> {valorResumo(individuo.especieBuscaTexto || formatarEspecieResumo(individuo.especieId, null))}</p>
                                                                 <p><span className="font-semibold">Numero do individuo:</span> {valorResumo(individuo.numeroIndividuo)}</p>
                                                                 <p><span className="font-semibold">Comprimento (cm):</span> {valorResumo(individuo.comprimentoIndividuo)}</p>
                                                                 <p><span className="font-semibold">Peso (g):</span> {valorResumo(individuo.pesoIndividuo)}</p>
