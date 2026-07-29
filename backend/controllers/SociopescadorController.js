@@ -65,6 +65,19 @@ const bool = (v) => {
   return false;
 };
 
+const hasMeaningfulValues = (payload) => Object.values(payload || {}).some((value) => {
+  if (value === null || value === undefined || value === '') return false;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value.trim() !== '';
+  return true;
+});
+
+const replaceOneToOneRecord = async (Model, id_pescador, payload, transaction) => {
+  await Model.destroy({ where: { id_pescador }, transaction });
+  if (!hasMeaningfulValues(payload)) return;
+  await Model.create({ id_pescador, ...payload }, { transaction });
+};
+
 // ─── criar ──────────────────────────────────────────────────────────────────
 
 /**
@@ -510,20 +523,18 @@ export const atualizar = async (req, res) => {
       divida_com_atravessador:   bool(pescador.dividaComAtravessador)
     }, { transaction: t });
 
-    // Saúde (upsert)
-    await SocioSaude.upsert({
-      id_pescador,
+    // Saúde (replace)
+    await replaceOneToOneRecord(SocioSaude, id_pescador, {
       vista:        bool(saude.vista),
       pele:         bool(saude.pele),
       coluna:       bool(saude.coluna),
       ginecologico: bool(saude.ginecologico),
       outros:       bool(saude.outros),
       outros_texto: txt(saude.outrosTexto)
-    }, { transaction: t });
+    }, t);
 
-    // Registro (upsert)
-    await SocioRegistro.upsert({
-      id_pescador,
+    // Registro (replace)
+    await replaceOneToOneRecord(SocioRegistro, id_pescador, {
       registro_inss:       txt(registro.registroINSS),
       registro_colonia:    txt(registro.registroColonia),
       nome_colonia:        txt(registro.nomeColonia),
@@ -532,11 +543,10 @@ export const atualizar = async (req, res) => {
       possui_carteira:     txt(registro.possuiCarteira),
       carteira_grande:     txt(registro.carteiraGrande),
       carteira_pequena:    txt(registro.carteiraPequena)
-    }, { transaction: t });
+    }, t);
 
-    // Embarcação (upsert)
-    await SocioEmbarcacao.upsert({
-      id_pescador,
+    // Embarcação (replace)
+    await replaceOneToOneRecord(SocioEmbarcacao, id_pescador, {
       pesca_embarcada:       txt(embarcacao.pescaEmbarcada),
       embarcacao_propria:    txt(embarcacao.embarcacaoPropria),
       financiada:            bool(embarcacao.financiada),
@@ -561,7 +571,7 @@ export const atualizar = async (req, res) => {
       licenciamento_mpa:     bool(embarcacao.licenciamentoMPA),
       propulsoes:            JSON.stringify(embarcacao.propulsoes || []),
       tipo_embarcacao:       txt(embarcacao.tipoEmbarcacao)
-    }, { transaction: t });
+    }, t);
 
     // Petrechos — substitui tudo
     await SocioPetrecho.destroy({ where: { id_pescador }, transaction: t });
@@ -593,9 +603,8 @@ export const atualizar = async (req, res) => {
       );
     }
 
-    // Produção (upsert)
-    await SocioProducao.upsert({
-      id_pescador,
+    // Produção (replace)
+    await replaceOneToOneRecord(SocioProducao, id_pescador, {
       media_dias_embarcado:    num(producao.mediaDiasEmbarcado),
       viagens_mes:             num(producao.viagensMes),
       producao_media_kg:       num(producao.producaoMediaKg),
@@ -609,7 +618,7 @@ export const atualizar = async (req, res) => {
       renda_media_pescaria:    num(producao.rendaMediaPescaria),
       percepcao_pesca_hoje_vs_passado: txt(producao.percepcaoPescaHojeVsPassado),
       percepcao_tamanho_volume_pescado: txt(producao.percepcaoTamanhoVolumePescado)
-    }, { transaction: t });
+    }, t);
 
     // Despesas — substitui tudo
     await SocioDespesa.destroy({ where: { id_pescador }, transaction: t });
