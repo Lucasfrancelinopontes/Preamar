@@ -51,8 +51,8 @@ export default function MeusPeixariasPage() {
 
     const formatarCodigo = (peixaria) => peixaria?.cod_peixaria || "-";
 
-    const handleEditar = (id) => {
-        router.push(`/peixaria?edit=${id}`);
+    const handleVisualizar = (id) => {
+        router.push(`/peixaria/${id}`);
     };
 
     const handleNovo = () => {
@@ -227,10 +227,10 @@ export default function MeusPeixariasPage() {
                                         <div className="flex items-center gap-3">
                                             <button
                                                 type="button"
-                                                onClick={() => handleEditar(peixaria.ID_peixaria)}
+                                                onClick={() => handleVisualizar(peixaria.ID_peixaria)}
                                                 className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                                             >
-                                                Editar
+                                                Visualizar
                                             </button>
                                             <button
                                                 type="button"

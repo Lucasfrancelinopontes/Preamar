@@ -63,8 +63,8 @@ export default function MeusPescadoresPage() {
         return pescador?.coleta?.codigo_coleta || pescador?.coleta?.codigoColeta || "-";
     };
 
-    const handleEditar = (id) => {
-        router.push(`/pescador/editar/${id}`);
+    const handleVisualizar = (id) => {
+        router.push(`/pescador/${id}`);
     };
 
     const handleNovo = () => {
@@ -252,10 +252,10 @@ export default function MeusPescadoresPage() {
                                         <div className="flex items-center gap-3">
                                             <button
                                                 type="button"
-                                                onClick={() => handleEditar(pescador.id)}
+                                                onClick={() => handleVisualizar(pescador.id)}
                                                 className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
                                             >
-                                                <span>✏️</span> Editar
+                                                <span>👁️</span> Visualizar
                                             </button>
                                             <button
                                                 type="button"
