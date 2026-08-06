@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import SpeciesAutocomplete from "@/components/SpeciesAutocomplete";
 import api from "@/services/api";
 import { mapFormDataToPayload, mapApiToFormData } from "./utils/mapper";
 import DeleteConfirmModal from "./DeleteConfirmModal";
@@ -1388,7 +1389,19 @@ export default function PeixariaClient() {
                                                     {form[key].linhas.map((linha, idx) => (
                                                         <tr key={linha.id ?? idx}>
                                                             <td className="px-4 py-3 text-sm font-semibold text-slate-600">{idx + 1}</td>
-                                                            <td className="px-4 py-3"><input className={inputClass} value={linha.especie} onChange={(e) => updateMarketRow(key, idx, "especie", e.target.value)} placeholder="Ex.: Tilápia" /></td>
+                                                            <td className="px-4 py-3 align-top">
+                                                                <SpeciesAutocomplete
+                                                                    options={especiesDisponiveis}
+                                                                    value={linha.especie ?? ""}
+                                                                    onChange={(value) => updateMarketRow(key, idx, "especie", value)}
+                                                                    onSelect={(especie, label) => updateMarketRow(key, idx, "especie", label?.nome || especie?.Nome_popular || especie?.nome_popular || "")}
+                                                                    placeholder="IDD ou nome popular"
+                                                                    disabled={carregandoEspecies}
+                                                                    inputClassName={inputClass}
+                                                                    dropdownClassName="w-96"
+                                                                    emptyText="Nenhuma espécie encontrada"
+                                                                />
+                                                            </td>
                                                             <td className="px-4 py-3">
                                                                 <select className={inputClass} value={linha.formaComercializacao} onChange={(e) => updateMarketRow(key, idx, "formaComercializacao", e.target.value)}>
                                                                     <option value="">Selecione</option>
