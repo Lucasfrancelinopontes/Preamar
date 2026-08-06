@@ -48,6 +48,13 @@ const OPCOES_ESCOLARIDADE = [
     { value: "pos_graduacao", label: "Pós-graduação" },
 ];
 
+const OPCOES_LOCAL_MORADIA = [
+    { value: "sede_municipal", label: "Sede municipal" },
+    { value: "comunidade_vila_local", label: "Comunidade/Vila local" },
+    { value: "outro_municipio", label: "Outro municipio" },
+    { value: "capital", label: "Capital" },
+];
+
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -963,7 +970,18 @@ export default function PeixariaClient() {
                                                 ...OPCOES_ESCOLARIDADE
                                             ]}
                                         />
-                                        <InputGroup label="Local de moradia" name="localMoradia" value={form.localMoradia} onChange={(e) => updateField("localMoradia", e.target.value)} />
+                                        <SelectGroup
+                                            label="Local de moradia"
+                                            name="localMoradia"
+                                            value={form.localMoradia}
+                                            onChange={(e) => updateField("localMoradia", e.target.value)}
+                                            options={[
+                                                ...(form.localMoradia && !OPCOES_LOCAL_MORADIA.some((opt) => opt.value === form.localMoradia)
+                                                    ? [{ value: form.localMoradia, label: form.localMoradia }]
+                                                    : []),
+                                                ...OPCOES_LOCAL_MORADIA
+                                            ]}
+                                        />
                                     </FormGrid>
                                 </SectionCard>
                             </>
