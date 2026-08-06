@@ -424,6 +424,7 @@ export const mapApiToFormData = (apiData = {}) => {
     pescadoresEntregam: entregas.map((item) => ({
       id: item.id ?? item.ID_pescador_fornecedor ?? null,
       nome: toText(item.nome),
+      apelido: toText(item.apelido),
       comunidade: toText(item.comunidade),
       tipoBarco: toText(item.tipo_barco),
       numeroPescadores: toText(item.numero_pescadores),
