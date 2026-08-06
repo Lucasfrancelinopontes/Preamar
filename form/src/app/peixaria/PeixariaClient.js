@@ -1110,6 +1110,16 @@ export default function PeixariaClient() {
                         {currentStep === 3 && (
                             <>
                                 <SectionCard subtitle="Cadeia de fornecimento" title="Fornecedores dos pescados (%)">
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <SectionTitle>Origem do pescado por fornecedor</SectionTitle>
+                                        <button
+                                            type="button"
+                                            className={btnAdd}
+                                            onClick={() => addRow("origemPescado", { tipo: "", pescadoresLocais: "", outrasLocalidadesPB: "", outrosEstados: "", outro: "" })}
+                                        >
+                                            + Adicionar linha
+                                        </button>
+                                    </div>
                                     <div className="overflow-x-auto rounded-xl border border-slate-200">
                                         <table className="min-w-full divide-y divide-slate-200 text-sm">
                                             <thead className="bg-slate-50">
@@ -1117,16 +1127,27 @@ export default function PeixariaClient() {
                                                     {["Tipo", "Pescadores locais %", "Outras localidades (PB) %", "Outros estados %", "Outro %"].map((h) => (
                                                         <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
                                                     ))}
+                                                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Ações</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 bg-white">
                                                 {form.origemPescado.map((row, idx) => (
                                                     <tr key={row.id}>
-                                                        <td className="px-4 py-3 text-sm font-semibold text-slate-700">{row.tipo}</td>
+                                                        <td className="px-4 py-3"><input className={inputClass} value={row.tipo ?? ""} onChange={(e) => updateArrayItem("origemPescado", idx, "tipo", e.target.value)} placeholder="Ex.: Total pescado" /></td>
                                                         <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={row.pescadoresLocais ?? ""} onChange={(e) => updateArrayItem("origemPescado", idx, "pescadoresLocais", e.target.value)} placeholder="0" min="0" max="100" /></td>
                                                         <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={row.outrasLocalidadesPB ?? ""} onChange={(e) => updateArrayItem("origemPescado", idx, "outrasLocalidadesPB", e.target.value)} placeholder="0" min="0" max="100" /></td>
                                                         <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={row.outrosEstados ?? ""} onChange={(e) => updateArrayItem("origemPescado", idx, "outrosEstados", e.target.value)} placeholder="0" min="0" max="100" /></td>
                                                         <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={row.outro ?? ""} onChange={(e) => updateArrayItem("origemPescado", idx, "outro", e.target.value)} placeholder="0" min="0" max="100" /></td>
+                                                        <td className="px-4 py-3">
+                                                            <button
+                                                                type="button"
+                                                                className={btnDanger}
+                                                                onClick={() => removeRow("origemPescado", idx)}
+                                                                disabled={form.origemPescado.length <= 1}
+                                                            >
+                                                                Remover
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
