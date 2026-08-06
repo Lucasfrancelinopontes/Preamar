@@ -39,6 +39,15 @@ const RELACOES_TRABALHO_OPTIONS = [
     "Assalariado (carteira assinada)",
 ];
 
+const OPCOES_ESCOLARIDADE = [
+    { value: "fundamental_incompleto", label: "Fundamental - incompleto" },
+    { value: "fundamental_completo", label: "Fundamental - completo" },
+    { value: "medio_incompleto", label: "Médio - incompleto" },
+    { value: "medio_completo", label: "Médio - completo" },
+    { value: "superior_graduacao", label: "Superior - graduação" },
+    { value: "pos_graduacao", label: "Pós-graduação" },
+];
+
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -942,7 +951,18 @@ export default function PeixariaClient() {
                                         <InputGroup label="Idade" name="idade" value={form.idade} type="number" inputMode="numeric" onChange={(e) => updateNumericField("idade", e.target.value)} />
                                         <SelectGroup label="Estado civil" name="estadoCivil" value={form.estadoCivil} onChange={(e) => updateField("estadoCivil", e.target.value)} options={optsEstadoCivil} />
                                         <InputGroup label="Número de familiares" name="numeroFamiliares" value={form.numeroFamiliares} type="number" inputMode="numeric" onChange={(e) => updateNumericField("numeroFamiliares", e.target.value)} />
-                                        <InputGroup label="Escolaridade" name="escolaridade" value={form.escolaridade} onChange={(e) => updateField("escolaridade", e.target.value)} />
+                                        <SelectGroup
+                                            label="Escolaridade"
+                                            name="escolaridade"
+                                            value={form.escolaridade}
+                                            onChange={(e) => updateField("escolaridade", e.target.value)}
+                                            options={[
+                                                ...(form.escolaridade && !OPCOES_ESCOLARIDADE.some((opt) => opt.value === form.escolaridade)
+                                                    ? [{ value: form.escolaridade, label: form.escolaridade }]
+                                                    : []),
+                                                ...OPCOES_ESCOLARIDADE
+                                            ]}
+                                        />
                                         <InputGroup label="Local de moradia" name="localMoradia" value={form.localMoradia} onChange={(e) => updateField("localMoradia", e.target.value)} />
                                     </FormGrid>
                                 </SectionCard>
