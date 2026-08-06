@@ -576,8 +576,8 @@ export default function PeixariaClient() {
             [key]: [
                 ...prev[key],
                 key === "especiesComerciais"
-                    ? { ...template, id: Date.now(), id_especie: null, buscaTexto: "", nome_popular: "", sugestoesvisiveis: false }
-                    : { ...template, id: Date.now() }
+                    ? { ...template, clientId: Date.now(), id_especie: null, buscaTexto: "", nome_popular: "", sugestoesvisiveis: false }
+                    : { ...template, clientId: Date.now() }
             ]
         })), []);
 
@@ -1132,7 +1132,7 @@ export default function PeixariaClient() {
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 bg-white">
                                                 {form.origemPescado.map((row, idx) => (
-                                                    <tr key={row.id}>
+                                                    <tr key={row.id ?? row.clientId ?? idx}>
                                                         <td className="px-4 py-3"><input className={inputClass} value={row.tipo ?? ""} onChange={(e) => updateArrayItem("origemPescado", idx, "tipo", e.target.value)} placeholder="Ex.: Total pescado" /></td>
                                                         <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={row.pescadoresLocais ?? ""} onChange={(e) => updateArrayItem("origemPescado", idx, "pescadoresLocais", e.target.value)} placeholder="0" min="0" max="100" /></td>
                                                         <td className="px-4 py-3"><input className={`${inputClass} text-right`} type="number" value={row.outrasLocalidadesPB ?? ""} onChange={(e) => updateArrayItem("origemPescado", idx, "outrasLocalidadesPB", e.target.value)} placeholder="0" min="0" max="100" /></td>
@@ -1176,7 +1176,7 @@ export default function PeixariaClient() {
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 bg-white">
                                                 {form.pescadoresEntregam.map((p, idx) => (
-                                                    <tr key={p.id}>
+                                                    <tr key={p.id ?? p.clientId ?? idx}>
                                                         <td className="px-4 py-3 text-sm font-semibold text-slate-600">{idx + 1}</td>
                                                         <td className="px-4 py-3"><input className={inputClass} value={p.apelido} onChange={(e) => updateArrayItem("pescadoresEntregam", idx, "apelido", e.target.value)} placeholder="Apelido" /></td>
                                                         <td className="px-4 py-3"><input className={inputClass} value={p.tipoBarco} onChange={(e) => updateArrayItem("pescadoresEntregam", idx, "tipoBarco", e.target.value)} placeholder="Ex.: Lancha" /></td>
@@ -1228,7 +1228,7 @@ export default function PeixariaClient() {
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 bg-white">
                                                 {form.especiesComerciais.map((esp, idx) => (
-                                                    <tr key={esp.id}>
+                                                    <tr key={esp.id ?? esp.clientId ?? idx}>
                                                         <td className="px-4 py-3 text-sm font-semibold text-slate-600">{idx + 1}</td>
                                                         <td className="px-4 py-3 align-top">
                                                             <div className="relative rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-3 shadow-sm">

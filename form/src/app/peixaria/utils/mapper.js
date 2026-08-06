@@ -396,7 +396,7 @@ export const mapApiToFormData = (apiData = {}) => {
     transporte: toText(data.transporte),
     despesas: normalizeArray(data.despesas)
       .map((item) => ({
-        id: item.id || item.ID_despesa || Date.now(),
+        id: item.id ?? item.ID_despesa ?? null,
         descricao: toText(item.descricao),
         nomeOutros: toText(item.nome_outros),
         quantidade: toText(item.quantidade),
@@ -405,13 +405,13 @@ export const mapApiToFormData = (apiData = {}) => {
       })),
     fornecedores: normalizeArray(data.fornecedores)
       .map((item) => ({
-        id: item.id || item.ID_fornecedor || Date.now(),
+        id: item.id ?? item.ID_fornecedor ?? null,
         nome: toText(item.nome),
         tipo: toText(item.tipo),
         telefone: toText(item.telefone)
       })),
     pescadoresLocais: locais.map((item) => ({
-      id: item.id || item.ID_pescador_fornecedor || Date.now(),
+      id: item.id ?? item.ID_pescador_fornecedor ?? null,
       nome: toText(item.nome),
       apelido: toText(item.apelido),
       comunidade: toText(item.comunidade),
@@ -422,7 +422,7 @@ export const mapApiToFormData = (apiData = {}) => {
       regularidade: toText(item.regularidade)
     })),
     pescadoresEntregam: entregas.map((item) => ({
-      id: item.id || item.ID_pescador_fornecedor || Date.now(),
+      id: item.id ?? item.ID_pescador_fornecedor ?? null,
       nome: toText(item.nome),
       comunidade: toText(item.comunidade),
       tipoBarco: toText(item.tipo_barco),
@@ -433,7 +433,7 @@ export const mapApiToFormData = (apiData = {}) => {
     })),
     especiesComerciais: normalizeArray(data.especies_comerciais)
       .map((item) => ({
-        id: item.id || item.ID_especie_comercial || Date.now(),
+        id: item.id ?? item.ID_especie_comercial ?? null,
         id_especie: item.id_especie ?? item.ID_especie ?? item.especieInfo?.ID_especie ?? item.especieInfo?.ID ?? null,
         buscaTexto: item.id_especie ?? item.ID_especie ?? item.especieInfo?.ID_especie ?? item.especieInfo?.ID != null
           ? String(item.id_especie ?? item.ID_especie ?? item.especieInfo?.ID_especie ?? item.especieInfo?.ID)
@@ -448,7 +448,7 @@ export const mapApiToFormData = (apiData = {}) => {
       })),
     perdas: normalizeArray(data.perdas)
       .map((item) => ({
-        id: item.id || item.ID_perda || Date.now(),
+        id: item.id ?? item.ID_perda ?? null,
         descricao: toText(item.descricao),
         quantidade: toText(item.quantidade),
         causa: toText(item.causa)
@@ -456,7 +456,7 @@ export const mapApiToFormData = (apiData = {}) => {
     perdasPorEspecie: mapPerdasPorEspecieFromApi(data.perdas_por_especie),
     origemPescado: normalizeArray(data.origens_pescado)
       .map((item) => ({
-        id: item.id || item.ID_origem_pescado || Date.now(),
+        id: item.id ?? item.ID_origem_pescado ?? null,
         tipo: toText(item.tipo),
         pescadoresLocais: toText(item.pescadores_locais),
         outrasLocalidadesPB: toText(item.outras_localidades_pb),
